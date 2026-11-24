@@ -17,6 +17,7 @@
     { "id": "poo", "titre": "Programmation objet", "niveau": "Terminale NSI", "gabarit": "introduction", "questions": 12, "duree_minutes": 15 },
     { "id": "piles-files", "titre": "Piles et files", "niveau": "Terminale NSI", "gabarit": "introduction", "questions": 12, "duree_minutes": 15 },
     { "id": "revision-piles-files", "titre": "Révision : piles et files", "niveau": "Terminale NSI", "gabarit": "revision", "questions": 20, "duree_minutes": 30 },
+    { "id": "revision-poo-piles-files", "titre": "Révision : POO, piles, files et rappels", "niveau": "Terminale NSI", "gabarit": "revision", "questions": 20, "duree_minutes": 20 },
     { "id": "recursivite", "titre": "Récursivité", "niveau": "Terminale NSI", "gabarit": "introduction", "questions": 12, "duree_minutes": 15 },
     { "id": "tri-fusion", "titre": "Tri fusion", "niveau": "Terminale NSI", "gabarit": "introduction", "questions": 12, "duree_minutes": 15 },
     { "id": "arbres-binaires", "titre": "Arbres binaires", "niveau": "Terminale NSI", "gabarit": "introduction", "questions": 12, "duree_minutes": 15 },
