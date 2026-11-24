@@ -125,6 +125,63 @@ essai('rapidité : ajouter du temps ne change pas l\'ordre des réponses', () =>
   const r = (ms, d) => B.points({ juste: true, ms }, { duree: d }).detail.rapidite;
   assert.ok(r(5000, 45) >= r(20000, 45) && r(5000, 30) >= r(20000, 30));
 });
+/* Changer d'avis : le dernier choix compte, la rapidité se mesure à l'instant du dernier changement. */
+const egal = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+const suivre = envois => envois.reduce((r, [v, k, ms]) => B.retenir(r, { v, k }, ms, egal), null);
+const rap = (r, duree) => B.points({ juste: r.v === 1, ms: r.ms }, { duree }).detail.rapidite;
+essai('changer d\'avis : faux puis juste, la rapidité à l\'instant du changement', () => {
+  const r = suivre([[0, 0, 1000], [1, 1, 15000]]);
+  assert.deepEqual(r, { v: 1, ms: 15000, k: 1 });
+  assert.equal(rap(r, 30), 10); // et pas 19 : cliquer au hasard tout de suite puis corriger ne rapporte rien de plus
+  assert.ok(rap(r, 30) < rap(suivre([[1, 0, 1000]]), 30));
+});
+essai('changer d\'avis : juste puis faux, la réponse finale est fausse', () => {
+  const r = suivre([[1, 0, 2000], [3, 1, 9000]]);
+  assert.equal(r.v, 3);
+  assert.equal(B.points({ juste: r.v === 1, ms: r.ms }, { duree: 30, precedente: 'faux' }).total, 10); // ni rapidité ni rebond
+});
+essai('changer d\'avis : le même choix recliqué ne change ni la réponse ni l\'instant', () => {
+  const r = suivre([[1, 0, 2000], [1, 1, 20000]]);
+  assert.deepEqual([r.v, r.ms], [1, 2000]);
+  const r2 = suivre([[1, 0, 2000], [1, 0, 20000]]); // un renvoi du même envoi
+  assert.deepEqual(r2, { v: 1, ms: 2000, k: 0 });
+});
+essai('changer d\'avis : un envoi plus ancien, arrivé en retard, ne revient pas en arrière', () => {
+  assert.deepEqual(suivre([[0, 0, 1000], [2, 2, 5000], [1, 1, 6000]]), { v: 2, ms: 5000, k: 2 });
+});
+essai('changer d\'avis : pas de « aucune réponse », 30 changements au plus', () => {
+  const r = suivre([[1, 0, 1000]]);
+  assert.equal(B.retenir(r, { v: null, k: 1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: undefined, k: 1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: 2, k: B.MAX_CHANGEMENTS + 1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: 2, k: -1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: 2, k: 1.5 }, 2000, egal), r);
+  assert.equal(B.retenir(null, { v: null, k: 0 }, 2000, egal), null);
+  assert.equal(B.retenir(r, { v: 2, k: B.MAX_CHANGEMENTS }, 2000, egal).v, 2);
+});
+essai('changer d\'avis pendant la pause : le temps du début de la pause', () => {
+  const e = q0(30), t = 1000000;
+  const r0 = B.retenir(null, { v: 0, k: 0 }, MN.ecoule(e, t + 4000), egal);
+  MN.pause(e, t + 8000);
+  const r1 = B.retenir(r0, { v: 1, k: 1 }, MN.ecoule(e, t + 40000), egal); // changé 32 s après le début de la pause
+  assert.equal(r1.ms, 8000);
+  assert.equal(rap(r1, MN.accordee(e)), Math.round(20 * (1 - 8 / 30)));
+});
+essai('changer d\'avis après un « + 15 s » : mesuré sur la durée accordée', () => {
+  const e = q0(20), t = 1000000;
+  const r0 = B.retenir(null, { v: 0, k: 0 }, MN.ecoule(e, t + 3000), egal);
+  MN.ajouter(e, t + 50000); // après le zéro : la question rouvre avec 15 s, écoulé = 20 s
+  const r1 = B.retenir(r0, { v: 1, k: 1 }, MN.ecoule(e, t + 55000), egal);
+  assert.equal(r1.ms, 25000);
+  assert.equal(rap(r1, MN.accordee(e)), Math.round(20 * (1 - 25 / 35)));
+});
+essai('changer d\'avis : les séries et le rebond se jugent sur la réponse finale', () => {
+  const finales = [suivre([[0, 0, 1], [1, 1, 2]]), suivre([[1, 0, 1]]), suivre([[1, 0, 1], [2, 1, 2]])].map(r => r.v === 1 ? 'juste' : 'faux');
+  assert.deepEqual(finales, ['juste', 'juste', 'faux']);
+  assert.equal(B.serie(finales).casse, true);
+  assert.equal(B.serie(finales.slice(0, 2)).n, 2);
+});
+
 essai('durées accordées possibles', () => {
   for (const d of [0, 20, 30, 35, 45, 60, 90, 105, 620, 690]) assert.ok(MN.dureeAccordeeValide(d), d);
   for (const d of [-15, 1, 10, 15, 21, 46, 91, 635, 691, 3600, 2.5, NaN, '45']) assert.equal(MN.dureeAccordeeValide(d), false, String(d));

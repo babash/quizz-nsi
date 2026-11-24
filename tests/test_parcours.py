@@ -556,7 +556,7 @@ def minuterie_et_flammes(nav, base):
     assert chrono(b) < gele_a, "le temps ne court pas après la reprise"
     b.click(f'button.option[data-choix="{BONNES[0]}"]')
     attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
-    assert not prof.is_enabled("#plus15"), "+ 15 s inutile quand tout le monde a répondu"
+    assert prof.is_enabled("#plus15"), "+ 15 s reste possible quand tout le monde a répondu (pour changer d'avis)"
     corriger(0)
     st = etat_prof(prof)
     e0 = st["q"][QUESTIONS[0]["id"]]
@@ -580,10 +580,31 @@ def minuterie_et_flammes(nav, base):
     a.wait_for_selector("#chrono")
     assert 20 < chrono(a) <= 30, chrono(a)
     assert etat_prof(prof)["q"][QUESTIONS[1]["id"]]["duree"] == 30
-    for p in (a, b):
-        p.click(f'button.option[data-choix="{BONNES[1]}"]')
+    # Naïma pré-choisit une mauvaise réponse, puis change d'avis ; Ilyes répond juste
+    faux1 = (BONNES[1] + 1) % 4
+    a.click(f'button.option[data-choix="{faux1}"]')
+    attendre_texte(a, "#changer", "Tu peux changer d'avis jusqu'à la fin du temps")
+    attendre_texte(a, f'button.option[data-choix="{faux1}"]', "Ta réponse")
+    assert a.get_attribute(f'button.option[data-choix="{faux1}"]', "aria-pressed") == "true"
+    attendre_texte(a, "#envoyee", "reçue")
+    b.click(f'button.option[data-choix="{BONNES[1]}"]')
     attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    assert "2 / 2" in prof.inner_text("#statutQ")
+    a.wait_for_timeout(1200)
+    a.click(f'button.option[data-choix="{BONNES[1]}"]')  # changement d'avis, question toujours ouverte
+    attendre_texte(a, "#envoyee", "reçue")
+    a.click(f'button.option[data-choix="{BONNES[1]}"]')  # le même choix recliqué : rien ne change
+    assert a.locator("button.option.choisie").count() == 1 and a.get_attribute(f'button.option[data-choix="{faux1}"]', "aria-pressed") == "false"
+    assert a.locator(f'button.option[data-choix="{faux1}"] .etiquette').count() == 0
+    prof.wait_for_timeout(600)
+    assert "2 / 2" in prof.inner_text("#statutQ"), "le compteur ne bouge pas quand on change d'avis"
+    assert "change" not in prof.inner_text("body").lower(), "rien n'indique qui a changé d'avis"
+    assert prof.locator(".rep-nb").count() == 0, "aucune répartition avant la correction"
+    r1 = next(x for x in etat_prof(prof)["joueurs"].values() if x["pseudo"] == "Naïma")["rep"][QUESTIONS[1]["id"]]
+    assert r1["c"] == BONNES[1] and r1["k"] == 1 and r1["ms"] >= 1000, r1
     corriger(1)
+    r1 = next(x for x in etat_prof(prof)["joueurs"].values() if x["pseudo"] == "Naïma")["rep"][QUESTIONS[1]["id"]]
+    assert r1["juste"] is True and r1["detail"]["rapidite"] == round(20 * (1 - min(r1["ms"], 30000) / 30000)), r1
     for p in (a, b):
         attendre_texte(p, ".serie", "2 d'affilée")
     attendre_texte(prof, ".zone-correction .series", "En série")
@@ -595,12 +616,17 @@ def minuterie_et_flammes(nav, base):
     a.click(f'button.option[data-choix="{BONNES[2]}"]')
     attendre_texte(prof, "#statutQ", "Temps écoulé", delai=26000)
     attendre_texte(b, "#ecran", "Temps écoulé")
+    # après le zéro : plus de changement possible (boutons désactivés ; un envoi forgé serait refusé par la page projetée)
+    a.wait_for_selector(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"][disabled]')
+    attendre_texte(a, "#envoyee", "qui compte")
+    assert a.inner_text("#changer") == ""
     assert prof.is_enabled("#plus15") and not prof.is_enabled("#pause")
     prof.wait_for_timeout(1500)  # le temps passé à zéro ne compte pas
     prof.click("#scene")
     prof.keyboard.press("t")
     b.wait_for_selector(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"]:not([disabled])')
     assert 13 <= chrono(b) <= 15, chrono(b)
+    a.wait_for_selector(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"]:not([disabled])')  # rouverte : Naïma peut encore changer
     e2 = etat_prof(prof)["q"][QUESTIONS[2]["id"]]
     assert e2["ferme"] is False and e2["ajouts"] == 1, e2
     b.click(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"]')  # Ilyes se trompe
@@ -858,12 +884,20 @@ def autres_types(nav, base):
     # ── la ligne fautive ──
     lg = diapos[ou["ligne"]]
     suivante(prof, "#action", "#compteur", ou["ligne"])
+    # Kobalt change d'avis : une autre ligne d'abord, puis la bonne (« Changer ma réponse ») ; seule la dernière compte
+    faux = 1 if lg["ligne"] != 1 else 2
+    k.wait_for_selector(".c-ligne")
+    k.locator(".c-ligne").nth(faux - 1).click()
+    k.click(".lignes-zone button.bouton.fort")
+    attendre_texte(k, "#envoyee", "reçue")
+    attendre_texte(k, ".lignes-zone button.bouton.fort", "Changer ma réponse")
     for e, l in ((k, lg["ligne"]), (i, 2)):
         e.wait_for_selector(".c-ligne")
         e.locator(".c-ligne").nth(l - 1).click()
         e.click(".lignes-zone button.bouton.fort")
         attendre_texte(e, "#envoyee", "reçue")
     attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    assert "2 / 2" in prof.inner_text("#statutQ")
     prof.click("#action")
     attendre_texte(prof, ".zone-correction", "1 sur 2")
     prof.screenshot(path=os.path.join(SORTIE, "autres-ligne-1440.png"), full_page=True)

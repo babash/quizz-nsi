@@ -80,11 +80,18 @@ assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE.correction), { res: { [A
 assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE.fin), { res: {} }), MOI), null);
 assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE.recus), { ids: [MOI] }), MOI), null);
 // le contenu déchiffré d'une réponse
-assert.deepEqual(M.reponse({ id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd' }), { id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd' });
-for (const f of FORGES) for (const k of ['id', 'qid', 'c', 'n']) { assert.equal(M.reponse(Object.assign({ id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd' }, { [k]: f })), null); n++; }
+assert.deepEqual(M.reponse({ id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd', k: 0 }), { id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd', k: 0 });
+for (const f of FORGES) for (const k of ['id', 'qid', 'c', 'n', 'k']) { assert.equal(M.reponse(Object.assign({ id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd', k: 0 }, { [k]: f })), null); n++; }
+// changer d'avis : le numéro du choix k (0 à 30) est obligatoire ; « aucune réponse » n'existe pas
+const C = { id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd', k: 0 };
+assert.ok(M.reponse(Object.assign({}, C, { k: 30 })));
+for (const v of [{ k: 31 }, { k: -1 }, { k: 1.5 }, { k: '3' }, { k: null }, { k: 1e9 }, { c: null }, { c: -1 }, { c: 4 }, { c: undefined }]) { assert.equal(M.reponse(Object.assign({}, C, v)), null, JSON.stringify(v)); n++; }
+const sansK = Object.assign({}, C); delete sansK.k; assert.equal(M.reponse(sansK), null); n++;
+const sansC = Object.assign({}, C); delete sansC.c; assert.equal(M.reponse(sansC), null); n++; // ni c ni r : pas de « je retire mon choix »
+for (const r of [null, [], '', -1]) { assert.equal(M.reponse(Object.assign({}, sansC, { r })), null, 'r = ' + JSON.stringify(r)); n++; }
 n += 3;
 // les autres types : r est un mot (nuage), un entier (ligne), une liste d'entiers (relier) ou de paires (puzzle)
-const R = { id: MOI, qid: 'a02', n: '00112233aabbccdd' };
+const R = { id: MOI, qid: 'a02', n: '00112233aabbccdd', k: 3 };
 for (const r of ['boucle', 2, [0, 1, -1], [[0, 0], [1, 1]], { vote: 3 }]) assert.deepEqual(M.reponse(Object.assign({}, R, { r })), Object.assign({}, R, { r }), JSON.stringify(r));
 for (const r of [1e300, -1, 2.5, 200, {}, { a: '<b>' }, 'x'.repeat(65), '', true, null, [], ['<b>'], [[0, 0, 0]], [[0, 9]], [1, [0, 0]], Array(17).fill(0), [16], [{}], { vote: -1 }, { vote: '3' }, { vote: 1e6 }, { vote: 1, html: '<b>' }, { voter: 1 }]) {
   assert.equal(M.reponse(Object.assign({}, R, { r })), null, JSON.stringify(r)); n++;

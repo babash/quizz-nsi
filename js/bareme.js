@@ -109,7 +109,23 @@
     return { n, palier: n > avant && PALIERS.includes(n), casse: n === 0 && avant >= 2 };
   }
 
-  const api = { BAREME, points, classer, repartition, progression, serie, PALIERS, minuterie };
+  /* Changer d'avis (T131, règle du 24/11) : tant que la question est ouverte, chaque choix remplace le précédent ;
+     seul le dernier compte. Chaque envoi du téléphone porte un numéro k (0 pour le premier choix, puis +1 à chaque
+     changement, 30 au plus). La page projetée garde le choix de plus grand numéro, et le temps de réponse est celui
+     du DERNIER CHANGEMENT (hors pause) : cliquer au hasard tout de suite puis corriger ne rapporte pas de rapidité.
+     Un envoi déjà reçu ou plus ancien (k plus petit ou égal) ne change rien ; le même choix renvoyé ne change ni la
+     réponse ni l'instant. Il n'existe pas de « aucune réponse » : on ne peut que changer.
+     ancien : null ou { v, ms, k } ; nouveau : { v, k } ; ms : le temps écoulé hors pause à la réception. */
+  const MAX_CHANGEMENTS = 30;
+  function retenir(ancien, nouveau, ms, egal) {
+    if (!nouveau || nouveau.v === null || nouveau.v === undefined || !Number.isSafeInteger(nouveau.k) || nouveau.k < 0 || nouveau.k > MAX_CHANGEMENTS) return ancien;
+    if (!ancien) return { v: nouveau.v, ms, k: nouveau.k };
+    if (nouveau.k <= ancien.k) return ancien;
+    if (egal(ancien.v, nouveau.v)) return { v: ancien.v, ms: ancien.ms, k: nouveau.k };
+    return { v: nouveau.v, ms, k: nouveau.k };
+  }
+
+  const api = { BAREME, points, classer, repartition, progression, serie, PALIERS, minuterie, retenir, MAX_CHANGEMENTS };
   racine.QuizzNSI = racine.QuizzNSI || {};
   racine.QuizzNSI.bareme = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

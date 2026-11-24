@@ -50,8 +50,9 @@
       if (j.rep && typeof j.rep === 'object') for (const [qid, r] of Object.entries(j.rep)) {
         if (!qids.has(qid) || !r || !ent(r.ms, -1e7, 1e9)) continue;
         const dq = parId.get(qid);
-        if (dq.type === 'question') { if (!ent(r.c, 0, 3)) continue; rep[qid] = { c: r.c, ms: r.ms }; }
-        else { const a = Q.activites.valider(dq, r.a); if (a === null) continue; rep[qid] = { a, ms: r.ms }; }
+        const k = ent(r.k, 0, B.MAX_CHANGEMENTS) ? r.k : 0;
+        if (dq.type === 'question') { if (!ent(r.c, 0, 3)) continue; rep[qid] = { c: r.c, ms: r.ms, k }; }
+        else { const a = Q.activites.valider(dq, r.a); if (a === null) continue; rep[qid] = { a, ms: r.ms, k }; }
         if (typeof r.juste === 'boolean' && ent(r.gain, 0, 1000) && r.detail && typeof r.detail === 'object') {
           const d = {}; let ok = true;
           for (const k of ['participation', 'juste', 'rapidite', 'rebond']) { if (!ent(r.detail[k], 0, 1000)) ok = false; d[k] = r.detail[k]; }
@@ -148,23 +149,20 @@
       const j = st.joueurs[m.id];
       if (!j || j.retire) return;
       if (d.type === 'nuage') { recevoirNuage(d, etat, m, recu); return; }
-      if (etat.ferme) return;
-      if (!j.rep[d.id]) {
-        // le temps de réponse : écoulé hors pause (une réponse pendant la pause compte le temps du début de la pause)
-        if (qcu(d)) { if (m.c === undefined) return; j.rep[d.id] = { c: m.c, ms: MN.ecoule(etat, recu) }; }
-        else {
-          // une réponse d'un autre type est contrôlée contre la diapositive du cours (longueur, indices, mot filtré)
-          const a = m.r === undefined ? null : Q.activites.valider(d, m.r);
-          if (a === null) return;
-          j.rep[d.id] = { a, ms: MN.ecoule(etat, recu) };
-        }
-        sauver(); majStatut(); if (d.type === 'nuage') majNuage(d);
-      }
+      if (etat.ferme) return; // après le zéro ou la correction : plus rien n'est accepté (pas d'accusé)
+      // le choix reçu : une réponse d'un autre type est contrôlée contre la diapositive du cours (longueur, indices)
+      const v = qcu(d) ? (m.c === undefined ? null : m.c) : (m.r === undefined ? null : Q.activites.valider(d, m.r));
+      if (v === null) return;
+      // changer d'avis : le dernier choix compte, et son instant (hors pause) pour la rapidité (js/bareme.js, retenir) ;
+      // le temps hors pause : un choix fait pendant la pause compte le temps du début de la pause. Rien n'est affiché
+      // de ces changements : le compteur ne voit qu'une réponse par élève.
+      const avant = j.rep[d.id], ancien = avant ? { v: qcu(d) ? avant.c : avant.a, ms: avant.ms, k: avant.k || 0 } : null;
+      const r = B.retenir(ancien, { v, k: m.k }, MN.ecoule(etat, recu), (x, y) => JSON.stringify(x) === JSON.stringify(y));
+      if (r !== ancien) { j.rep[d.id] = qcu(d) ? { c: r.v, ms: r.ms, k: r.k } : { a: r.v, ms: r.ms, k: r.k }; sauver(); majStatut(); }
       // l'accusé de réception ne porte qu'un nombre tiré au hasard par le téléphone, pas son identifiant
       accuses.add(m.n);
       if (!accuseMinuterie) accuseMinuterie = setTimeout(() => { envoyer({ t: 'recus', qid: d.id, n: [...accuses] }); accuses = new Set(); accuseMinuterie = null; }, 400);
-      const repondu = presentsActifs().filter(p => st.joueurs[p.id].rep[d.id]).length;
-      if (repondu > 0 && repondu === presentsActifs().length && !etat.ferme) fermer(d, 'Tout le monde a répondu.');
+      // tout le monde a répondu : la question reste ouverte (on peut changer d'avis jusqu'au zéro ou à la correction)
     }
   }
 
@@ -298,8 +296,8 @@
      restant hors pause, durée accordée, pause), que chaque téléphone suit. Le barème compte le temps écoulé hors pause,
      rapporté à la durée accordée (js/bareme.js). */
   const minuterieQ = () => { const d = st && st.commence ? diapo() : null; return inter(d) && d.type !== 'nuage' && st.q[d.id] && !st.q[d.id].revelee ? d : null; };
-  // + 15 s : possible tant que la question n'est pas corrigée, même après le zéro (elle rouvre avec 15 s), mais pas
-  // quand tout le monde a déjà répondu (il n'y a plus personne à attendre)
+  // + 15 s : possible tant que la question n'est pas corrigée, même après le zéro (elle rouvre avec 15 s), et même
+  // quand tout le monde a répondu (on peut laisser du temps pour changer d'avis)
   const peutAjouter = d => { const e = d && st.q[d.id]; return !!e && e.duree > 0 && e.ajouts < MN.MAX_AJOUTS && (!e.ferme || e.parTemps); };
   function plus15() {
     const d = minuterieQ(); if (!peutAjouter(d)) return;
@@ -355,7 +353,11 @@
     }
     if (e.revelee) t = n + ' réponse' + (n > 1 ? 's' : '') + ' · correction affichée';
     else if (e.ferme) t += ' · ' + (e.raison || 'réponses fermées') + (e.parTemps ? ' (+ 15 s rouvre)' : '');
-    else if (e.duree > 0) t = (MN.enPause(e) ? '‖ En pause · ' : '⏱ ') + Math.ceil(MN.reste(e, Date.now()) / 1000) + ' s · ' + t;
+    else {
+      // tout le monde a répondu : la question reste ouverte, chacun·e peut encore changer d'avis
+      if (n > 0 && n >= total) t += ' · Tout le monde a répondu';
+      if (e.duree > 0) t = (MN.enPause(e) ? '‖ En pause · ' : '⏱ ') + Math.ceil(MN.reste(e, Date.now()) / 1000) + ' s · ' + t;
+    }
     z.textContent = t;
   }
 

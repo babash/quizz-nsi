@@ -130,7 +130,7 @@
       return;
     }
     if (m.t === 'attente') { phase = 'attente'; question = null; ecran(attente('Regarde l\'écran : la suite arrive.')); return; }
-    if (m.t === 'fermee') { if (question && m.qid === question.qid) { question.ferme = true; question.pause = false; clearInterval(chrono); chrono = null; if ($('pauseInfo')) $('pauseInfo').textContent = ''; if (question.choix == null) ecran(attente('Temps écoulé : la correction arrive à l\'écran.')); } return; }
+    if (m.t === 'fermee') { if (question && m.qid === question.qid) { question.ferme = true; question.pause = false; clearInterval(chrono); chrono = null; if ($('pauseInfo')) $('pauseInfo').textContent = ''; if (question.choix == null) ecran(attente('Temps écoulé : la correction arrive à l\'écran.')); else { bloquer(); majEnvoyee(); } } return; }
     const n = ++numero; // seul le dernier message reçu s'affiche, même si son cours arrive plus tard
     obtenirCours(m.cours).then(cours => {
       if (!cours || n !== numero) return;
@@ -171,13 +171,13 @@
     if (question && question.qid === q.id && phase === 'question') {
       // déjà affichée : la minuterie suit la page projetée (+ 15 s, pause, reprise) ; une question fermée au zéro
       // puis rouverte par « + 15 s » se réaffiche, pour répondre
-      if (!(question.ferme && !m.ferme)) { if (m.ferme) { question.ferme = true; clearInterval(chrono); chrono = null; } else synchroniser(m); majChrono(); return; }
+      if (!(question.ferme && !m.ferme)) { if (m.ferme) { question.ferme = true; clearInterval(chrono); chrono = null; bloquer(); majEnvoyee(); } else synchroniser(m); majChrono(); return; }
     }
     phase = 'question';
     const ancienne = historique().reps[q.id] || null; // la page rouverte retrouve la réponse déjà donnée
     // une réponse déjà donnée (page rouverte) : contrôlée de nouveau contre la question du cours
     const avant = !ancienne ? null : qcu(q) ? (Number.isInteger(ancienne.c) ? ancienne.c : null) : Q.activites.valider(q, ancienne.r);
-    question = { qid: q.id, q, choix: avant, ms: ancienne ? ancienne.ms : null, n: ancienne ? ancienne.n : null, recu: false, ferme: m.ferme };
+    question = { qid: q.id, q, choix: avant, ms: ancienne ? ancienne.ms : null, n: ancienne ? ancienne.n : null, k: ancienne ? ancienne.k : 0, recu: false, ferme: m.ferme };
     synchroniser(m);
     const s = el('section', { class: 'd-question' + (qcu(q) ? '' : ' d-activite d-' + q.type) });
     if (qcu(q)) {
@@ -187,13 +187,13 @@
     } else {
       s.appendChild(Q.fragmentCours(Q.rendreEnonceActivite(q, cours.total)));
       s.append(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' }));
-      question.ui = Q.activiteUI(q, { reponse: avant, libelle: q.type === 'nuage' ? 'Envoyer' : 'Valider', onValider: choisir });
+      question.ui = Q.activiteUI(q, { reponse: avant, libelle: avant != null ? 'Changer ma réponse' : 'Valider', onValider: choisir });
       s.appendChild(question.ui.noeud);
     }
-    s.appendChild(el('p', { class: 'envoyee', id: 'envoyee', role: 'status' }));
+    s.append(el('p', { class: 'envoyee', id: 'envoyee', role: 'status' }), el('p', { class: 'aide changer', id: 'changer' }));
     ecran(s);
     $('ecran').querySelectorAll('button.option').forEach(b => b.addEventListener('click', () => choisir(+b.dataset.choix)));
-    if (question.choix != null || question.ferme) bloquer();
+    if (question.ferme || question.k >= Q.bareme.MAX_CHANGEMENTS) bloquer(); else marquerChoix();
     if (question.choix != null) { majEnvoyee(); envoyerReponse(); }
     clearInterval(chrono); chrono = null;
     if (question.duree > 0 && !question.ferme) { majChrono(); chrono = setInterval(majChrono, 500); }
@@ -217,31 +217,52 @@
     z.textContent = (question.pause ? '‖ En pause · ' : '⏱ ') + s + ' s';
     z.classList.toggle('en-pause', !!question.pause);
     const p = $('pauseInfo');
-    if (p) p.textContent = question.pause && !question.ferme ? (question.choix == null ? 'Le temps est arrêté : tu peux lire et répondre, sans gain ni perte de rapidité.' : 'Le temps est arrêté.') : '';
+    if (p) p.textContent = question.pause && !question.ferme ? (question.choix == null ? 'Le temps est arrêté : tu peux lire et répondre, sans gain ni perte de rapidité.' : 'Le temps est arrêté : tu peux encore changer d\'avis.') : '';
     if (s === 0 && !question.pause) { clearInterval(chrono); chrono = null; }
   }
-  function bloquer() {
-    if (question && question.ui) { question.ui.bloquer(); return; }
+  /* Changer d'avis (règle du 24/11) : tant que la question est ouverte (pause comprise), le premier choix est
+     envoyé tout de suite comme réponse, reste sélectionné (étiquette « Ta réponse » et bouton enfoncé, pas la couleur
+     seule), et un autre choix le remplace ; on ne peut pas revenir à « pas de réponse ». Seul le dernier choix reçu
+     par la page projetée compte, avec son instant pour la rapidité (js/bareme.js, retenir). */
+  function marquerChoix() {
+    const z = $('changer');
+    if (z) z.textContent = question.ferme || question.k >= Q.bareme.MAX_CHANGEMENTS ? '' : question.duree > 0 ? 'Tu peux changer d\'avis jusqu\'à la fin du temps.' : 'Tu peux changer d\'avis jusqu\'à la correction.';
+    if (question.ui) return;
     $('ecran').querySelectorAll('button.option').forEach(b => {
-      b.disabled = true;
-      if (+b.dataset.choix === question.choix) { b.classList.add('choisie'); if (!b.querySelector('.etiquette')) b.appendChild(el('span', { class: 'etiquette' }, 'Ta réponse')); }
+      const moi = +b.dataset.choix === question.choix, et = b.querySelector('.etiquette');
+      b.classList.toggle('choisie', moi); b.setAttribute('aria-pressed', String(moi));
+      if (moi && !et) b.appendChild(el('span', { class: 'etiquette' }, 'Ta réponse'));
+      if (!moi && et) et.remove();
     });
   }
+  function bloquer() {
+    if (!question) return;
+    if (question.ui) question.ui.bloquer();
+    else $('ecran').querySelectorAll('button.option').forEach(b => { b.disabled = true; });
+    const ferme = question.ferme; question.ferme = true; marquerChoix(); question.ferme = ferme;
+  }
   function choisir(c) {
-    if (!question || question.choix != null || question.ferme) return;
+    if (!question || question.ferme) return;
     const q = question.q;
     if (qcu(q) ? !(Number.isInteger(c) && c >= 0 && c <= 3) : Q.activites.valider(q, c) === null) return;
     if (!qcu(q)) c = Q.activites.valider(q, c);
-    question.choix = c; question.ms = Math.round(ecouleIci()); question.n = Q.nouvelId();
-    const h = historique(); h.reps[question.qid] = qcu(q) ? { c, ms: question.ms, n: question.n } : { r: c, ms: question.ms, n: question.n }; ecrireHistorique(h);
-    bloquer(); majEnvoyee(); envoyerReponse();
-    Q.annoncer(qcu(q) ? 'Réponse ' + Q.LETTRES[c] + ' choisie.' : 'Réponse envoyée.');
+    // le même choix recliqué ne change rien (ni la réponse, ni l'instant)
+    if (question.choix != null && JSON.stringify(c) === JSON.stringify(question.choix)) return;
+    const k = question.choix == null ? 0 : (question.k || 0) + 1;
+    if (k > Q.bareme.MAX_CHANGEMENTS) return;
+    question.choix = c; question.k = k; question.ms = Math.round(ecouleIci()); question.n = Q.nouvelId(); question.recu = false;
+    const h = historique(); h.reps[question.qid] = qcu(q) ? { c, ms: question.ms, n: question.n, k } : { r: c, ms: question.ms, n: question.n, k }; ecrireHistorique(h);
+    // 30 changements au plus : ensuite, la réponse est gardée telle quelle (frein contre l'inondation, sans reproche)
+    if (k >= Q.bareme.MAX_CHANGEMENTS) bloquer(); else marquerChoix();
+    if (question.ui && question.ui.renommer) question.ui.renommer('Changer ma réponse');
+    majEnvoyee(); envoyerReponse();
+    Q.annoncer(qcu(q) ? 'Réponse ' + Q.LETTRES[c] + ' choisie.' + (k ? '' : ' Tu peux encore changer d\'avis.') : 'Réponse envoyée.');
   }
   function envoyerReponse() {
     const envoi = async () => {
       if (!(question && question.choix != null && !question.recu && !question.ferme)) { clearInterval(renvoi); return; }
       if (!chiffreur || !clesHote.length) { majEnvoyee(); return; } // pas encore de page projetée : on réessaie dans 2 s
-      const clair = qcu(question.q) ? { id: moi.id, qid: question.qid, c: question.choix, n: question.n } : { id: moi.id, qid: question.qid, r: question.choix, n: question.n };
+      const clair = qcu(question.q) ? { id: moi.id, qid: question.qid, c: question.choix, n: question.n, k: question.k } : { id: moi.id, qid: question.qid, r: question.choix, n: question.n, k: question.k };
       let parti = false;
       // chiffrée pour chaque page projetée présente (en principe, une seule)
       for (const k of clesHote) { try { const env = await chiffreur.chiffrer(clair, k); if (seance) { seance.envoyer(Object.assign({ t: 'rep' }, env)); parti = true; } } catch (e) { /* clé illisible : ignorée */ } }
@@ -255,7 +276,8 @@
   function majEnvoyee() {
     const z = $('envoyee'); if (!z || !question || question.choix == null) return;
     const l = qcu(question.q) ? Q.LETTRES[question.choix] : '';
-    if (question.recu) { z.className = 'envoyee'; z.textContent = (l ? 'Réponse ' + l : 'Ta réponse') + ' reçue par la page projetée. Attends la correction à l\'écran.'; }
+    if (question.ferme) { z.className = 'envoyee'; z.textContent = 'C\'est ' + (l ? 'ta réponse ' + l : 'ta dernière réponse') + ' qui compte. La correction arrive à l\'écran.'; }
+    else if (question.recu) { z.className = 'envoyee'; z.textContent = (l ? 'Réponse ' + l : 'Ta réponse') + ' reçue par la page projetée.'; }
     else if (!clesHote.length) { z.className = 'envoyee'; z.textContent = (l ? 'Réponse ' + l + ' choisie' : 'Réponse prête') + ' : en attente de la page projetée…'; }
     else if (essais >= ESSAIS_AVANT_ALERTE) { z.className = 'envoyee alerte'; z.textContent = 'La page projetée n\'a pas encore reçu ta réponse' + (l ? ' ' + l : '') + ' : vérifie le réseau (wifi ou données). Le téléphone continue d\'essayer.'; }
     else { z.className = 'envoyee'; z.textContent = (l ? 'Réponse ' + l + ' choisie' : 'Réponse prête') + ' : envoi à la page projetée…'; }
@@ -272,8 +294,9 @@
       || !Array.isArray(v.ordre) || !v.res || typeof v.res !== 'object') return h;
     if (v.reps && typeof v.reps === 'object') for (const [qid, a] of Object.entries(v.reps)) {
       if (!Q.messages.estQid(qid) || !a || typeof a !== 'object' || !Number.isFinite(a.ms) || a.ms < 0 || a.ms >= 1e8 || typeof a.n !== 'string' || !/^[0-9a-f]{16}$/.test(a.n)) continue;
-      if (Number.isInteger(a.c) && a.c >= 0 && a.c <= 3) h.reps[qid] = { c: a.c, ms: a.ms, n: a.n };
-      else if (a.r !== undefined && Q.messages.formeReponse(a.r) !== undefined) h.reps[qid] = { r: Q.messages.formeReponse(a.r), ms: a.ms, n: a.n }; // contrôlée contre la question à l'usage
+      const k = Number.isInteger(a.k) && a.k >= 0 && a.k <= Q.bareme.MAX_CHANGEMENTS ? a.k : 0; // le numéro du dernier choix
+      if (Number.isInteger(a.c) && a.c >= 0 && a.c <= 3) h.reps[qid] = { c: a.c, ms: a.ms, n: a.n, k };
+      else if (a.r !== undefined && Q.messages.formeReponse(a.r) !== undefined) h.reps[qid] = { r: Q.messages.formeReponse(a.r), ms: a.ms, n: a.n, k }; // contrôlée contre la question à l'usage
     }
     for (const qid of v.ordre.slice(0, 1000)) {
       const r = v.res[qid];
@@ -419,7 +442,7 @@
   let nuage = null;
   const ATTENTE_MOT = 3000;
   function envoyerNuage(r, quoi) {
-    const n = Q.nouvelId(), clair = { id: moi.id, qid: nuage.qid, r, n }, ici = nuage;
+    const n = Q.nouvelId(), clair = { id: moi.id, qid: nuage.qid, r, n, k: 0 }, ici = nuage;
     let essais = 0;
     const envoi = async () => {
       if (nuage !== ici || !ici.envois.has(n)) { clearInterval(t); return; }

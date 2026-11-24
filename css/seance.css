@@ -135,3 +135,6 @@ select, input[type="text"] { font: inherit; color: var(--ink); background: var(-
 .serie .serie-mot { font-family: var(--text); font-size: .8em; font-weight: 400; }
 .statut-q { min-width: 0; }
 select { max-width: 100%; }
+.eleve button.option.choisie .etiquette { color: var(--ink); }
+.changer:empty { display: none; }
+.changer { text-align: center; margin: 4px 0; }

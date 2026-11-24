@@ -137,10 +137,12 @@
     if (r.every(x => Array.isArray(x) && x.length === 2 && entier(x[0], 0, 15) && entier(x[1], 0, 6))) return r.map(x => [x[0], x[1]]); // puzzle
     return undefined;
   }
+  // k : le numéro du choix (0 pour le premier, +1 à chaque changement d'avis, 30 au plus : js/bareme.js, retenir)
+  const MAX_CHANGEMENTS = 30;
   function reponse(m) {
-    if (!objet(m) || !estId(m.id) || !estQid(m.qid) || typeof m.n !== 'string' || !NONCE.test(m.n)) return null;
-    if (cles(m, ['id', 'qid', 'c', 'n']) && 'c' in m) return entier(m.c, 0, 3) ? { id: m.id, qid: m.qid, c: m.c, n: m.n } : null;
-    if (cles(m, ['id', 'qid', 'r', 'n']) && 'r' in m) { const r = formeReponse(m.r); return r === undefined ? null : { id: m.id, qid: m.qid, r, n: m.n }; }
+    if (!objet(m) || !estId(m.id) || !estQid(m.qid) || typeof m.n !== 'string' || !NONCE.test(m.n) || !entier(m.k, 0, MAX_CHANGEMENTS)) return null;
+    if (cles(m, ['id', 'qid', 'c', 'n', 'k']) && 'c' in m) return entier(m.c, 0, 3) ? { id: m.id, qid: m.qid, c: m.c, n: m.n, k: m.k } : null;
+    if (cles(m, ['id', 'qid', 'r', 'n', 'k']) && 'r' in m) { const r = formeReponse(m.r); return r === undefined ? null : { id: m.id, qid: m.qid, r, n: m.n, k: m.k }; }
     return null;
   }
 
