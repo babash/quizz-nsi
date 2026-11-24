@@ -82,6 +82,21 @@
 
   /* ── Les élèves ─────────────────────────── */
   const joueursActifs = () => Object.entries(st.joueurs).filter(([, j]) => !j.retire).map(([id, j]) => Object.assign({ id }, j));
+  /* Clé perdue (docs/DONNEES.md) : un téléphone revenu avec un nouvel identifiant sous le même pseudo. L'ancien identifiant
+     reste dans la séance (ses points restent comptés, rien n'est fusionné) ; tant qu'il est déconnecté et qu'un autre
+     identifiant porte le même pseudo, c'est un « ancien appareil » : marqué en texte dans la liste, sans bouton « Retirer »
+     (qui retirerait aussi le pseudo du nouvel appareil), ni sur le podium ni dans « En série ». Le nouveau garde le pseudo.
+     Si aucun des deux n'est connecté, le plus récent garde le pseudo. */
+  function anciensAppareils() {
+    const groupes = new Map(), caches = new Set();
+    for (const j of joueursActifs()) { if (!groupes.has(j.cle)) groupes.set(j.cle, []); groupes.get(j.cle).push(j); }
+    for (const g of groupes.values()) {
+      if (g.length < 2) continue;
+      const garde = g.some(j => presents.has(j.id)) ? g.filter(j => presents.has(j.id)) : [g[g.length - 1]];
+      for (const j of g) if (!garde.includes(j)) caches.add(j.id);
+    }
+    return caches;
+  }
   const presentsActifs = () => [...presents.values()].filter(p => p.role === 'eleve' && st.joueurs[p.id] && !st.joueurs[p.id].retire);
 
   function onPresence(liste) {
@@ -122,9 +137,11 @@
     const txt = pluriel(enLigne.length, 'élève');
     $('nbEleves').textContent = enLigne.length; $('nbEleves2').textContent = enLigne.length; $('nbBarre').textContent = txt;
     if (!st.fini) $('qrNb').textContent = 'Dans la séance : ' + txt + '.';
+    const anciens = anciensAppareils();
     const items = () => l.map(j => el('li', { class: presents.has(j.id) ? '' : 'absent' },
-      el('span', {}, j.pseudo, st.commence ? flammeDe(st.joueurs[j.id]) : null, presents.has(j.id) ? null : el('small', {}, ' (déconnecté·e)')),
-      el('button', { type: 'button', class: 'retirer', 'data-retirer': j.id, 'aria-label': 'Retirer le pseudo ' + j.pseudo }, 'Retirer')));
+      el('span', {}, j.pseudo, st.commence && !anciens.has(j.id) ? flammeDe(st.joueurs[j.id]) : null,
+        presents.has(j.id) ? null : el('small', {}, anciens.has(j.id) ? ' (ancien appareil, déconnecté·e)' : ' (déconnecté·e)')),
+      anciens.has(j.id) ? null : el('button', { type: 'button', class: 'retirer', 'data-retirer': j.id, 'aria-label': 'Retirer le pseudo ' + j.pseudo }, 'Retirer')));
     $('eleves').replaceChildren(...(l.length ? items() : [el('li', { class: 'vide' }, 'Personne pour l\'instant.')]));
     $('eleves2').replaceChildren(...items());
     majStatut();
@@ -266,7 +283,7 @@
   // la flamme et « 3 d'affilée », à côté d'un pseudo, à partir de 2 d'affilée (si le réglage le permet)
   const flammeDe = j => { if (!st.series || !j) return null; const s = serieDe(j); return s.n >= 2 ? Q.flamme(s.n, false) : null; };
   const repartition = d => B.repartition(joueursActifs().map(j => j.rep[d.id] ? j.rep[d.id].c : null));
-  const podium = () => B.classer(joueursActifs().map(j => ({ id: j.id, pseudo: j.pseudo, total: j.total, justes: bilanJoueur(j).justes })));
+  const podium = () => { const anciens = anciensAppareils(); return B.classer(joueursActifs().filter(j => !anciens.has(j.id)).map(j => ({ id: j.id, pseudo: j.pseudo, total: j.total, justes: bilanJoueur(j).justes }))); };
 
   function corriger(d) {
     const e = st.q[d.id];
@@ -419,7 +436,8 @@
   // Les séries en cours, à côté des pseudos (ordre alphabétique : ce n'est pas un classement), à partir de 2 d'affilée.
   function ligneSeries() {
     if (!st.series) return null;
-    const l = joueursActifs().map(j => ({ j, s: serieDe(j) })).filter(x => x.s.n >= 2).sort((a, b) => a.j.pseudo.localeCompare(b.j.pseudo, 'fr'));
+    const anciens = anciensAppareils();
+    const l = joueursActifs().filter(j => !anciens.has(j.id)).map(j => ({ j, s: serieDe(j) })).filter(x => x.s.n >= 2).sort((a, b) => a.j.pseudo.localeCompare(b.j.pseudo, 'fr'));
     if (!l.length) return null;
     return el('p', { class: 'series' }, el('strong', {}, 'En série : '), ...l.flatMap((x, i) => [i ? ', ' : '', el('span', { class: 'qui-serie' }, x.j.pseudo, ' ', Q.flamme(x.s.n, x.s.palier))]), '.');
   }

@@ -142,7 +142,13 @@
     if (m.t === 'refus') { if (m.pourMoi) { Q.session.oublier('eleve'); afficherEntree(m.raison === 'pris' ? 'Ce pseudo est déjà pris dans la séance : choisis-en un autre.' : 'Ce pseudo n\'est pas accepté : choisis-en un autre.'); } return; }
     if (m.t === 'recus') {
       if (nuage && m.qid === nuage.qid) { for (const x of m.n) if (nuage.envois.has(x)) { nuage.envois.get(x).fait(); nuage.envois.delete(x); } majNuageTel(); }
-      if (question && m.qid === question.qid && question.n && m.n.includes(question.n)) { question.recu = true; clearInterval(renvoi); majEnvoyee(); }
+      if (question && m.qid === question.qid && question.n && m.n.includes(question.n)) {
+        question.recu = true; clearInterval(renvoi); majEnvoyee();
+        // gardé dans l'historique de la séance : après un rechargement, un envoi accusé n'est pas renvoyé (un renvoi juste
+        // après le retour de l'élève dans la présence, puis son accusé, permettraient à un tiers de relier ce nombre au pseudo)
+        const h = historique(), a = h.reps[question.qid];
+        if (a && a.n === question.n && a.acc !== question.n) { a.acc = question.n; ecrireHistorique(h); }
+      }
       return;
     }
     if (m.t === 'attente') { phase = 'attente'; question = null; ecran(attente('Regarde l\'écran : la suite arrive.')); return; }
@@ -218,7 +224,8 @@
     ecran(s);
     $('ecran').querySelectorAll('button.option').forEach(b => b.addEventListener('click', () => choisir(+b.dataset.choix)));
     if (question.ferme || question.k >= Q.bareme.MAX_CHANGEMENTS) bloquer(); else marquerChoix();
-    if (question.choix != null) { majEnvoyee(); envoyerReponse(); }
+    // page rouverte : un choix déjà accusé n'est pas renvoyé ; un choix jamais accusé l'est, après un délai tiré au hasard
+    if (question.choix != null) { question.recu = !!(ancienne && ancienne.acc && ancienne.acc === ancienne.n); majEnvoyee(); if (!question.recu) envoyerReponse(true); }
     clearInterval(chrono); chrono = null;
     if (question.duree > 0 && !question.ferme) { majChrono(); chrono = setInterval(majChrono, 500); }
     $('ecran').focus({ preventScroll: true }); window.scrollTo(0, 0);
@@ -292,7 +299,9 @@
     majEnvoyee(); envoyerReponse();
     Q.annoncer(qcu(q) ? 'Réponse ' + Q.LETTRES[c] + ' choisie.' + (k ? '' : ' Tu peux encore changer d\'avis.') : 'Réponse envoyée.');
   }
-  function envoyerReponse() {
+  /* differe : après un rechargement, le premier envoi attend 2 à 10 s, tirées au hasard, pour ne pas suivre de près le
+     retour de l'élève dans la présence (voir docs/DONNEES.md : ce qui reste de ce lien). */
+  function envoyerReponse(differe) {
     const envoi = async () => {
       if (!(question && question.choix != null && !question.recu && !question.ferme)) { clearInterval(renvoi); return; }
       if (!chiffreur || !clesHote.length) { majEnvoyee(); return; } // pas encore de page projetée : on réessaie dans 2 s
@@ -304,7 +313,9 @@
       majEnvoyee();
     };
     essais = 0;
-    clearInterval(renvoi); envoi(); renvoi = setInterval(envoi, 2000);
+    clearInterval(renvoi);
+    if (differe) { const a = new Uint32Array(1); crypto.getRandomValues(a); renvoi = setTimeout(() => { envoi(); renvoi = setInterval(envoi, 2000); }, 2000 + a[0] % 8001); return; }
+    envoi(); renvoi = setInterval(envoi, 2000);
   }
   // « reçue » seulement après l'accusé de réception de la page projetée.
   function majEnvoyee() {
@@ -342,8 +353,9 @@
       // les envois de la question : [n, choix, instant], 31 au plus, chacun contrôlé
       const e = Array.isArray(a.e) ? a.e.slice(-(Q.bareme.MAX_CHANGEMENTS + 1)).filter(x => Array.isArray(x) && x.length === 3 && typeof x[0] === 'string' && /^[0-9a-f]{16}$/.test(x[0])
         && Number.isFinite(x[2]) && x[2] >= 0 && x[2] < 1e8 && (qc ? Number.isInteger(x[1]) && x[1] >= 0 && x[1] <= 3 : Q.messages.formeReponse(x[1]) !== undefined)).map(x => [x[0], qc ? x[1] : Q.messages.formeReponse(x[1]), x[2]]) : [];
-      if (qc) h.reps[qid] = { c: a.c, ms: a.ms, n: a.n, k, e };
-      else if (a.r !== undefined && Q.messages.formeReponse(a.r) !== undefined) h.reps[qid] = { r: Q.messages.formeReponse(a.r), ms: a.ms, n: a.n, k, e }; // contrôlée contre la question à l'usage
+      const acc = typeof a.acc === 'string' && /^[0-9a-f]{16}$/.test(a.acc) ? a.acc : undefined; // le dernier envoi accusé
+      if (qc) h.reps[qid] = { c: a.c, ms: a.ms, n: a.n, k, e, acc };
+      else if (a.r !== undefined && Q.messages.formeReponse(a.r) !== undefined) h.reps[qid] = { r: Q.messages.formeReponse(a.r), ms: a.ms, n: a.n, k, e, acc }; // contrôlée contre la question à l'usage
     }
     for (const qid of v.ordre.slice(0, 1000)) {
       const r = v.res[qid];

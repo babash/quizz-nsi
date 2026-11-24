@@ -1187,6 +1187,66 @@ def rendus(nav, base):
     print(f"  rendus : {len(pages)} pages × 3 largeurs × 2 thèmes, sans défilement horizontal")
 
 
+def retours(nav, base):
+    """Le rechargement espionné et la clé perdue (T131c). Un espion note les retours dans la séance et les enveloppes :
+    après un rechargement, un choix déjà accusé n'est pas renvoyé ; un choix jamais accusé l'est après 2 à 10 s. Puis un
+    téléphone perd sa clé et revient sous le même pseudo : le pseudo n'apparaît qu'une fois au podium."""
+    ctx = contexte(nav, base)
+    prof = ctx.new_page(); prof.set_viewport_size({"width": 1440, "height": 900}); surveiller(prof, "retours enseignant·e")
+    prof.goto(base + "animer.html?cours=piles-files"); attendre_texte(prof, "#etatConnexion", "Séance ouverte")
+    code = prof.inner_text("#code").strip()
+    espion = ctx.new_page(); espion.goto(base + "index.html")
+    espion.evaluate("""canal => { const E = window.__ev = []; const bc = new BroadcastChannel('faux:' + canal), t0 = window.__t0 = performance.now();
+      bc.onmessage = ({ data }) => { const t = performance.now() - t0;
+        if (data.k === 'p' && data.info && data.info.role === 'eleve') E.push({ t, quoi: 'presence', pseudo: data.info.pseudo });
+        if (data.k === 'b' && data.payload && data.payload.t === 'rep') E.push({ t, quoi: 'rep' }); }; }""", "quizz-nsi:" + code)
+    tels = {}
+    for nom in ("Naïma", "Ilyes"):
+        p = ctx.new_page(); p.set_viewport_size({"width": 320, "height": 740}); surveiller(p, "retours " + nom)
+        p.goto(base + f"rejoindre.html?s={code}"); p.fill("#champPseudo", nom); p.click("#rejoindre"); attendre_texte(prof, "#eleves", nom)
+        tels[nom] = p
+    A, B = tels["Naïma"], tels["Ilyes"]
+    prof.select_option("#duree", "0"); prof.select_option("#podium", "fin"); prof.click("#commencer")
+    premiere = next(i for i, d in enumerate(COURS["diapositives"]) if d["type"] == "question")
+    suivante(prof, "#action", "#compteur", premiere)
+    A.wait_for_selector("button.option"); B.wait_for_selector("button.option")
+    A.click('button.option[data-choix="0"]'); attendre_texte(A, "#envoyee", "reçue")
+    B.click('button.option[data-choix="1"]'); attendre_texte(B, "#envoyee", "reçue")
+    nb = lambda: espion.evaluate("() => window.__ev.filter(e => e.quoi === 'rep').length")
+    avant = nb()
+    # 1. rechargement après l'accusé : aucun envoi ne suit le retour de Naïma
+    A.reload(); A.wait_for_selector("button.option"); attendre_texte(A, "#envoyee", "reçue")
+    prof.wait_for_timeout(11000)
+    assert nb() == avant, "après un rechargement, un choix déjà accusé a été renvoyé (lien possible avec le pseudo)"
+    A.click('button.option[data-choix="2"]'); attendre_texte(A, "#envoyee", "reçue")
+    # 2. un choix jamais accusé (envois perdus), puis un rechargement : renvoyé après 2 à 10 s, et retenu
+    A.evaluate("""() => { const o = BroadcastChannel.prototype.postMessage; BroadcastChannel.prototype.postMessage = function (d) {
+      if (d && d.k === 'b' && d.payload && d.payload.t === 'rep') return; return o.call(this, d); }; }""")
+    A.click('button.option[data-choix="3"]'); prof.wait_for_timeout(500)
+    avant = nb(); t_retour = espion.evaluate("() => performance.now() - window.__t0")
+    A.reload(); A.wait_for_selector("button.option")
+    attendre_texte(A, "#envoyee", "reçue", delai=16000)
+    reps = espion.evaluate("() => window.__ev.filter(e => e.quoi === 'rep')")[avant:]
+    assert reps and reps[0]["t"] - t_retour >= 2000, f"un choix jamais accusé est renvoyé trop vite après le rechargement ({reps[0]['t'] - t_retour if reps else None} ms)"
+    etat = json.loads(prof.evaluate("() => sessionStorage.getItem('quizz-nsi:animer:piles-files')"))
+    na = next(j for j in etat["joueurs"].values() if j["pseudo"] == "Naïma")
+    assert na["rep"][COURS["diapositives"][premiere]["id"]]["c"] == 3, "le choix jamais accusé, renvoyé après le rechargement, aurait dû être retenu"
+    prof.click("#action"); attendre_texte(A, ".q-num", "correction")
+    # 3. clé perdue : stockage effacé ; Naïma revient sous le même pseudo, avec un nouvel identifiant
+    A.evaluate("() => { localStorage.clear(); sessionStorage.clear(); }")
+    A.reload(); A.fill("#champCode", code); A.fill("#champPseudo", "Naïma"); A.click("#rejoindre")
+    prof.wait_for_function("() => [...document.querySelectorAll('#eleves li')].filter(l => l.innerText.includes('Naïma')).length === 2")
+    lignes = prof.evaluate("() => [...document.querySelectorAll('#eleves li')].filter(l => l.innerText.includes('Naïma')).map(l => ({ t: l.innerText, retirer: !!l.querySelector('[data-retirer]') }))")
+    anciens = [l for l in lignes if "ancien appareil, déconnecté·e" in l["t"]]
+    assert len(anciens) == 1 and not anciens[0]["retirer"], f"l'ancien appareil doit être marqué en texte, sans « Retirer » : {lignes}"
+    assert sum(1 for l in lignes if l["retirer"]) == 1, "le nouvel identifiant garde le pseudo (et son bouton « Retirer »)"
+    prof.click("#btnPodium"); prof.wait_for_selector("#podiumBoite[open]")
+    podium = prof.inner_text("#podiumCorps .podium")
+    assert podium.count("Naïma") == 1, f"le pseudo apparaît deux fois au podium : {podium!r}"
+    print("  retours : rechargement sans renvoi d'un choix accusé (11 s d'écoute) ; choix jamais accusé renvoyé après un délai et retenu ; clé perdue : « ancien appareil, déconnecté·e », pseudo une seule fois au podium")
+    ctx.close()
+
+
 def main():
     s, base = serveur()
     with sync_playwright() as pw:
@@ -1197,6 +1257,7 @@ def main():
         minuterie_et_flammes(nav, base)
         series_masquees(nav, base)
         autres_types(nav, base)
+        retours(nav, base)
         stockage(nav, base)
         sans_chiffrement(nav, base)
         autonome(nav, base)
