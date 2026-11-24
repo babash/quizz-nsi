@@ -18,6 +18,12 @@ Lancement, depuis la racine de QuizzNSI :
 1 quater. Les autres types de questions en séance (nuage de mots, relier, puzzle de code, ligne fautive) :
    deux téléphones et la page projetée ; le mot du nuage filtré, caché puis montré, masqué ; les points
    (en proportion pour relier) ; un piège à innerHTML et un espion sur le canal.
+1 quinquies. La minuterie et les flammes (T131) : la page d'animation (1440 px) et des téléphones (320 px, clair et obscur) ;
+   + 15 s (bouton et touche T), pause et reprise (touche S et bouton), un ajout après le zéro qui rouvre la question,
+   le temps des questions suivantes changé en cours de séance, une réponse pendant la pause (rapidité recalculée ici),
+   un·e élève qui arrive pendant la pause, la page d'animation rechargée en pause ; une série de 3 (flamme, palier) puis
+   une erreur (« Nouvelle série à la prochaine »), les flammes sur l'écran projeté (correction, liste, podium) ;
+   le réglage « Afficher les séries : non ».
 1 ter. Le QR code en très grand (bouton et touche Q), à l'accueil et pendant une question, à 3 largeurs et
    dans les 2 thèmes ; un·e élève en retard rejoint en pleine question et reçoit ses points.
 2. Le mode autonome : les diapositives, une erreur puis la bonne réponse, le bilan ;
@@ -101,6 +107,21 @@ PIEGE = """
 """
 
 
+def non_attribuable(espion, reps):
+    """Écoute passive (T131b) : un tiers qui lit tout le canal et toutes les présences (pseudos, identifiants, clés
+    publiques) ne doit pouvoir relier aucune réponse chiffrée à un pseudo : l'enveloppe ne porte que iv et donnees,
+    sans identifiant ni clé, et toutes les enveloppes ont la même longueur."""
+    pres = [p for p in espion.evaluate("window.__pres") if p and p.get("role") == "eleve"]
+    publics = {p.get("id") for p in pres} | {c for p in pres if isinstance(p.get("cle"), dict) for c in (p["cle"].get("x"), p["cle"].get("y"))}
+    publics.discard(None)
+    assert pres and any(isinstance(p.get("cle"), dict) for p in pres), "l'espion aurait dû voir les présences et leurs clés"
+    for m in reps:
+        assert set(m) == {"t", "iv", "donnees"}, f"enveloppe attribuable (champ en plus) : {sorted(m)}"
+        texte = json.dumps(m)
+        assert not any(v in texte for v in publics), "une enveloppe porte un identifiant ou une clé publique d'élève"
+    assert len({len(m["donnees"]) for m in reps}) == 1, f"enveloppes de longueurs différentes : {sorted({len(m['donnees']) for m in reps})}"
+
+
 def forges(moi, autre):
     """Pour chaque type de message et chaque champ (imbriqué compris), des copies avec une valeur forgée."""
     import copy
@@ -108,19 +129,20 @@ def forges(moi, autre):
     modeles = [
         {"t": "attente"},
         {"t": "notion", "cours": "piles-files", "n": 1, "f": 0},
-        {"t": "question", "cours": "piles-files", "qid": "q01", "reste": 1000, "duree": 45, "ferme": False},
-        {"t": "fermee", "qid": "q01"},
+        {"t": "question", "cours": "piles-files", "qid": "q01", "reste": 1000, "duree": 45, "ferme": False, "pause": False},
+        {"t": "fermee", "qid": "q01", "retenus": ["00112233aabbccdd"]},
         {"t": "recus", "qid": "q01", "n": ["00112233aabbccdd"]},
         {"t": "retire", "id": moi},
         {"t": "refus", "id": moi, "raison": "pris"},
         {"t": "correction", "cours": "piles-files", "qid": "q01", "precedente": None, "bonne": 1, "rep": [1, 1, 0, 0],
          "bareme": {"participation": 10, "juste": 100, "rapidite": 20, "rebond": 30}, "duree": 0,
-         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}]},
+         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}], "series": True, "retenus": ["00112233aabbccdd"]},
         {"t": "fin", "cours": "piles-files", "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}]},
         {"t": "corrige", "cours": "piles-files", "qid": "q01", "precedente": None, "duree": 0, "nb": 2, "justes": 1,
-         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}]},
+         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}], "series": True, "retenus": ["00112233aabbccdd"]},
         {"t": "bonjour", "id": autre},
-        {"t": "rep", "de": cle, "iv": "abcdefghijklmnop", "donnees": "QUJDRA"},
+        {"t": "rep", "iv": "abcdefghijklmnop", "donnees": "QUJD" * 133 + "QU"},
+        {"t": "rep", "de": cle, "iv": "abcdefghijklmnop", "donnees": "QUJD" * 133 + "QU"},
     ]
     valeurs = [BALISE, 10 ** 300, -1, 2.5, {"html": BALISE}, [BALISE], BALISE * 2000, True]
 
@@ -194,10 +216,23 @@ def injection(nav, base):
     }""", ["quizz-nsi:" + code, liste, BALISE, moi])
     prof.wait_for_timeout(1500)
     attendre_texte(prof, "#autreHote", "une autre page projetée")  # la présence forgée d'une page projetée
+    # présence usurpée (T131b) : l'identifiant ET la clé publique d'un·e élève (deux valeurs publiques), recopiés avec un
+    # autre pseudo, un pseudo piégé, un pseudo vide ou une autre clé : ni renommage, ni refus, ni retrait de l'élève
+    cle0 = eleves[0].evaluate("() => { const c = JSON.parse(sessionStorage.getItem('quizz-nsi:eleve')).cle; return { x: c.x, y: c.y }; }")
+    attaque.evaluate("""([canal, moi, cle, balise]) => {
+        const bc = new BroadcastChannel('faux:' + canal), autre = { x: 'A'.repeat(43), y: 'B'.repeat(43) };
+        bc.postMessage({ k: 'p', cle: 'u1', info: { id: moi, pseudo: 'Usurpe', role: 'eleve', cle } });
+        bc.postMessage({ k: 'p', cle: 'u2', info: { id: moi, pseudo: balise, role: 'eleve', cle } });
+        bc.postMessage({ k: 'p', cle: 'u3', info: { id: moi, pseudo: 'Usurpe', role: 'eleve', cle: autre } });
+        bc.postMessage({ k: 'p', cle: 'u4', info: { id: moi, pseudo: 'Usurpe', role: 'eleve' } });
+    }""", ["quizz-nsi:" + code, moi, cle0, BALISE])
+    prof.wait_for_timeout(1200)
+    assert "Usurpe" not in prof.inner_text("#eleves") and "Kobalt " + MARQUE in prof.inner_text("#eleves"), "présence usurpée : pseudo changé"
+    assert eleves[0].is_hidden("#entree") and eleves[0].is_visible('button.option[data-choix="1"]'), "présence usurpée : l'élève a été sorti·e de la séance"
     # un espion écoute tout le canal pendant la suite de la séance
     espion = ctx.new_page()
     espion.goto(base + "index.html")
-    espion.evaluate("canal => { window.__vus = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); }; }", "quizz-nsi:" + code)
+    espion.evaluate("canal => { window.__vus = []; window.__pres = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); else if (data.k === 'p') window.__pres.push(data.info); }; bc.postMessage({ k: 'p', cle: 'espion', info: { id: 'eeeeeeeeeeeeeeee', role: 'spectateur' } }); }", "quizz-nsi:" + code)
     # la séance continue normalement après l'attaque
     eleves[0].click('button.option[data-choix="1"]')
     eleves[1].click('button.option[data-choix="0"]')
@@ -231,11 +266,10 @@ def injection(nav, base):
         texte = json.dumps(m)
         if m.get("t") in ("rep", "correction", "fin", "recus", "question"):
             assert moi not in texte and autre not in texte, f"identifiant d'élève diffusé : {texte[:120]}"
-        if m.get("t") == "rep":
-            assert set(m) == {"t", "de", "iv", "donnees"}, f"réponse en clair : {texte[:120]}"
         if m.get("t") in ("correction", "fin"):
             assert "res" not in m, "résultats individuels diffusés"
-    print(f"  confidentialité : {len(vus)} messages écoutés, {len(reps)} réponses chiffrées, aucun résultat individuel")
+    non_attribuable(espion, reps)
+    print(f"  confidentialité : {len(vus)} messages écoutés, {len(reps)} réponses chiffrées, aucun résultat individuel, aucun envoi attribuable")
     print(f"  injection : {len(liste)} messages forgés et 5 présences forgées ignorés (la fausse page projetée est signalée) ; aucun innerHTML ne reçoit de donnée du canal")
     ctx.close()
 
@@ -456,6 +490,292 @@ def qr_et_retard(nav, base):
     ctx.close()
 
 
+def chrono(page):
+    """Les secondes affichées par la minuterie du téléphone (« ⏱ 23 s » ou « ‖ En pause · 23 s »)."""
+    import re
+    t = page.inner_text("#chrono")
+    return int(re.search(r"(\d+) s", t).group(1))
+
+
+def statut_s(prof):
+    import re
+    return int(re.search(r"(\d+) s ·", prof.inner_text("#statutQ")).group(1))
+
+
+def etat_prof(prof):
+    return prof.evaluate("() => JSON.parse(sessionStorage.getItem('quizz-nsi:animer:piles-files'))")
+
+
+def sans_defilement(page, nom):
+    large = page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
+    assert large <= 0, f"{nom} : défilement horizontal de {large} px"
+
+
+def minuterie_et_flammes(nav, base):
+    """+ 15 s, pause, reprise, durée changée, ajout après le zéro, rechargement ; une série de 3 puis une erreur."""
+    ctx = contexte(nav, base)
+    prof = ctx.new_page()
+    prof.set_viewport_size({"width": 1440, "height": 900})
+    surveiller(prof, "minuterie enseignant·e")
+    prof.goto(base + "animer.html?cours=piles-files")
+    attendre_texte(prof, "#etatConnexion", "Séance ouverte")
+    code = prof.inner_text("#code").strip()
+    assert prof.input_value("#series") == "oui", "les séries s'affichent par défaut"
+
+    def eleve(pseudo, theme):
+        p = ctx.new_page()
+        p.set_viewport_size({"width": 320, "height": 740})
+        p.emulate_media(color_scheme=theme)
+        surveiller(p, pseudo)
+        p.goto(base + f"rejoindre.html?s={code}")
+        p.fill("#champPseudo", pseudo)
+        p.click("#rejoindre")
+        return p
+    a = eleve("Naïma", "light")
+    b = eleve("Ilyes", "dark")
+    attendre_texte(prof, "#eleves", "Naïma")
+    attendre_texte(prof, "#eleves", "Ilyes")
+    prof.select_option("#duree", "20")
+    prof.click("#commencer")
+    idx = [i for i, d in enumerate(COURS["diapositives"]) if d["type"] == "question"]
+
+    def aller_question(k):
+        suivante(prof, "#action", "#compteur", idx[k])
+        for p in (a, b):
+            attendre_texte(p, ".q-num", f"Question {k + 1} sur {T}")
+
+    def corriger(k):
+        prof.click("#action")
+        for p in (a, b):
+            attendre_texte(p, ".q-num", f"Question {k + 1} sur {T} · correction")
+
+    # Q1 (20 s) : + 15 s (bouton), puis pause (touche S), réponse pendant la pause, reprise (bouton)
+    aller_question(0)
+    a.wait_for_selector("#chrono")
+    assert chrono(a) <= 20
+    assert prof.is_enabled("#plus15") and prof.is_enabled("#pause")
+    prof.click("#plus15")
+    a.wait_for_function("() => /(3[0-5]) s/.test(document.querySelector('#chrono').innerText)")
+    b.wait_for_function("() => /(3[0-5]) s/.test(document.querySelector('#chrono').innerText)")
+    prof.wait_for_timeout(3000)  # 3 s de minuterie avant la pause
+    prof.click("#scene")
+    prof.keyboard.press("s")
+    attendre_texte(prof, "#statutQ", "En pause")
+    assert prof.get_attribute("#pause", "aria-pressed") == "true" and "Reprendre" in prof.inner_text("#pause")
+    for p in (a, b):
+        attendre_texte(p, "#chrono", "En pause")
+        attendre_texte(p, "#pauseInfo", "tu peux lire et répondre")
+    gele_a, gele_p = chrono(a), statut_s(prof)
+    prof.screenshot(path=os.path.join(SORTIE, "minuterie-pause-1440.png"))
+    a.screenshot(path=os.path.join(SORTIE, "minuterie-pause-320.png"), full_page=True)
+    b.screenshot(path=os.path.join(SORTIE, "minuterie-pause-320-obscur.png"), full_page=True)
+    sans_defilement(a, "téléphone en pause")
+    prof.wait_for_timeout(2600)
+    assert chrono(a) == gele_a and statut_s(prof) == gele_p, "le temps a couru pendant la pause"
+    a.click(f'button.option[data-choix="{BONNES[0]}"]')  # Naïma répond pendant la pause
+    attendre_texte(a, "#envoyee", "reçue")
+    prof.wait_for_timeout(1200)
+    assert chrono(a) == gele_a, "le temps a couru pendant la pause (après une réponse)"
+    prof.click("#pause")  # reprise
+    attendre_texte(prof, "#pause", "Pause")
+    b.wait_for_function("() => !document.querySelector('#chrono').innerText.includes('pause')")
+    assert b.inner_text("#pauseInfo") == ""
+    prof.wait_for_timeout(1600)
+    assert chrono(b) < gele_a, "le temps ne court pas après la reprise"
+    b.click(f'button.option[data-choix="{BONNES[0]}"]')
+    attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    assert prof.is_enabled("#plus15"), "+ 15 s reste possible quand tout le monde a répondu (pour changer d'avis)"
+    corriger(0)
+    st = etat_prof(prof)
+    e0 = st["q"][QUESTIONS[0]["id"]]
+    assert e0["duree"] == 20 and e0["ajouts"] == 1 and e0["pauseMs"] >= 3500 and e0["pauseDepuis"] is None, e0
+    for pseudo in ("Naïma", "Ilyes"):
+        j = next(x for x in st["joueurs"].values() if x["pseudo"] == pseudo)
+        r = j["rep"][QUESTIONS[0]["id"]]
+        attendu = round(20 * (1 - min(max(r["ms"], 0), 35000) / 35000))
+        assert r["detail"]["rapidite"] == attendu, (pseudo, r)
+        assert 0 <= r["detail"]["rapidite"] <= 20
+    rn = next(x for x in st["joueurs"].values() if x["pseudo"] == "Naïma")["rep"][QUESTIONS[0]["id"]]
+    assert 2500 <= rn["ms"] <= 35000 - gele_a * 1000 + 1500, f"réponse pendant la pause : le temps du début de la pause attendu ({rn['ms']} ms)"
+    gain_a = rn["gain"]
+    attendre_texte(a, "#points", f"{gain_a} pts")
+    assert a.locator(".serie .flamme").count() == 0, "pas de flamme pour 1 bonne réponse"
+    print(f"  minuterie : + 15 s (35 s accordées), pause de {e0['pauseMs'] // 1000} s, réponse pendant la pause comptée à {rn['ms']} ms, rapidité {rn['detail']['rapidite']} (téléphone : {gain_a} pts)")
+
+    # Q2 : le temps des questions suivantes passe à 30 s ; les deux répondent juste : 2 d'affilée
+    prof.select_option("#dureeSuite", "30")
+    aller_question(1)
+    a.wait_for_selector("#chrono")
+    assert 20 < chrono(a) <= 30, chrono(a)
+    assert etat_prof(prof)["q"][QUESTIONS[1]["id"]]["duree"] == 30
+    # Naïma pré-choisit une mauvaise réponse, puis change d'avis ; Ilyes répond juste
+    faux1 = (BONNES[1] + 1) % 4
+    a.click(f'button.option[data-choix="{faux1}"]')
+    attendre_texte(a, "#changer", "Tu peux changer d'avis jusqu'à la fin du temps")
+    attendre_texte(a, f'button.option[data-choix="{faux1}"]', "Ta réponse")
+    assert a.get_attribute(f'button.option[data-choix="{faux1}"]', "aria-pressed") == "true"
+    attendre_texte(a, "#envoyee", "reçue")
+    b.click(f'button.option[data-choix="{BONNES[1]}"]')
+    attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    assert "2 / 2" in prof.inner_text("#statutQ")
+    a.wait_for_timeout(1200)
+    a.click(f'button.option[data-choix="{BONNES[1]}"]')  # changement d'avis, question toujours ouverte
+    attendre_texte(a, "#envoyee", "reçue")
+    a.click(f'button.option[data-choix="{BONNES[1]}"]')  # le même choix recliqué : rien ne change
+    assert a.locator("button.option.choisie").count() == 1 and a.get_attribute(f'button.option[data-choix="{faux1}"]', "aria-pressed") == "false"
+    assert a.locator(f'button.option[data-choix="{faux1}"] .etiquette').count() == 0
+    prof.wait_for_timeout(600)
+    assert "2 / 2" in prof.inner_text("#statutQ"), "le compteur ne bouge pas quand on change d'avis"
+    assert "change" not in prof.inner_text("body").lower(), "rien n'indique qui a changé d'avis"
+    assert prof.locator(".rep-nb").count() == 0, "aucune répartition avant la correction"
+    r1 = next(x for x in etat_prof(prof)["joueurs"].values() if x["pseudo"] == "Naïma")["rep"][QUESTIONS[1]["id"]]
+    assert r1["c"] == BONNES[1] and r1["k"] == 1 and r1["ms"] >= 1000, r1
+    corriger(1)
+    r1 = next(x for x in etat_prof(prof)["joueurs"].values() if x["pseudo"] == "Naïma")["rep"][QUESTIONS[1]["id"]]
+    assert r1["juste"] is True and r1["detail"]["rapidite"] == round(20 * (1 - min(r1["ms"], 30000) / 30000)), r1
+    for p in (a, b):
+        attendre_texte(p, ".serie", "2 d'affilée")
+    attendre_texte(prof, ".zone-correction .series", "En série")
+    assert "Ilyes" in prof.inner_text(".series") and "Naïma" in prof.inner_text(".series")
+
+    # Q3 : 20 s ; Naïma répond juste, Ilyes laisse passer le temps ; + 15 s (touche T) après le zéro rouvre la question
+    prof.select_option("#dureeSuite", "20")
+    aller_question(2)
+    a.click(f'button.option[data-choix="{BONNES[2]}"]')
+    attendre_texte(prof, "#statutQ", "Temps écoulé", delai=26000)
+    attendre_texte(b, "#ecran", "Temps écoulé")
+    # après le zéro : plus de changement possible (boutons désactivés ; un envoi forgé serait refusé par la page projetée)
+    a.wait_for_selector(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"][disabled]')
+    attendre_texte(a, "#envoyee", "qui compte")
+    assert a.inner_text("#changer") == ""
+    assert prof.is_enabled("#plus15") and not prof.is_enabled("#pause")
+    prof.wait_for_timeout(1500)  # le temps passé à zéro ne compte pas
+    prof.click("#scene")
+    prof.keyboard.press("t")
+    b.wait_for_selector(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"]:not([disabled])')
+    assert 13 <= chrono(b) <= 15, chrono(b)
+    a.wait_for_selector(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"]:not([disabled])')  # rouverte : Naïma peut encore changer
+    e2 = etat_prof(prof)["q"][QUESTIONS[2]["id"]]
+    assert e2["ferme"] is False and e2["ajouts"] == 1, e2
+    b.click(f'button.option[data-choix="{(BONNES[2] + 1) % 4}"]')  # Ilyes se trompe
+    attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    corriger(2)
+    attendre_texte(a, ".serie", "3 d'affilée")
+    assert a.locator(".serie .flamme.palier").count() == 1, "palier de 3 : animation attendue"
+    attendre_texte(b, ".serie", "Nouvelle série à la prochaine")
+    assert b.locator(".flamme").count() == 0
+    assert "erreur" not in b.inner_text(".serie").lower()
+    attendre_texte(prof, ".series", "Naïma")
+    assert "Ilyes" not in prof.inner_text(".series")
+    assert prof.locator(".series .flamme.palier").count() == 1
+    a.screenshot(path=os.path.join(SORTIE, "flammes-3-320.png"), full_page=True)
+    b.screenshot(path=os.path.join(SORTIE, "flammes-nouvelle-serie-320-obscur.png"), full_page=True)
+    prof.screenshot(path=os.path.join(SORTIE, "flammes-correction-1440.png"), full_page=True)
+    prof.emulate_media(color_scheme="dark")
+    prof.screenshot(path=os.path.join(SORTIE, "flammes-correction-1440-obscur.png"), full_page=True)
+    prof.emulate_media(color_scheme="light")
+    # la liste des élèves de l'écran projeté porte la flamme
+    prof.click("#btnRejoindre")
+    attendre_texte(prof, "#eleves2", "3 d'affilée")
+    prof.click("#btnRejoindre")
+    # les téléphones et la page projetée en mouvement réduit : pas d'animation
+    a.emulate_media(reduced_motion="reduce")
+    assert a.evaluate("getComputedStyle(document.querySelector('.flamme.palier .flamme-svg')).animationName") == "none"
+    a.emulate_media(reduced_motion="no-preference")
+
+    # Q4 : Naïma se trompe (la série repart à zéro, sans reproche), Ilyes répond juste
+    aller_question(3)
+    a.click(f'button.option[data-choix="{(BONNES[3] + 1) % 4}"]')
+    b.click(f'button.option[data-choix="{BONNES[3]}"]')
+    attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    corriger(3)
+    attendre_texte(a, ".serie", "Nouvelle série à la prochaine")
+    assert a.locator(".flamme").count() == 0
+    assert prof.locator(".series").count() == 0, "personne n'a 2 d'affilée"
+
+    # Q5 : pause, un·e élève qui arrive pendant la pause, la page d'animation rechargée en pause
+    aller_question(4)
+    prof.click("#scene")
+    prof.keyboard.press("s")
+    attendre_texte(a, "#chrono", "En pause")
+    z = eleve("Zaki", "light")
+    attendre_texte(z, ".q-num", f"Question 5 sur {T}")
+    attendre_texte(z, "#chrono", "En pause")
+    attendre_texte(z, "#pauseInfo", "tu peux lire et répondre")
+    gele = chrono(z)
+    prof.reload()
+    prof.wait_for_selector("#reprendre:not([hidden])")
+    prof.click("#reprendre")
+    attendre_texte(prof, "#statutQ", "En pause")
+    assert prof.get_attribute("#pause", "aria-pressed") == "true"
+    prof.wait_for_timeout(1500)
+    assert chrono(z) == gele and chrono(a) == gele, "le rechargement a relancé le temps"
+    attendre_texte(prof, "#etatConnexion", "Séance ouverte")
+    prof.click("#scene")
+    prof.keyboard.press("s")
+    attendre_texte(prof, "#pause", "Pause")
+    z.wait_for_function("() => !document.querySelector('#chrono').innerText.includes('pause')")
+    for p in (a, b, z):
+        p.click(f'button.option[data-choix="{BONNES[4]}"]')
+    attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    corriger(4)
+    attendre_texte(b, ".serie", "2 d'affilée")
+    attendre_texte(prof, ".series", "Ilyes")
+    prof.click("#scene")
+    prof.keyboard.press("p")
+    prof.wait_for_selector("#podiumBoite[open]")
+    attendre_texte(prof, "#podiumCorps", "2 d'affilée")
+    prof.screenshot(path=os.path.join(SORTIE, "flammes-podium-1440.png"))
+    prof.keyboard.press("Escape")
+    # la page d'animation à 320 px pendant une question : les commandes passent à la ligne
+    aller_question(5)
+    prof.set_viewport_size({"width": 320, "height": 800})
+    prof.wait_for_timeout(300)
+    sans_defilement(prof, "animation à 320 px")
+    prof.screenshot(path=os.path.join(SORTIE, "minuterie-animation-320.png"), full_page=True)
+    prof.set_viewport_size({"width": 1440, "height": 900})
+    sans_defilement(a, "téléphone")
+    print("  minuterie : durée changée (30 s puis 20 s), ajout après le zéro (question rouverte avec 15 s), arrivée et rechargement en pause ;"
+          " flammes : 2 et 3 d'affilée (palier animé, coupé en mouvement réduit), « nouvelle série à la prochaine », correction, liste et podium")
+    ctx.close()
+
+
+def series_masquees(nav, base):
+    """« Afficher les séries : non » : aucune flamme, ni au téléphone ni sur l'écran projeté."""
+    ctx = contexte(nav, base)
+    prof = ctx.new_page()
+    prof.set_viewport_size({"width": 1440, "height": 900})
+    surveiller(prof, "séries masquées")
+    prof.goto(base + "animer.html?cours=piles-files")
+    attendre_texte(prof, "#etatConnexion", "Séance ouverte")
+    code = prof.inner_text("#code").strip()
+    e = ctx.new_page()
+    e.set_viewport_size({"width": 320, "height": 740})
+    surveiller(e, "séries masquées élève")
+    e.goto(base + f"rejoindre.html?s={code}")
+    e.fill("#champPseudo", "Soilihi")
+    e.click("#rejoindre")
+    attendre_texte(prof, "#eleves", "Soilihi")
+    prof.select_option("#duree", "0")
+    prof.select_option("#series", "non")
+    prof.click("#commencer")
+    assert not prof.is_enabled("#plus15") and not prof.is_enabled("#pause")
+    idx = [i for i, d in enumerate(COURS["diapositives"]) if d["type"] == "question"]
+    for k in range(3):
+        suivante(prof, "#action", "#compteur", idx[k])
+        e.wait_for_selector(f'button.option[data-choix="{BONNES[k]}"]:not([disabled])')
+        assert not prof.is_enabled("#plus15"), "sans minuterie : pas de + 15 s"
+        assert e.locator("#chrono").inner_text() == ""
+        e.click(f'button.option[data-choix="{BONNES[k]}"]')
+        attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+        prof.click("#action")
+        attendre_texte(e, ".q-num", "correction")
+    assert e.locator(".flamme").count() == 0 and e.locator(".serie").count() == 0
+    assert prof.locator(".flamme").count() == 0
+    print("  séries masquées : 3 bonnes réponses d'affilée, aucune flamme ; sans minuterie, + 15 s et pause désactivés")
+    ctx.close()
+
+
 def puzzle_resoudre(page, lignes, indentation=True):
     """Remet le puzzle dans l'ordre avec les boutons (choisir une ligne, « Monter », « Indenter »)."""
     for p, sol in enumerate(lignes):
@@ -487,7 +807,7 @@ def autres_types(nav, base):
     code = prof.inner_text("#code").strip()
     espion = ctx.new_page()
     espion.goto(base + "index.html")
-    espion.evaluate("canal => { window.__vus = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); }; }", "quizz-nsi:" + code)
+    espion.evaluate("canal => { window.__vus = []; window.__pres = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); else if (data.k === 'p') window.__pres.push(data.info); }; bc.postMessage({ k: 'p', cle: 'espion', info: { id: 'eeeeeeeeeeeeeeee', role: 'spectateur' } }); }", "quizz-nsi:" + code)
     tel = []
     for pseudo, theme in (("Kobalt", "light"), ("Ixo", "dark")):
         e = ctx.new_page()
@@ -592,12 +912,20 @@ def autres_types(nav, base):
     # ── la ligne fautive ──
     lg = diapos[ou["ligne"]]
     suivante(prof, "#action", "#compteur", ou["ligne"])
+    # Kobalt change d'avis : une autre ligne d'abord, puis la bonne (« Changer ma réponse ») ; seule la dernière compte
+    faux = 1 if lg["ligne"] != 1 else 2
+    k.wait_for_selector(".c-ligne")
+    k.locator(".c-ligne").nth(faux - 1).click()
+    k.click(".lignes-zone button.bouton.fort")
+    attendre_texte(k, "#envoyee", "reçue")
+    attendre_texte(k, ".lignes-zone button.bouton.fort", "Changer ma réponse")
     for e, l in ((k, lg["ligne"]), (i, 2)):
         e.wait_for_selector(".c-ligne")
         e.locator(".c-ligne").nth(l - 1).click()
         e.click(".lignes-zone button.bouton.fort")
         attendre_texte(e, "#envoyee", "reçue")
     attendre_texte(prof, "#statutQ", "Tout le monde a répondu")
+    assert "2 / 2" in prof.inner_text("#statutQ")
     prof.click("#action")
     attendre_texte(prof, ".zone-correction", "1 sur 2")
     prof.screenshot(path=os.path.join(SORTIE, "autres-ligne-1440.png"), full_page=True)
@@ -620,11 +948,10 @@ def autres_types(nav, base):
         else:
             assert all(set(w) == {"k", "m", "n"} for w in m["mots"]), "un mot part avec autre chose que son numéro et ses voix"
             assert "kobalt" not in t and "ixo" not in t, "un pseudo est parti avec le nuage"
-        if m.get("t") == "rep":
-            assert set(m) == {"t", "de", "iv", "donnees"}
+    non_attribuable(espion, [m for m in vus if m.get("t") == "rep"])  # mots, voix, relier, puzzle, ligne : même longueur
     assert "motpiege" not in json.dumps(nuages[-1]), "le mot supprimé a disparu du dernier nuage envoyé"
     assert any(m.get("t") == "corrige" for m in vus)
-    print(f"  autres types : nuage (filtré, frein, caché puis montré, voix, mot supprimé partout), relier (60 points pour 3 paires sur 5), puzzle, ligne fautive ; {len(vus)} messages écoutés, mots seulement dans « nuage », sans pseudo, aucune réponse en clair")
+    print(f"  autres types : nuage (filtré, frein, caché puis montré, voix, mot supprimé partout), relier (60 points pour 3 paires sur 5), puzzle, ligne fautive ; {len(vus)} messages écoutés, mots seulement dans « nuage », sans pseudo, aucune réponse en clair ni attribuable")
     ctx.close()
 
 
@@ -658,7 +985,7 @@ def sans_chiffrement(nav, base):
         const info = { id: '9999999999999999', role: 'hote', cle: { x: j.x, y: j.y } };
         bc.onmessage = ({ data }) => { if (data.k === 'p' && data.info.id !== info.id) bc.postMessage({ k: 'p', cle: info.id, info }); };
         bc.postMessage({ k: 'p', cle: info.id, info });
-        setTimeout(() => bc.postMessage({ k: 'b', event: 'm', payload: { t: 'question', cours: 'piles-files', qid: 'q01', reste: null, duree: 0, ferme: false } }), 500);
+        setTimeout(() => bc.postMessage({ k: 'b', event: 'm', payload: { t: 'question', cours: 'piles-files', qid: 'q01', reste: null, duree: 0, ferme: false, pause: false } }), 500);
     }""")
     p.wait_for_selector('button.option[data-choix="1"]:not([disabled])')
     p.click('button.option[data-choix="1"]')
@@ -867,6 +1194,8 @@ def main():
         seance(nav, base)
         injection(nav, base)
         qr_et_retard(nav, base)
+        minuterie_et_flammes(nav, base)
+        series_masquees(nav, base)
         autres_types(nav, base)
         stockage(nav, base)
         sans_chiffrement(nav, base)

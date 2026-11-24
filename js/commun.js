@@ -353,6 +353,18 @@
     }
     return e;
   };
+  /* La flamme d'une série (T131) : un dessin original en SVG (contour plein et cœur plein, lisible en noir et blanc),
+     toujours suivi du nombre en texte (« 3 d'affilée ») ; palier : petite animation à 3, 5 et 10 (coupée si l'élève a
+     demandé moins d'animations, css/seance.css). Construite élément par élément, sans HTML. */
+  Q.flamme = function (n, palier) {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('class', 'flamme-svg'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+    const trace = (d, cls) => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); p.setAttribute('class', cls); svg.appendChild(p); };
+    trace('M12 1.5C13.2 5.4 18.5 8 18.5 14.2A6.5 6.5 0 0 1 5.5 14.2C5.5 10.6 7.6 8.7 8.6 6.2C9.6 8.1 10.3 9.2 10.6 10.4C11.9 8 12.6 5 12 1.5Z', 'flamme-tour');
+    trace('M12.2 11.2C13.4 13.4 15.4 14.6 15.4 17.2A3.4 3.4 0 0 1 8.6 17.2C8.6 15.4 10 14.6 10.6 13.2C11.1 14 11.4 14.5 11.5 15C12.2 13.9 12.5 12.6 12.2 11.2Z', 'flamme-coeur');
+    const nb = Number.isSafeInteger(n) && n >= 0 ? n : 0;
+    return Q.el('span', { class: 'flamme' + (palier ? ' palier' : '') }, svg, Q.el('span', { class: 'flamme-nb' }, nb + ' d\'affilée'));
+  };
   // Un fragment de HTML produit par le moteur à partir du fichier du cours (contenu local, échappé).
   Q.fragmentCours = function (html) { const t = document.createElement('template'); t.innerHTML = html; return t.content; };
   Q.annoncer = function (texte) { const z = Q.$('annonce'); if (z) { z.textContent = ''; setTimeout(() => { z.textContent = texte; }, 30); } };

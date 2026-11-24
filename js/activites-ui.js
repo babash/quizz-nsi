@@ -1,5 +1,7 @@
 /* QuizzNSI : répondre aux autres types de questions, au téléphone et en révision (MIT, Babash - NSI Tani Malandi).
-   Q.activiteUI(d, { reponse, onValider, libelle }) renvoie { noeud, bloquer(), marquer(detail), valeur() }.
+   Q.activiteUI(d, { reponse, onValider, libelle }) renvoie { noeud, bloquer(), marquer(detail), valeur(), renommer(texte) }.
+   En séance, l'élève peut changer d'avis : après « Valider », la réponse reste modifiable et le bouton devient
+   « Changer ma réponse » (js/rejoindre.js) jusqu'à la fin du temps ou la correction.
    - nuage : un champ (un mot ou deux), filtré avant l'envoi (js/activites.js) ;
    - relier : une liste déroulante par élément de gauche (accessible au clavier et au lecteur d'écran) ;
    - puzzle : chaque ligne est un bouton ; on la choisit, puis « Monter », « Descendre », « Indenter »,
@@ -31,7 +33,7 @@
       o.onValider(r.mot);
     });
     if (o.reponse) { champ.value = o.reponse; montrer(o.reponse); }
-    return { noeud: f, bloquer() { champ.disabled = true; btn.disabled = true; }, marquer() {}, valeur: () => A().filtrerMot(champ.value).ok ? A().filtrerMot(champ.value).mot : null };
+    return { noeud: f, renommer(t) { btn.textContent = t; }, bloquer() { champ.disabled = true; btn.disabled = true; }, marquer() {}, valeur: () => A().filtrerMot(champ.value).ok ? A().filtrerMot(champ.value).mot : null };
   }
 
   function relier(d, o) {
@@ -60,7 +62,7 @@
     maj();
     const noeud = el('div', { class: 'relier' }, el('p', { class: 'fb-titre' }, 'Les réponses'), droite, el('p', { class: 'fb-titre' }, 'À relier'), el('ol', { class: 'r-gauche' }, lignes), el('p', {}, btn));
     return {
-      noeud, valeur,
+      noeud, valeur, renommer(t) { btn.textContent = t; },
       bloquer() { selects.forEach(s => { s.disabled = true; }); btn.disabled = true; },
       marquer(det) { lignes.forEach((li, i) => { li.classList.toggle('ok', det[i] === true); li.classList.toggle('ko', det[i] === false); li.querySelector('.r-marque').textContent = det[i] ? '✓' : det[i] === false ? '✗' : ''; }); },
     };
@@ -108,7 +110,7 @@
     const noeud = el('div', { class: 'puzzle-zone' }, el('p', { class: 'aide' }, 'Touche une ligne pour la choisir, puis déplace-la' + (ind ? ' ou change son indentation' : '') + '. Au clavier : Alt + flèches.'),
       liste, outils, el('p', {}, btn));
     return {
-      noeud, valeur: () => etat.map(x => [x[0], x[1]]),
+      noeud, valeur: () => etat.map(x => [x[0], x[1]]), renommer(t) { btn.textContent = t; },
       bloquer() { verrou = true; dessiner(null); outils.querySelectorAll('button').forEach(b => { b.disabled = true; }); btn.disabled = true; },
       marquer(det) { liste.querySelectorAll('li').forEach((li, p) => { li.classList.toggle('ok', det[p] === true); li.classList.toggle('ko', det[p] === false); }); },
     };
@@ -134,7 +136,7 @@
     if (d.console) noeud.appendChild(Q.fragmentCours(Q.console(d.console)));
     noeud.appendChild(el('p', {}, btn));
     return {
-      noeud, valeur: () => choix,
+      noeud, valeur: () => choix, renommer(t) { btn.textContent = t; },
       bloquer() { boutons.forEach(b => { b.disabled = true; }); btn.disabled = true; },
       marquer(det, r) { boutons.forEach((b, i) => b.classList.toggle('ko', i === r && det[0] === false)); },
     };

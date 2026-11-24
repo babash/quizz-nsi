@@ -1,5 +1,5 @@
 /* QuizzNSI : le barème du mode « en classe » (MIT, Babash - NSI Tani Malandi).
-   Fonctions pures, sans page ni réseau : elles sont testées par tests/test_bareme.js (node).
+   Fonctions pures, sans page ni réseau : elles sont testées par tests/test_moteur.js (node).
 
    Barème proposé (à valider par l'enseignant·e) :
    - répondre, même faux : +10 (on ose répondre) ;
@@ -13,7 +13,13 @@
    - relier, puzzle de code : la bonne réponse est notée en proportion de ce qui est juste (3 paires bien
      reliées sur 4 : 75 points sur 100) ; rapidité et rebond seulement si tout est juste ;
    - ligne fautive : comme une question à choix (juste ou faux) ;
-   - nuage de mots : non noté (aucune bonne réponse), il ne compte ni pour les points ni pour les rebonds. */
+   - nuage de mots : non noté (aucune bonne réponse), il ne compte ni pour les points ni pour les rebonds.
+
+   La minuterie (T131) : l'enseignant·e peut ajouter 15 s (autant de fois que voulu, 40 fois au plus), mettre en pause
+   et reprendre. La part de rapidité se calcule sur le temps réellement écoulé hors pause, rapporté à la durée totale
+   accordée (durée de départ + ajouts) : rapidité = 20 × (1 − écoulé / accordée), arrondie, toujours entre 0 et 20.
+   Une réponse donnée pendant la pause compte le temps écoulé au début de la pause (ni gain ni perte). Un ajout fait
+   après le zéro rouvre la question avec 15 s ; le temps passé à zéro n'est pas compté. */
 (function (racine) {
   'use strict';
   const BAREME = { participation: 10, juste: 100, rapidite: 20, rebond: 30 };
@@ -69,7 +75,83 @@
     return { justes, repondues, serie, meilleure, rebonds };
   }
 
-  const api = { BAREME, points, classer, repartition, progression };
+  /* ── La minuterie d'une question (fonctions pures, temps t en millisecondes) ──
+     e : { ouverte: instant d'ouverture, duree: durée de départ en s (0 : sans minuterie), ajouts: nombre de « + 15 s »,
+           pauseMs: temps déjà passé en pause, pauseDepuis: début de la pause en cours (null : la minuterie tourne) } */
+  const DUREES = [0, 20, 30, 45, 60, 90], AJOUT = 15, MAX_AJOUTS = 40, PALIERS = [3, 5, 10];
+  const accordee = e => e && e.duree > 0 ? e.duree + AJOUT * e.ajouts : 0;            // en secondes
+  function ecoule(e, t) {                                                               // hors pause, en ms
+    const pause = e.pauseMs + (e.pauseDepuis != null ? Math.max(0, t - e.pauseDepuis) : 0);
+    return Math.max(0, t - e.ouverte - pause);
+  }
+  const reste = (e, t) => e.duree > 0 ? Math.max(0, accordee(e) * 1000 - ecoule(e, t)) : null;
+  const enPause = e => e.pauseDepuis != null;
+  function pause(e, t) { if (e.duree > 0 && !enPause(e) && reste(e, t) > 0) { e.pauseDepuis = t; return true; } return false; }
+  function reprendre(e, t) { if (!enPause(e)) return false; e.pauseMs += Math.max(0, t - e.pauseDepuis); e.pauseDepuis = null; return true; }
+  // + 15 s : la fin recule de 15 s. Après le zéro, le temps passé à zéro est compté comme une pause : il reste 15 s.
+  function ajouter(e, t) {
+    if (!(e.duree > 0) || e.ajouts >= MAX_AJOUTS) return false;
+    const trop = ecoule(e, t) - accordee(e) * 1000;
+    if (trop > 0) e.pauseMs += trop;
+    e.ajouts++;
+    return true;
+  }
+  // une durée accordée possible (ce que les messages peuvent annoncer) : 0, ou une durée de départ + k × 15 s
+  const dureeAccordeeValide = d => d === 0 || DUREES.some(b => b > 0 && Number.isSafeInteger(d) && d >= b && (d - b) % AJOUT === 0 && (d - b) / AJOUT <= MAX_AJOUTS);
+  const minuterie = { DUREES, AJOUT, MAX_AJOUTS, accordee, ecoule, reste, enPause, pause, reprendre, ajouter, dureeAccordeeValide };
+
+  /* La série en cours (les flammes) : le nombre de bonnes réponses d'affilée dans la séance, à partir des résultats
+     dans l'ordre joué ; une erreur ou une non-réponse la remet à zéro. Rien n'est gardé d'une séance à l'autre.
+     palier : vrai quand la série vient d'atteindre 3, 5 ou 10 (petite animation). casse : la série d'au moins 2
+     vient de s'arrêter (on écrit « nouvelle série à la prochaine », sans message négatif). */
+  function serie(resultats) {
+    const n = progression(resultats).serie, avant = resultats.length ? progression(resultats.slice(0, -1)).serie : 0;
+    return { n, palier: n > avant && PALIERS.includes(n), casse: n === 0 && avant >= 2 };
+  }
+
+  /* Changer d'avis (T131, règle du 24/11) : tant que la question est ouverte, chaque choix remplace le précédent ;
+     seul le dernier compte. Chaque envoi du téléphone porte un numéro k (0 pour le premier choix, puis +1 à chaque
+     changement, 30 au plus). La page projetée garde le choix de plus grand numéro, et le temps de réponse est celui
+     du DERNIER CHANGEMENT (hors pause) : cliquer au hasard tout de suite puis corriger ne rapporte pas de rapidité.
+     Un envoi déjà reçu ou plus ancien (k plus petit ou égal) ne change rien ; le même choix renvoyé ne change ni la
+     réponse ni l'instant. Il n'existe pas de « aucune réponse » : on ne peut que changer.
+     ancien : null ou { v, ms, k } ; nouveau : { v, k } ; ms : le temps écoulé hors pause à la réception. */
+  const MAX_CHANGEMENTS = 30;
+  function retenir(ancien, nouveau, ms, egal) {
+    if (!nouveau || nouveau.v === null || nouveau.v === undefined || !Number.isSafeInteger(nouveau.k) || nouveau.k < 0 || nouveau.k > MAX_CHANGEMENTS) return ancien;
+    if (!ancien) return { v: nouveau.v, ms, k: nouveau.k };
+    if (nouveau.k <= ancien.k) return ancien;
+    if (egal(ancien.v, nouveau.v)) return { v: ancien.v, ms: ancien.ms, k: nouveau.k };
+    return { v: nouveau.v, ms, k: nouveau.k };
+  }
+
+  /* Recevoir un envoi sur la page projetée (T131b) : aucun téléphone ne touche à la réponse d'un·e autre.
+     lien : l'empreinte de la clé publique reliée à l'identifiant de l'élève (null : pas encore reliée) ;
+     avant : null ou { v, ms, k, n } (le choix retenu, n : le nombre tiré au hasard de son envoi) ;
+     envoi : { de, v, k, n } (de : l'empreinte de la clé de l'expéditeur, lue sur l'enveloppe chiffrée).
+     Un envoi d'une autre clé est ignoré (la page projetée relie la clé dès la présence, js/animer.js ; sans lien, la
+     première clé acceptée serait reliée). L'accusé de
+     réception (accuse) ne part que pour un envoi retenu, ou pour le même envoi reçu deux fois : jamais pour un
+     changement ignoré. Renvoie { lien, rep, accuse }. */
+  function recevoir(lien, avant, envoi, ms, egal) {
+    const rien = { lien, rep: avant, accuse: false };
+    if (!envoi || typeof envoi.de !== 'string' || !envoi.de || (lien && lien !== envoi.de)) return rien;
+    const ancien = avant ? { v: avant.v, ms: avant.ms, k: avant.k || 0 } : null;
+    const r = retenir(ancien, { v: envoi.v, k: envoi.k }, ms, egal);
+    if (r === ancien) return { lien, rep: avant, accuse: !!avant && avant.n === envoi.n };
+    return { lien: lien || envoi.de, rep: { v: r.v, ms: r.ms, k: r.k, n: envoi.n }, accuse: true };
+  }
+  /* Sur le téléphone : parmi ses envois d'une question ([n, choix, instant], dans l'ordre), celui que la page projetée
+     a retenu, d'après la liste « retenus » de la fermeture ou de la correction : { v, ms }, ou null (aucun envoi retenu :
+     arrivé trop tard, ou jamais arrivé). Le téléphone affiche et compte ce choix-là, comme la page projetée. */
+  function retenuParmi(envois, retenus) {
+    if (!Array.isArray(envois) || !Array.isArray(retenus)) return null;
+    const vus = new Set(retenus);
+    for (let i = envois.length - 1; i >= 0; i--) if (Array.isArray(envois[i]) && vus.has(envois[i][0])) return { v: envois[i][1], ms: envois[i][2] };
+    return null;
+  }
+
+  const api = { BAREME, points, classer, repartition, progression, serie, PALIERS, minuterie, retenir, recevoir, retenuParmi, MAX_CHANGEMENTS };
   racine.QuizzNSI = racine.QuizzNSI || {};
   racine.QuizzNSI.bareme = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

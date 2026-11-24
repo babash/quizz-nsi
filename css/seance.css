@@ -105,3 +105,40 @@ select, input[type="text"] { font: inherit; color: var(--ink); background: var(-
 .fin-liens { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .envoyee { text-align: center; font-weight: 700; }
 #autreHote { margin: 12px 16px; }
+
+/* ── La minuterie (T131) : + 15 s, pause, temps des questions suivantes ── */
+.minuterie { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.duree-suite { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 15px; color: var(--ink-soft); }
+.duree-suite select { min-height: 36px; padding: 4px 8px; }
+.bouton[aria-pressed="true"] { background: var(--accent-fond); border-style: dashed; }
+.chrono.en-pause { display: inline-block; border: 2px dashed var(--ink-soft); border-radius: 8px; padding: 2px 10px; }
+.pause-info { font-weight: 700; margin: 4px 0; }
+.pause-info:empty { display: none; }
+
+/* ── Les flammes : la série de bonnes réponses d'affilée, dans la séance ── */
+.flamme { display: inline-flex; align-items: center; gap: .2em; font-weight: 700; white-space: nowrap; vertical-align: middle; }
+.flamme-svg { width: 1.15em; height: 1.15em; flex: none; overflow: visible; }
+.flamme-tour { fill: var(--f2); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.flamme-coeur { fill: var(--ink); }
+.flamme-nb { font-family: var(--display); }
+.series { margin: .4em 0; }
+.series .qui-serie { white-space: nowrap; }
+.serie { font-family: var(--display); font-size: 1.2em; margin: 0 0 .5em; }
+.serie .flamme-svg { width: 1.6em; height: 1.6em; }
+.serie.neutre { font-family: var(--text); font-size: 1em; color: var(--ink-soft); }
+.podium .qui .flamme { font-size: .8em; margin-left: .3em; }
+@media (prefers-reduced-motion: no-preference) {
+  .flamme.palier .flamme-svg { animation: flamme-palier .9s ease-out 2; transform-origin: 50% 90%; }
+  @keyframes flamme-palier { 0% { transform: scale(1) rotate(0); } 30% { transform: scale(1.35) rotate(-6deg); } 60% { transform: scale(1.15) rotate(5deg); } 100% { transform: scale(1) rotate(0); } }
+}
+@media print { .minuterie { display: none; } }
+.serie .serie-mot { font-family: var(--text); font-size: .8em; font-weight: 400; }
+.statut-q { min-width: 0; }
+/* la barre de la page projetée : le statut (« Tout le monde a répondu ») passe à la ligne dans sa case plutôt que de
+   pousser la barre sur deux lignes ; si elle passe quand même à la ligne (écran étroit), l'action reste à droite */
+.projete .commandes .statut-q { flex: 1 1 16ch; }
+.projete .commandes #action { margin-left: auto; }
+select { max-width: 100%; }
+.eleve button.option.choisie .etiquette { color: var(--ink); }
+.changer:empty { display: none; }
+.changer { text-align: center; margin: 4px 0; }

@@ -42,6 +42,211 @@ essai('progression : séries et rebonds', () => {
   assert.deepEqual([p.justes, p.repondues, p.serie, p.meilleure, p.rebonds], [4, 5, 1, 2, 1]);
 });
 
+/* La minuterie (T131) : + 15 s, pause, reprise ; la rapidité sur le temps écoulé hors pause, rapporté à la durée accordée. */
+const MN = B.minuterie;
+const q0 = (duree = 30) => ({ ouverte: 1000000, duree, ajouts: 0, pauseMs: 0, pauseDepuis: null });
+essai('minuterie : temps écoulé et restant sans pause', () => {
+  const e = q0(30);
+  assert.equal(MN.ecoule(e, 1000000 + 12000), 12000);
+  assert.equal(MN.reste(e, 1000000 + 12000), 18000);
+  assert.equal(MN.reste(e, 1000000 + 99000), 0);
+  assert.equal(MN.ecoule(e, 999000), 0); // jamais négatif
+  assert.equal(MN.reste(q0(0), 1000000 + 5000), null); // sans minuterie
+});
+essai('minuterie : la pause arrête le temps, la reprise le relance', () => {
+  const e = q0(30), t = 1000000;
+  assert.ok(MN.pause(e, t + 10000));
+  assert.equal(MN.ecoule(e, t + 50000), 10000); // 40 s de pause : rien ne s'écoule
+  assert.equal(MN.reste(e, t + 50000), 20000);
+  assert.equal(MN.pause(e, t + 51000), false); // déjà en pause
+  assert.ok(MN.reprendre(e, t + 60000));
+  assert.equal(e.pauseMs, 50000);
+  assert.equal(MN.ecoule(e, t + 65000), 15000);
+  assert.equal(MN.reprendre(e, t + 66000), false);
+  assert.equal(MN.pause(q0(0), t), false); // sans minuterie, pas de pause
+  assert.equal(MN.pause(e, t + 999000), false); // pas de pause après le zéro
+});
+essai('minuterie : + 15 s recule la fin, autant de fois que voulu (40 au plus)', () => {
+  const e = q0(30), t = 1000000;
+  assert.ok(MN.ajouter(e, t + 5000)); assert.ok(MN.ajouter(e, t + 6000));
+  assert.equal(MN.accordee(e), 60);
+  assert.equal(MN.reste(e, t + 10000), 50000);
+  for (let k = 2; k < MN.MAX_AJOUTS; k++) assert.ok(MN.ajouter(e, t + 10000));
+  assert.equal(MN.ajouter(e, t + 10000), false);
+  assert.equal(MN.accordee(e), 30 + 15 * 40);
+  assert.equal(MN.ajouter(q0(0), t), false); // sans minuterie
+});
+essai('minuterie : + 15 s après le zéro rouvre avec 15 s, le temps passé à zéro ne compte pas', () => {
+  const e = q0(20), t = 1000000;
+  assert.equal(MN.reste(e, t + 50000), 0); // 30 s après le zéro
+  assert.ok(MN.ajouter(e, t + 50000));
+  assert.equal(MN.reste(e, t + 50000), 15000);
+  assert.equal(MN.ecoule(e, t + 50000), 20000);
+  assert.equal(MN.accordee(e), 35);
+  // en pause pendant l'ajout : le temps reste arrêté
+  const f = q0(20); MN.pause(f, t + 10000); MN.ajouter(f, t + 30000);
+  assert.equal(MN.reste(f, t + 40000), 25000);
+});
+essai('rapidité avec pause et ajouts : temps hors pause rapporté à la durée accordée', () => {
+  const e = q0(30), t = 1000000;
+  MN.pause(e, t + 10000); MN.reprendre(e, t + 70000); MN.ajouter(e, t + 75000); // 60 s de pause, puis + 15 s
+  const ms = MN.ecoule(e, t + 85000); // 25 s réellement écoulées sur 45 accordées
+  assert.equal(ms, 25000);
+  assert.equal(B.points({ juste: true, ms }, { duree: MN.accordee(e) }).detail.rapidite, Math.round(20 * (1 - 25 / 45)));
+  // une réponse pendant la pause : le temps du début de la pause, ni gain ni perte
+  const f = q0(30); MN.pause(f, t + 6000);
+  assert.equal(MN.ecoule(f, t + 6000), MN.ecoule(f, t + 600000));
+  assert.equal(B.points({ juste: true, ms: MN.ecoule(f, t + 600000) }, { duree: 30 }).detail.rapidite, 16);
+});
+essai('rapidité : jamais plus de +20, jamais négative, quelles que soient pauses et ajouts', () => {
+  const t = 1000000;
+  let k = 0;
+  for (const duree of MN.DUREES.filter(Boolean)) for (const ajouts of [0, 1, 3, 40]) for (const ms of [-1e9, -1, 0, 1, 7000, duree * 1000, 1e9, Infinity, NaN]) {
+    const p = B.points({ juste: true, ms }, { duree: duree + 15 * ajouts });
+    assert.ok(p.detail.rapidite >= 0 && p.detail.rapidite <= 20 && Number.isInteger(p.detail.rapidite), JSON.stringify([duree, ajouts, ms, p.detail.rapidite]));
+    assert.ok(p.total <= 150 && p.total >= 0);
+    k++;
+  }
+  // des pauses et des ajouts au hasard : le temps écoulé reste entre 0 et le temps réel, la rapidité entre 0 et 20
+  let graine = 7; const hasard = () => (graine = (graine * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (let i = 0; i < 500; i++) {
+    const e = q0([20, 30, 45, 60, 90][i % 5]); let now = t;
+    for (let j = 0; j < 12; j++) { now += Math.floor(hasard() * 20000); const a = hasard(); if (a < .3) MN.pause(e, now); else if (a < .6) MN.reprendre(e, now); else if (a < .75) MN.ajouter(e, now); }
+    const ms = MN.ecoule(e, now);
+    assert.ok(ms >= 0 && ms <= now - t, 'écoulé hors bornes');
+    const r = B.points({ juste: true, ms }, { duree: MN.accordee(e) }).detail.rapidite;
+    assert.ok(r >= 0 && r <= 20);
+    assert.ok(MN.reste(e, now) >= 0 && MN.reste(e, now) <= MN.accordee(e) * 1000);
+    k++;
+  }
+  assert.ok(k > 500);
+});
+essai('rapidité : ajouter du temps ne change pas l\'ordre des réponses', () => {
+  const r = (ms, d) => B.points({ juste: true, ms }, { duree: d }).detail.rapidite;
+  assert.ok(r(5000, 45) >= r(20000, 45) && r(5000, 30) >= r(20000, 30));
+});
+/* Changer d'avis : le dernier choix compte, la rapidité se mesure à l'instant du dernier changement. */
+const egal = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+const suivre = envois => envois.reduce((r, [v, k, ms]) => B.retenir(r, { v, k }, ms, egal), null);
+const rap = (r, duree) => B.points({ juste: r.v === 1, ms: r.ms }, { duree }).detail.rapidite;
+essai('changer d\'avis : faux puis juste, la rapidité à l\'instant du changement', () => {
+  const r = suivre([[0, 0, 1000], [1, 1, 15000]]);
+  assert.deepEqual(r, { v: 1, ms: 15000, k: 1 });
+  assert.equal(rap(r, 30), 10); // et pas 19 : cliquer au hasard tout de suite puis corriger ne rapporte rien de plus
+  assert.ok(rap(r, 30) < rap(suivre([[1, 0, 1000]]), 30));
+});
+essai('changer d\'avis : juste puis faux, la réponse finale est fausse', () => {
+  const r = suivre([[1, 0, 2000], [3, 1, 9000]]);
+  assert.equal(r.v, 3);
+  assert.equal(B.points({ juste: r.v === 1, ms: r.ms }, { duree: 30, precedente: 'faux' }).total, 10); // ni rapidité ni rebond
+});
+essai('changer d\'avis : le même choix recliqué ne change ni la réponse ni l\'instant', () => {
+  const r = suivre([[1, 0, 2000], [1, 1, 20000]]);
+  assert.deepEqual([r.v, r.ms], [1, 2000]);
+  const r2 = suivre([[1, 0, 2000], [1, 0, 20000]]); // un renvoi du même envoi
+  assert.deepEqual(r2, { v: 1, ms: 2000, k: 0 });
+});
+essai('changer d\'avis : un envoi plus ancien, arrivé en retard, ne revient pas en arrière', () => {
+  assert.deepEqual(suivre([[0, 0, 1000], [2, 2, 5000], [1, 1, 6000]]), { v: 2, ms: 5000, k: 2 });
+});
+essai('changer d\'avis : pas de « aucune réponse », 30 changements au plus', () => {
+  const r = suivre([[1, 0, 1000]]);
+  assert.equal(B.retenir(r, { v: null, k: 1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: undefined, k: 1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: 2, k: B.MAX_CHANGEMENTS + 1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: 2, k: -1 }, 2000, egal), r);
+  assert.equal(B.retenir(r, { v: 2, k: 1.5 }, 2000, egal), r);
+  assert.equal(B.retenir(null, { v: null, k: 0 }, 2000, egal), null);
+  assert.equal(B.retenir(r, { v: 2, k: B.MAX_CHANGEMENTS }, 2000, egal).v, 2);
+});
+essai('changer d\'avis pendant la pause : le temps du début de la pause', () => {
+  const e = q0(30), t = 1000000;
+  const r0 = B.retenir(null, { v: 0, k: 0 }, MN.ecoule(e, t + 4000), egal);
+  MN.pause(e, t + 8000);
+  const r1 = B.retenir(r0, { v: 1, k: 1 }, MN.ecoule(e, t + 40000), egal); // changé 32 s après le début de la pause
+  assert.equal(r1.ms, 8000);
+  assert.equal(rap(r1, MN.accordee(e)), Math.round(20 * (1 - 8 / 30)));
+});
+essai('changer d\'avis après un « + 15 s » : mesuré sur la durée accordée', () => {
+  const e = q0(20), t = 1000000;
+  const r0 = B.retenir(null, { v: 0, k: 0 }, MN.ecoule(e, t + 3000), egal);
+  MN.ajouter(e, t + 50000); // après le zéro : la question rouvre avec 15 s, écoulé = 20 s
+  const r1 = B.retenir(r0, { v: 1, k: 1 }, MN.ecoule(e, t + 55000), egal);
+  assert.equal(r1.ms, 25000);
+  assert.equal(rap(r1, MN.accordee(e)), Math.round(20 * (1 - 25 / 35)));
+});
+essai('changer d\'avis : les séries et le rebond se jugent sur la réponse finale', () => {
+  const finales = [suivre([[0, 0, 1], [1, 1, 2]]), suivre([[1, 0, 1]]), suivre([[1, 0, 1], [2, 1, 2]])].map(r => r.v === 1 ? 'juste' : 'faux');
+  assert.deepEqual(finales, ['juste', 'juste', 'faux']);
+  assert.equal(B.serie(finales).casse, true);
+  assert.equal(B.serie(finales.slice(0, 2)).n, 2);
+});
+
+/* T131b, défaut 1 : aucun téléphone ne touche à la réponse d'un·e autre. La page projetée relie l'identifiant à la clé
+   publique de son appareil ; un envoi d'une autre clé (un faussaire qui a lu l'identifiant dans la présence) est ignoré,
+   sans accusé ; l'accusé ne part que pour un envoi retenu. */
+const ILYES = 'I'.repeat(86), FAUX = 'F'.repeat(86);
+const recevoirTous = (lien, envois) => envois.reduce((e, [de, v, k, n, ms]) => { const x = B.recevoir(e.lien, e.rep, { de, v, k, n }, ms, egal); e.accuses.push(x.accuse); return { lien: x.lien, rep: x.rep, accuses: e.accuses }; }, { lien, rep: null, accuses: [] });
+essai('défaut 1 : un faux envoi au nom d\'un·e autre, k = 30, après sa réponse : ignoré, sans accusé ; son vrai changement compte', () => {
+  const e = recevoirTous(ILYES, [[ILYES, 1, 0, 'n0', 11000], [FAUX, 2, 30, 'nf', 11500], [ILYES, 3, 1, 'n1', 12000]]);
+  assert.deepEqual(e.rep, { v: 3, ms: 12000, k: 1, n: 'n1' });
+  assert.deepEqual(e.accuses, [true, false, true]);
+  assert.equal(e.lien, ILYES);
+});
+essai('défaut 1 : devancer un·e élève (avant sa réponse, clé reliée par la présence) : ignoré', () => {
+  const e = recevoirTous(ILYES, [[FAUX, 2, 30, 'nf', 1000], [FAUX, 2, 0, 'nf2', 1000], [ILYES, 1, 0, 'n0', 3000]]);
+  assert.deepEqual(e.rep, { v: 1, ms: 3000, k: 0, n: 'n0' });
+  assert.deepEqual(e.accuses, [false, false, true]);
+});
+essai('défaut 1 : une clé pas encore reliée l\'est au premier envoi accepté, puis tient', () => {
+  const e = recevoirTous(null, [[ILYES, 1, 0, 'n0', 1000], [FAUX, 2, 30, 'nf', 2000]]);
+  assert.equal(e.lien, ILYES); assert.deepEqual(e.accuses, [true, false]); assert.equal(e.rep.v, 1);
+  assert.deepEqual(B.recevoir(null, null, { de: '', v: 1, k: 0, n: 'x' }, 0, egal), { lien: null, rep: null, accuse: false });
+  assert.deepEqual(B.recevoir(null, null, { de: ILYES, v: null, k: 0, n: 'x' }, 0, egal), { lien: null, rep: null, accuse: false }); // refusé : ne relie rien
+});
+essai('défaut 1 : pas d\'accusé pour un changement ignoré ; le même envoi reçu deux fois en reçoit un', () => {
+  const e = recevoirTous(ILYES, [[ILYES, 0, 0, 'n0', 1000], [ILYES, 2, 2, 'n2', 5000], [ILYES, 1, 1, 'n1', 6000], [ILYES, 2, 2, 'n2', 7000], [ILYES, 3, 2, 'n9', 7500]]);
+  assert.deepEqual(e.rep, { v: 2, ms: 5000, k: 2, n: 'n2' });
+  assert.deepEqual(e.accuses, [true, true, false, true, false]);
+});
+/* T131b, défaut 2 : le téléphone affiche et compte le choix que la page projetée a retenu (liste « retenus »). */
+essai('défaut 2 : un changement arrivé après la fermeture : le téléphone retrouve le choix retenu et les mêmes points', () => {
+  const envois = [['n0', 0, 2000], ['n1', 1, 19500]]; // faux à 2 s, puis la bonne réponse (1) à 19,5 s, arrivée trop tard
+  const r = B.retenuParmi(envois, ['aaaaaaaaaaaaaaaa', 'n0']);
+  assert.deepEqual(r, { v: 0, ms: 2000 });
+  assert.equal(B.points({ juste: r.v === 1, ms: r.ms }, { duree: 20 }).total, 10); // comme la page projetée, et pas 110
+  assert.deepEqual(B.retenuParmi(envois, ['n1']), { v: 1, ms: 19500 });
+});
+essai('défaut 2 : la première réponse arrivée trop tard : aucun choix retenu, 0 point des deux côtés', () => {
+  assert.equal(B.retenuParmi([['n0', 1, 19900]], ['bbbbbbbbbbbbbbbb']), null);
+  assert.equal(B.points(null, { duree: 20 }).total, 0);
+  assert.equal(B.retenuParmi([], ['n0']), null); assert.equal(B.retenuParmi(null, ['n0']), null); assert.equal(B.retenuParmi([['n0', 1, 0]], null), null);
+});
+essai('défaut 2 : accusé perdu (A reçu, B retenu sans accusé, C trop tard) : le téléphone retrouve B', () => {
+  assert.deepEqual(B.retenuParmi([['nA', 0, 1000], ['nB', 1, 5000], ['nC', 2, 19800]], ['nB']), { v: 1, ms: 5000 });
+});
+
+essai('durées accordées possibles', () => {
+  for (const d of [0, 20, 30, 35, 45, 60, 90, 105, 620, 690]) assert.ok(MN.dureeAccordeeValide(d), d);
+  for (const d of [-15, 1, 10, 15, 21, 46, 91, 635, 691, 3600, 2.5, NaN, '45']) assert.equal(MN.dureeAccordeeValide(d), false, String(d));
+});
+essai('séries : bonnes réponses d\'affilée, remises à zéro par une erreur ou une non-réponse', () => {
+  assert.deepEqual(B.serie([]), { n: 0, palier: false, casse: false });
+  assert.deepEqual(B.serie(['juste', 'juste']), { n: 2, palier: false, casse: false });
+  assert.deepEqual(B.serie(['juste', 'juste', 'juste']), { n: 3, palier: true, casse: false });
+  assert.deepEqual(B.serie(['juste', 'juste', 'juste', 'faux']), { n: 0, palier: false, casse: true });
+  assert.deepEqual(B.serie(['juste', 'juste', null]), { n: 0, palier: false, casse: true });
+  assert.deepEqual(B.serie(['juste', 'faux']), { n: 0, palier: false, casse: false }); // une série de 1 : rien à dire
+  assert.equal(B.serie(Array(5).fill('juste')).palier, true);
+  assert.equal(B.serie(Array(6).fill('juste')).palier, false);
+  assert.equal(B.serie(Array(10).fill('juste')).palier, true);
+  assert.equal(B.serie(['faux', 'juste', 'juste', 'juste']).n, 3);
+});
+essai('séries : le barème ne change pas (une série ne rapporte aucun point)', () => {
+  assert.deepEqual(B.BAREME, { participation: 10, juste: 100, rapidite: 20, rebond: 30 });
+  assert.equal(B.points({ juste: true, ms: 0 }, { duree: 0, precedente: 'juste' }).total, 110);
+});
+
 essai('pseudo : prénoms et pseudos acceptés', () => {
   for (const p of ['Kobalt', 'Zéphyr', 'Ixo', 'Pixel-42', "L'Orque", 'kiki_976', 'Néon M.', 'Кобальт', 'Ζέφυρος', 'نجمة']) assert.ok(Q.filtrerPseudo(p).ok, p);
   assert.equal(Q.filtrerPseudo('  Ixo   Neo  ').pseudo, 'Ixo Neo');
