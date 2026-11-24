@@ -1187,6 +1187,123 @@ def rendus(nav, base):
     print(f"  rendus : {len(pages)} pages × 3 largeurs × 2 thèmes, sans défilement horizontal")
 
 
+def bibliotheque(nav, base):
+    """L'accueil rangé en bibliothèque, affiné comme la bibliothèque du site : cases Niveau, Type et Notions
+    travaillées avec leur nombre, puces des filtres actifs, recherche sans accents (alternatifs du thésaurus compris),
+    adresse (et anciennes adresses), aucun résultat, clavier, sans JavaScript, et les deux actions de cinq cartes
+    qui ouvrent les mêmes adresses qu'avant."""
+    with open(os.path.join(RACINE, "cours", "catalogue.json"), encoding="utf-8") as f:
+        cat = json.load(f)
+    classe = [c for c in cat["cours"] if c.get("demonstration") is not True]
+    total = len(classe)
+    visibles = ".qz-niveau:not(.qz-decouvrir) .qz-carte:visible"
+    tle = [c for c in classe if c["niveau"] == "Terminale NSI"]
+    for largeur in (320, 768, 1440):
+        ctx = contexte(nav, base, viewport={"width": largeur, "height": 900})
+        p = ctx.new_page()
+        surveiller(p, f"bibliothèque {largeur}")
+        p.goto(base + "index.html")
+        assert p.locator(visibles).count() == total, "toutes les cartes au départ"
+        assert p.is_visible("#recherche"), "la recherche est visible"
+        if largeur < 900:
+            p.click("#plus-filtres > summary")
+        # aucune case cochée au départ, chaque case avec son nombre
+        assert p.locator("#facettes input:checked").count() == 0
+        assert p.inner_text("label[for=f-niv-terminale] .nb") == str(len(tle))
+        # niveau, puis type : une case d'un filtre ET une case d'un autre
+        p.check("#f-niv-terminale")
+        assert p.locator(".qz-niveau[data-niveau=premiere]").is_hidden(), "Première cachée"
+        assert p.locator(visibles).count() == len(tle)
+        # seules les notions de la Terminale sont proposées, avec leur nombre (repliées au départ, comme sur le site)
+        assert p.is_hidden("#f-notion-donnees-pile")
+        p.click("details.facette > summary:has-text('Notions travaillées')")
+        assert p.locator("#f-notion-donnees-binaire").count() == 0, "une notion de Première n'est pas proposée"
+        piles = sum(1 for c in tle if "donnees.pile" in c["notions"])
+        assert p.inner_text("label[for=f-notion-donnees-pile] .nb") == str(piles)
+        p.check("#f-type-revision")
+        n_rev = sum(1 for c in tle if c.get("gabarit") == "revision")
+        assert p.locator(visibles).count() == n_rev
+        assert "niv=terminale" in p.url and "type=revision" in p.url, p.url
+        # l'adresse rouvre le même état
+        p.goto(p.url)
+        if largeur < 900:
+            assert p.evaluate("document.getElementById('plus-filtres').open"), "filtres actifs : le panneau s'ouvre"
+        assert p.locator(visibles).count() == n_rev, "filtres relus dans l'adresse"
+        # deux notions d'un même filtre : l'une OU l'autre ; les puces ; tout retirer
+        p.uncheck("#f-type-revision")
+        p.click("details.facette > summary:has-text('Notions travaillées')")
+        p.check("#f-notion-donnees-pile")
+        p.check("#f-notion-prog-recursivite")
+        attendu = sum(1 for c in tle if {"donnees.pile", "prog.recursivite"} & set(c["notions"]))
+        assert p.locator(visibles).count() == attendu, "notions : l'une ou l'autre"
+        assert "notion=donnees.pile%2Cprog.recursivite" in p.url or "notion=donnees.pile,prog.recursivite" in p.url, p.url
+        assert p.locator(".puce-filtre").count() == 3, "une puce par filtre actif"
+        p.click(".puce-filtre[aria-label='Retirer le filtre Notions travaillées : Récursivité']")
+        assert p.locator(visibles).count() == piles
+        p.click("#puces .lien-bouton")
+        assert p.locator(visibles).count() == total and p.is_hidden("#puces")
+        # la recherche, sans accents, dans les titres, les mots-clés et les notions (alternatifs du site)
+        p.fill("#recherche", "RECURSIVITE")
+        assert p.locator(visibles).count() == 2, "récursivité : le cours et le tri fusion"
+        p.fill("#recherche", "poo")
+        assert p.locator(visibles).count() == 2, "POO : un alternatif du thésaurus du site"
+        p.fill("#recherche", "noeud")
+        assert p.is_visible(".qz-carte[data-cours=arbres-binaires]")
+        # aucun résultat ici, mais sans les filtres
+        p.goto(base + "index.html?niv=premiere&q=pile")
+        if largeur < 900:
+            assert p.evaluate("document.getElementById('plus-filtres').open")
+        assert p.is_visible("#aucun"), "état « aucun résultat »"
+        assert "Aucun cours-quiz" in p.inner_text("#compteur")
+        assert "Retirer les filtres" in p.inner_text("#aucun")
+        p.click("#aucun button.p")
+        assert p.locator(visibles).count() >= 3 and p.is_hidden("#aucun")
+        p.fill("#recherche", "zzzz")
+        p.wait_for_timeout(600)
+        assert "Effacer la recherche" in p.inner_text("#aucun")
+        # une adresse de la première version : le niveau est gardé, le thème n'est plus un filtre
+        p.goto(base + "index.html?niveau=terminale-nsi&theme=nsi-tle-2019.algorithmique&type=introduction,revision")
+        assert p.locator(visibles).count() == len(tle), "ancienne adresse"
+        assert "theme=" not in p.url and "niv=terminale" in p.url, p.url
+        large = p.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
+        assert large <= 0, f"bibliothèque à {largeur} px : défilement horizontal de {large} px"
+        ctx.close()
+    # au clavier seul : la recherche, puis la première action de la première carte trouvée
+    ctx = contexte(nav, base, viewport={"width": 1440, "height": 900})
+    p = ctx.new_page()
+    surveiller(p, "bibliothèque clavier")
+    p.goto(base + "index.html")
+    p.focus("#recherche")
+    p.keyboard.type("dichotomique")
+    for _ in range(80):
+        p.keyboard.press("Tab")
+        if p.evaluate("() => document.activeElement.matches('.qz-carte .bt.p')"):
+            break
+    assert p.evaluate("() => document.activeElement.getAttribute('href')") == "animer.html?cours=dichotomie"
+    p.keyboard.press("Enter")
+    p.wait_for_url("**/animer.html?cours=dichotomie")
+    # les deux actions de cinq cartes : les adresses d'avant, et la page s'ouvre
+    for i in ("variables", "chaines", "revision-conditions-boucles", "sql", "revision-poo-piles-files"):
+        for action, adresse in (("Animer en classe", f"animer.html?cours={i}"), ("Réviser seul·e", f"revision.html?cours={i}")):
+            p.goto(base + "index.html")
+            lien = p.locator(f".qz-carte[data-cours={i}] a.bt", has_text=action)
+            assert lien.get_attribute("href") == adresse, f"{i} : {action}"
+            lien.click()
+            p.wait_for_url("**/" + adresse)
+            with open(os.path.join(RACINE, "cours", i + ".json"), encoding="utf-8") as f:
+                titre = json.load(f)["titre"]  # le titre du cours lui-même : la page l'a bien chargé
+            p.wait_for_function("t => document.body.innerText.includes(t)", arg=titre, timeout=8000)
+    ctx.close()
+    # sans JavaScript : la liste complète, les filtres cachés
+    ctx = nav.new_context(java_script_enabled=False)
+    p = ctx.new_page()
+    p.goto(base + "index.html")
+    assert p.locator(".qz-carte:visible").count() == len(cat["cours"]), "sans JavaScript : la liste complète"
+    assert p.is_hidden("#filtres")
+    ctx.close()
+    print(f"  bibliothèque : {total} cours-quiz ; cases Niveau, Type, Notions travaillées et leurs nombres, puces, recherche sans accents et alternatifs, adresse (et ancienne), aucun résultat, clavier, 5 cartes ouvertes, sans JavaScript, 3 largeurs")
+
+
 def main():
     s, base = serveur()
     with sync_playwright() as pw:
@@ -1198,6 +1315,7 @@ def main():
         series_masquees(nav, base)
         autres_types(nav, base)
         stockage(nav, base)
+        bibliotheque(nav, base)
         sans_chiffrement(nav, base)
         autonome(nav, base)
         rejouer(nav, base)

@@ -5,6 +5,8 @@
 | Fichier | Rôle |
 |---|---|
 | `index.html`, `animer.html`, `rejoindre.html`, `revision.html`, `imprimer.html` | l'accueil, la page projetée, la page élève, le mode autonome, la version à imprimer |
+| `js/accueil.js`, `css/bibliotheque.css` | l'accueil rangé en bibliothèque, affiné comme la bibliothèque du site (`assets/bibliotheque.js`) : cases Niveau, Type et Notions travaillées avec leur nombre, puces des filtres actifs, recherche sans accents (alternatifs et mots du code compris), compteur annoncé, état « aucun résultat », filtres dans l'adresse (`q`, `niv`, `type`, `notion`, comme sur le site) |
+| `css/socle-provisoire.css` | le socle du design des applications (piste B), chargé par l'accueil seulement, **à remplacer** par `assets/signal-commun.css` et `assets/applis.css` du site quand ils seront publiés |
 | `js/commun.js` | lecture d'un cours, mise en forme du texte, coloration du Python, schémas SVG, pseudo, stockage, thème |
 | `js/diapos.js` | le rendu des diapositives, des questions, des corrections et des apparitions progressives |
 | `js/seance.js` | la séance en direct (canaux temps réel, ou mode démo entre les onglets) |
@@ -14,7 +16,7 @@
 | `js/activites.js` | les autres types de questions (nuage de mots, relier, puzzle de code, ligne fautive) : contrôle d'une réponse, note, ordre d'affichage (fonctions pures) |
 | `js/activites-ui.js` | y répondre au téléphone et en révision (clavier et lecteur d'écran compris) |
 | `cours/` | les cours-quiz (un fichier JSON par cours) et le catalogue de l'accueil |
-| `outils/` | le vérificateur des cours et le contrôle des caractères |
+| `outils/` | le vérificateur des cours, la bibliothèque de l'accueil (`bibliotheque.py`) et le contrôle des caractères |
 | `vendor/` | le client temps réel de Supabase et le générateur de QR codes (MIT) |
 
 ## Ajouter un cours
@@ -26,6 +28,7 @@ python3 -I outils/verifier_cours.py cours/<id>.json     # gabarit (questions, é
                                                        # 4 options, une juste, feedbacks, répartition A-D,
                                                        # caractères, exécution du code
 python3 -I outils/verifier_cours.py --tous              # tous les cours, et le catalogue de l'accueil
+python3 -I outils/bibliotheque.py --ecrire              # réécrit la bibliothèque de index.html d'après le catalogue
 ```
 
 ## Les tests
