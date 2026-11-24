@@ -16,7 +16,7 @@ QuizzNSI fait partie des [Ressources NSI et SNT](https://babash.github.io/Babash
 
 1. **Tu** ouvres [la page d'animation](https://babash.github.io/quizz-nsi/animer.html?cours=piles-files) et la projettes : un code de 4 lettres, un lien et un QR code s'affichent. Tu choisis le temps par question (sans minuterie, ou de 20 s à 1 min 30) et le classement (à la fin, après chaque question, ou aucun).
 2. **Les élèves** rejoignent avec le QR code, le lien ou le code, depuis un téléphone ou un ordinateur, avec un prénom ou un pseudo (jamais un nom de famille). Un pseudo déplacé se retire d'un clic : l'élève en choisit un autre. À tout moment, **QR code en grand** (ou la touche **Q**) affiche le QR code et le code de la séance en très grand, lisibles du fond de la classe ; Q ou Échap les referme. Un·e élève en retard rejoint en cours de route : son téléphone arrive directement sur la diapositive ou la question en cours.
-3. **Tu avances dans le cours** (flèches, Entrée), 15 minutes pour une introduction, 25 à 45 pour une révision : les téléphones suivent les diapositives ; à chaque question, l'écran compte les réponses, puis **Montrer la réponse** affiche la répartition, l'erreur la plus fréquente avec son explication, et le feedback de chaque option.
+3. **Tu avances dans le cours** (flèches, Entrée), 15 minutes pour une introduction, 20 à 45 pour une révision : les téléphones suivent les diapositives ; à chaque question, l'écran compte les réponses, puis **Montrer la réponse** affiche la répartition, l'erreur la plus fréquente avec son explication, et le feedback de chaque option.
 
 **À la fin de la séance, le quiz se rejoue.** Le téléphone de chaque élève propose « Rejouer le quiz seul·e », et la page projetée affiche un QR code « rejouer » (dans le podium, et en grand avec la touche Q) : chacun·e rejoue les questions sans l'enseignant·e, dans un nouvel ordre et avec les réponses mélangées, corrigées tout de suite. Rien n'est envoyé ; l'ordre et les réponses restent dans l'onglet du téléphone, effacés à sa fermeture. Le lien : `revision.html?cours=<id>&rejouer`.
 
@@ -26,7 +26,7 @@ Une seule page projetée par séance : si une deuxième est ouverte (onglet dupl
 
 ## Les cours
 
-22 cours-quiz d'introduction, un par fiche de [FichesNSI](https://babash.github.io/fiches-nsi/), et 2 révisions. Le titre ouvre le mode autonome.
+22 cours-quiz d'introduction, un par fiche de [FichesNSI](https://babash.github.io/fiches-nsi/), et 3 révisions. Le titre ouvre le mode autonome.
 
 **Première NSI** (12 introductions, 1 révision, dans l'ordre de l'année)
 
@@ -46,7 +46,7 @@ Une seule page projetée par séance : si une deuxième est ouverte (onglet dupl
 | [Recherche dichotomique](https://babash.github.io/quizz-nsi/revision.html?cours=dichotomie) | introduction · 12 questions · 15 min | [animer](https://babash.github.io/quizz-nsi/animer.html?cours=dichotomie) · [imprimer](https://babash.github.io/quizz-nsi/imprimer.html?cours=dichotomie) |
 | [Algorithmes gloutons](https://babash.github.io/quizz-nsi/revision.html?cours=gloutons) | introduction · 12 questions · 15 min | [animer](https://babash.github.io/quizz-nsi/animer.html?cours=gloutons) · [imprimer](https://babash.github.io/quizz-nsi/imprimer.html?cours=gloutons) |
 
-**Terminale NSI** (10 introductions, 1 révision, dans l'ordre de l'année)
+**Terminale NSI** (10 introductions, 2 révisions, dans l'ordre de l'année)
 
 | Cours-quiz | Gabarit | Liens |
 |---|---|---|
@@ -72,7 +72,7 @@ Deux gabarits de cours-quiz ([le format](cours/FORMAT.md#les-gabarits)) :
 | Gabarit | Quand | Durée | Questions | Cours |
 |---|---|---|---|---|
 | **Introduction** | la première rencontre avec une notion, avant le cours ou TD applicatif, les TP, le TD type bac et la feuille de révision | 15 min | 12 | 8 écrans au plus, 25 mots au plus chacun : l'enseignant·e présente à l'oral, on apprend par les questions et leurs feedbacks |
-| **Révision** | un bilan avant un contrôle | 25 à 45 min | 20 | peu ou pas de cours |
+| **Révision** | un bilan avant un contrôle | 20 à 45 min | 20 | peu ou pas de cours |
 
 Le cours modèle, **piles et files**, est une introduction : 8 écrans très courts et 12 questions. Il part du quotidien à Mayotte (la boîte de chips en tube pour la pile, la file au doukabé et le bouchon vers Mamoudzou pour la file, les véhicules qui attendent la barge), puis passe à l'informatique (le bouton « Annuler », l'imprimante de la salle info).
 
@@ -91,6 +91,8 @@ Les 12 questions construisent la notion dans l'ordre :
 
 Les définitions (interface et implémentation), Python (`append`, `pop()`, `pop(0)` et son coût), la file à deux piles, les parenthèses et la pile d'appels viennent ensuite, dans le cours ou TD applicatif et le TD type bac, puis dans **[la révision « Piles et files »](https://babash.github.io/quizz-nsi/animer.html?cours=revision-piles-files)** (Terminale, 30 min) : 4 blocs de 5 questions (implémenter avec une liste, parcourir une pile, des files, applications), pour faire son bilan en fin de chapitre.
 
+**[La révision « POO, piles, files et rappels »](https://babash.github.io/quizz-nsi/animer.html?cours=revision-poo-piles-files)** (Terminale, 20 min) fait le bilan avant un contrôle : 3 blocs de questions à choix (5 rappels de première, 8 questions de programmation objet, 7 sur les piles et les files), avec un point sur la feuille de route à la fin de chaque bloc.
+
 Toutes les questions notées sont numérotées ensemble, quel que soit leur type : « Question 12 sur 12 » pour la ligne fautive de l'introduction (le nuage de mots, non noté, n'a pas de numéro). Dans une question « Trouve l'erreur » ou une ligne fautive dont le code s'arrête sur une erreur, le message réel de Python 3.13 s'affiche en entier (« Did you mean » compris) dans une console compacte sous le code ; le vérificateur exécute ce code et compare le message mot pour mot. Les messages de SQLite du cours SQL sont cités dans l'énoncé. Les autres codes n'affichent pas leur sortie : la trouver, c'est la question.
 
 Chaque question a un objectif affiché, quatre options tirées d'erreurs fréquentes et un feedback pour chacune. Chaque code affiché a été exécuté par le vérificateur.
@@ -99,7 +101,7 @@ Chaque question a un objectif affiché, quatre options tirées d'erreurs fréque
 
 | Usage | Comment |
 |---|---|
-| **Une séance en classe** (15 min pour une introduction, 25 à 45 pour une révision) | La page d'animation projetée, les téléphones des élèves. |
+| **Une séance en classe** (15 min pour une introduction, 20 à 45 pour une révision) | La page d'animation projetée, les téléphones des élèves. |
 | **En îlots** | Un téléphone pour deux ou pour l'îlot : on se met d'accord avant de répondre. |
 | **Pour s'entraîner seul·e** | Le mode autonome : les diapositives et les questions, des essais illimités, la correction quand on veut ; « Questions seules » saute les notions. |
 | **Pour rejouer après la séance** | « Rejouer le quiz » : les questions seules, dans un nouvel ordre, les réponses mélangées ; « Rejouer encore » tire un autre ordre. |
