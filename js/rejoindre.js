@@ -14,6 +14,7 @@
   const DOUZE_HEURES = 12 * 3600 * 1000;
   let moi = null, seance = null, phase = null, question = null, attenteHote = null, hoteVu = false, renvoi = null, chrono = null, total = 0, numero = 0;
   let clesHote = [], chiffreur = null, essais = 0;
+  let seriesVisibles = true; // le réglage « Afficher les séries » de l'enseignant·e, reçu avec chaque correction
   const ESSAIS_AVANT_ALERTE = 4; // 4 envois, toutes les 2 s, sans accusé de réception : on prévient
   const lesCours = new Map();
 
@@ -25,7 +26,7 @@
   /* ── L'entrée ───────────────────────────── */
   function afficherEntree(message) {
     if (seance) { seance.fermer(); seance = null; }
-    clearInterval(renvoi); clearInterval(chrono); clearTimeout(attenteHote);
+    clearInterval(renvoi); clearInterval(chrono); chrono = null; clearTimeout(attenteHote);
     $('jeu').hidden = true; $('entree').hidden = false; $('quitter').hidden = true;
     $('moi').textContent = ''; $('points').textContent = '';
     $('erreurPseudo').textContent = message || '';
@@ -129,7 +130,7 @@
       return;
     }
     if (m.t === 'attente') { phase = 'attente'; question = null; ecran(attente('Regarde l\'écran : la suite arrive.')); return; }
-    if (m.t === 'fermee') { if (question && m.qid === question.qid) { question.ferme = true; clearInterval(chrono); if (question.choix == null) ecran(attente('Temps écoulé : la correction arrive à l\'écran.')); } return; }
+    if (m.t === 'fermee') { if (question && m.qid === question.qid) { question.ferme = true; question.pause = false; clearInterval(chrono); chrono = null; if ($('pauseInfo')) $('pauseInfo').textContent = ''; if (question.choix == null) ecran(attente('Temps écoulé : la correction arrive à l\'écran.')); } return; }
     const n = ++numero; // seul le dernier message reçu s'affiche, même si son cours arrive plus tard
     obtenirCours(m.cours).then(cours => {
       if (!cours || n !== numero) return;
@@ -167,23 +168,25 @@
     const q = trouverQuestion(cours, m.qid);
     if (!q) return;
     if (q.type === 'nuage') { afficherNuage(cours, q, null); return; }
-    if (question && question.qid === q.id && phase === 'question') { if (m.ferme) question.ferme = true; return; } // déjà affichée
+    if (question && question.qid === q.id && phase === 'question') {
+      // déjà affichée : la minuterie suit la page projetée (+ 15 s, pause, reprise) ; une question fermée au zéro
+      // puis rouverte par « + 15 s » se réaffiche, pour répondre
+      if (!(question.ferme && !m.ferme)) { if (m.ferme) { question.ferme = true; clearInterval(chrono); chrono = null; } else synchroniser(m); majChrono(); return; }
+    }
     phase = 'question';
     const ancienne = historique().reps[q.id] || null; // la page rouverte retrouve la réponse déjà donnée
-    // le temps déjà écoulé depuis l'ouverture de la question (pour le bonus de rapidité, calculé ici)
-    const ecoule = m.duree > 0 && m.reste != null ? Math.max(0, m.duree * 1000 - m.reste) : 0;
     // une réponse déjà donnée (page rouverte) : contrôlée de nouveau contre la question du cours
     const avant = !ancienne ? null : qcu(q) ? (Number.isInteger(ancienne.c) ? ancienne.c : null) : Q.activites.valider(q, ancienne.r);
-    question = { qid: q.id, q, choix: avant, ms: ancienne ? ancienne.ms : null, n: ancienne ? ancienne.n : null,
-      depart: Date.now() - ecoule, recu: false, ferme: m.ferme, fin: m.reste != null ? Date.now() + m.reste : null };
+    question = { qid: q.id, q, choix: avant, ms: ancienne ? ancienne.ms : null, n: ancienne ? ancienne.n : null, recu: false, ferme: m.ferme };
+    synchroniser(m);
     const s = el('section', { class: 'd-question' + (qcu(q) ? '' : ' d-activite d-' + q.type) });
     if (qcu(q)) {
       s.appendChild(Q.fragmentCours(Q.rendreEnonce(q, cours.total)));
-      s.appendChild(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }));
+      s.append(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' }));
       s.appendChild(Q.fragmentCours(Q.rendreOptions(q, { boutons: true })));
     } else {
       s.appendChild(Q.fragmentCours(Q.rendreEnonceActivite(q, cours.total)));
-      s.appendChild(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }));
+      s.append(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' }));
       question.ui = Q.activiteUI(q, { reponse: avant, libelle: q.type === 'nuage' ? 'Envoyer' : 'Valider', onValider: choisir });
       s.appendChild(question.ui.noeud);
     }
@@ -192,16 +195,30 @@
     $('ecran').querySelectorAll('button.option').forEach(b => b.addEventListener('click', () => choisir(+b.dataset.choix)));
     if (question.choix != null || question.ferme) bloquer();
     if (question.choix != null) { majEnvoyee(); envoyerReponse(); }
-    clearInterval(chrono);
-    if (question.fin && !question.ferme) { majChrono(); chrono = setInterval(majChrono, 500); }
+    clearInterval(chrono); chrono = null;
+    if (question.duree > 0 && !question.ferme) { majChrono(); chrono = setInterval(majChrono, 500); }
     $('ecran').focus({ preventScroll: true }); window.scrollTo(0, 0);
     Q.annoncer('Question ' + q.numero + ' : ' + q.nom.replace(/`/g, ''));
   }
+  /* La minuterie, d'après le dernier message « question » de la page projetée : le temps déjà écoulé hors pause
+     (durée accordée moins le temps restant), puis le temps qui court depuis la réception, sauf en pause. */
+  function synchroniser(m) {
+    if (!question) return;
+    question.duree = m.duree; question.pause = m.pause;
+    question.base = m.duree > 0 && m.reste != null ? Math.max(0, m.duree * 1000 - m.reste) : 0;
+    question.depuis = m.pause ? null : Date.now();
+    if (m.duree > 0 && !question.ferme && !chrono) chrono = setInterval(majChrono, 500);
+  }
+  const ecouleIci = () => !question ? 0 : (question.base || 0) + (question.depuis ? Date.now() - question.depuis : 0);
   function majChrono() {
-    const z = $('chrono'); if (!z || !question || !question.fin) return;
-    const s = Math.max(0, Math.ceil((question.fin - Date.now()) / 1000));
-    z.textContent = '⏱ ' + s + ' s';
-    if (s === 0) clearInterval(chrono);
+    const z = $('chrono'); if (!z || !question || !(question.duree > 0)) return;
+    const s = Math.max(0, Math.ceil((question.duree * 1000 - ecouleIci()) / 1000));
+    // la pause se lit sans la couleur : le symbole, le mot et une phrase
+    z.textContent = (question.pause ? '‖ En pause · ' : '⏱ ') + s + ' s';
+    z.classList.toggle('en-pause', !!question.pause);
+    const p = $('pauseInfo');
+    if (p) p.textContent = question.pause && !question.ferme ? (question.choix == null ? 'Le temps est arrêté : tu peux lire et répondre, sans gain ni perte de rapidité.' : 'Le temps est arrêté.') : '';
+    if (s === 0 && !question.pause) { clearInterval(chrono); chrono = null; }
   }
   function bloquer() {
     if (question && question.ui) { question.ui.bloquer(); return; }
@@ -215,7 +232,7 @@
     const q = question.q;
     if (qcu(q) ? !(Number.isInteger(c) && c >= 0 && c <= 3) : Q.activites.valider(q, c) === null) return;
     if (!qcu(q)) c = Q.activites.valider(q, c);
-    question.choix = c; question.ms = Date.now() - question.depart; question.n = Q.nouvelId();
+    question.choix = c; question.ms = Math.round(ecouleIci()); question.n = Q.nouvelId();
     const h = historique(); h.reps[question.qid] = qcu(q) ? { c, ms: question.ms, n: question.n } : { r: c, ms: question.ms, n: question.n }; ecrireHistorique(h);
     bloquer(); majEnvoyee(); envoyerReponse();
     Q.annoncer(qcu(q) ? 'Réponse ' + Q.LETTRES[c] + ' choisie.' : 'Réponse envoyée.');
@@ -263,7 +280,7 @@
       if (!Q.messages.estQid(qid) || !r || typeof r !== 'object' || h.res[qid]) continue;
       const ok = (r.c === null || (Number.isInteger(r.c) && r.c >= 0 && r.c <= 3)) && Number.isInteger(r.gain) && r.gain >= 0 && r.gain <= 1000;
       if (!ok) continue;
-      h.ordre.push(qid); h.res[qid] = { c: r.c, juste: r.juste === true, gain: r.gain, rebond: r.rebond === true }; h.total += r.gain;
+      h.ordre.push(qid); h.res[qid] = { c: r.c, juste: r.juste === true, gain: r.gain, rebond: r.rebond === true, p: r.p === null || Q.messages.estQid(r.p) ? r.p : undefined }; h.total += r.gain;
     }
     return h;
   }
@@ -278,15 +295,26 @@
     const juste = rep ? rep.c === m.bonne : false;
     // le barème est celui du moteur (js/bareme.js), jamais celui reçu : une correction forgée ne gonfle pas les points
     const p = Q.bareme.points(rep ? { juste, ms: rep.ms } : null, { duree: m.duree, precedente: pr }, Q.bareme.BAREME);
-    const r = { c: rep ? rep.c : null, juste, gain: p.total, rebond: p.detail.rebond > 0 };
+    const r = { c: rep ? rep.c : null, juste, gain: p.total, rebond: p.detail.rebond > 0, p: m.precedente };
     h.ordre.push(m.qid); h.res[m.qid] = r; h.total += p.total;
     ecrireHistorique(h);
     return { h, r, detail: rep ? p.detail : null };
   }
   const bilanDe = h => {
     const suite = h.ordre.map(q => h.res[q].c === null ? null : h.res[q].juste ? 'juste' : 'faux');
-    return Object.assign(Q.bareme.progression(suite), { suite });
+    // pour la série : une correction manquée (téléphone hors ligne) compte comme une question sans réponse, comme
+    // sur la page projetée ; on la repère à la question corrigée juste avant, notée avec chaque résultat
+    const pourSerie = [];
+    h.ordre.forEach((q, i) => { const p = h.res[q].p; if (typeof p === 'string' && p !== h.ordre[i - 1]) pourSerie.push(null); pourSerie.push(suite[i]); });
+    return Object.assign(Q.bareme.progression(suite), { suite, flamme: Q.bareme.serie(pourSerie) });
   };
+  // La flamme après la correction (à partir de 2 d'affilée), ou « nouvelle série à la prochaine », jamais un reproche.
+  function blocSerie(b) {
+    if (!seriesVisibles) return null;
+    if (b.flamme.n >= 2) return el('p', { class: 'serie' }, Q.flamme(b.flamme.n, b.flamme.palier), ' ', el('span', { class: 'serie-mot' }, b.flamme.palier ? 'Bravo, ça chauffe !' : 'Continue comme ça.'));
+    if (b.flamme.casse) return el('p', { class: 'serie neutre' }, 'Nouvelle série à la prochaine.');
+    return null;
+  }
 
   function suite(s) {
     if (!s.length) return null;
@@ -301,8 +329,9 @@
     const q = trouverQuestion(cours, m.qid);
     if (!q) return;
     if (q.bonne !== m.bonne) return; // la bonne réponse annoncée doit être celle du fichier du cours
-    clearInterval(renvoi); clearInterval(chrono);
+    clearInterval(renvoi); clearInterval(chrono); chrono = null;
     phase = 'correction';
+    seriesVisibles = m.series;
     const note = noter(m), r = note.r;
     const choix = r.c;
     question = { qid: q.id, q, choix, recu: true, ferme: true };
@@ -322,8 +351,8 @@
     }
     {
       const b = bilanDe(note.h);
-      s.appendChild(el('div', { class: 'cadre' }, el('p', {}, el('strong', {}, pluriel(b.justes, 'juste')), ' sur ' + pluriel(b.repondues, 'réponse')
-        + (b.serie > 1 ? ' · série en cours : ' + b.serie : '') + (b.rebonds ? ' · rebonds : ' + b.rebonds : '')), suite(b.suite)));
+      s.appendChild(el('div', { class: 'cadre' }, blocSerie(b), el('p', {}, el('strong', {}, pluriel(b.justes, 'juste')), ' sur ' + pluriel(b.repondues, 'réponse')
+        + (b.rebonds ? ' · rebonds : ' + b.rebonds : '')), suite(b.suite)));
     }
     if (m.podium && m.podium.some(p => p.pseudo === moi.pseudo)) s.appendChild(el('p', { class: 'rebonds' }, 'Tu es sur le podium en ce moment.'));
     ecran(s);
@@ -336,8 +365,9 @@
   function afficherCorrige(cours, m) {
     const q = trouverQuestion(cours, m.qid);
     if (!q || qcu(q)) return;
-    clearInterval(renvoi); clearInterval(chrono);
+    clearInterval(renvoi); clearInterval(chrono); chrono = null;
     phase = 'correction';
+    seriesVisibles = m.series;
     const h0 = historique();
     const brute = question && question.qid === q.id && question.choix != null ? question.choix : (h0.reps[q.id] ? h0.reps[q.id].r : null);
     const reponse = brute == null ? null : Q.activites.valider(q, brute), ms = question && question.qid === q.id && question.ms != null ? question.ms : (h0.reps[q.id] ? h0.reps[q.id].ms : 0);
@@ -358,7 +388,7 @@
       const pr = m.precedente && h0.res[m.precedente] && h0.res[m.precedente].c !== null ? (h0.res[m.precedente].juste ? 'juste' : 'faux') : null;
       const n = reponse == null ? null : Q.activites.noter(q, reponse);
       const p = Q.bareme.points(n ? { juste: n.juste, ms, part: n.part } : null, { duree: m.duree, precedente: pr }, Q.bareme.BAREME);
-      r = { c: n ? 0 : null, juste: !!(n && n.juste), gain: p.total, rebond: p.detail.rebond > 0 };
+      r = { c: n ? 0 : null, juste: !!(n && n.juste), gain: p.total, rebond: p.detail.rebond > 0, p: m.precedente };
       h0.ordre.push(q.id); h0.res[q.id] = r; h0.total += p.total; ecrireHistorique(h0);
       gain = p.total; detail = n ? p.detail : null;
     } else r = h0.res[q.id];
@@ -373,8 +403,8 @@
       if (detail.rebond) s.appendChild(el('p', { class: 'rebonds' }, 'Beau rebond : tu t\'es repris·e juste après une erreur.'));
     }
     const b = bilanDe(h0);
-    s.appendChild(el('div', { class: 'cadre' }, el('p', {}, el('strong', {}, pluriel(b.justes, 'juste')), ' sur ' + pluriel(b.repondues, 'réponse')
-      + (b.serie > 1 ? ' · série en cours : ' + b.serie : '') + (b.rebonds ? ' · rebonds : ' + b.rebonds : '')), suite(b.suite)));
+    s.appendChild(el('div', { class: 'cadre' }, blocSerie(b), el('p', {}, el('strong', {}, pluriel(b.justes, 'juste')), ' sur ' + pluriel(b.repondues, 'réponse')
+      + (b.rebonds ? ' · rebonds : ' + b.rebonds : '')), suite(b.suite)));
     if (m.podium && m.podium.some(p => p.pseudo === moi.pseudo)) s.appendChild(el('p', { class: 'rebonds' }, 'Tu es sur le podium en ce moment.'));
     ecran(s);
     $('ecran').focus({ preventScroll: true }); window.scrollTo(0, 0);
@@ -402,7 +432,7 @@
   }
   function afficherNuage(cours, q, mots) {
     if (!q || q.type !== 'nuage') return;
-    clearInterval(renvoi); clearInterval(chrono);
+    clearInterval(renvoi); clearInterval(chrono); chrono = null;
     if (!nuage || nuage.qid !== q.id || phase !== 'nuage') {
       phase = 'nuage'; question = null;
       nuage = { qid: q.id, q, mots: null, miens: new Map(), votes: new Set(), envois: new Map(), pret: 0, erreur: '' };
@@ -454,13 +484,13 @@
   }
 
   function afficherFin(cours, m) {
-    phase = 'fin'; question = null; clearInterval(renvoi); clearInterval(chrono);
+    phase = 'fin'; question = null; clearInterval(renvoi); clearInterval(chrono); chrono = null;
     const h = historique(), s = el('section', { class: 'attente' }, el('p', { class: 'grand' }, 'Fin de la séance'));
     if (h.ordre.length) {
       total = h.total; majPoints();
       const b = bilanDe(h);
       s.append(el('p', { class: 'gains' }, total + ' points'),
-        el('p', {}, el('strong', {}, b.justes + ' sur ' + cours.interactifs.filter(q => q.type !== 'nuage').length), ' bonnes réponses · meilleure série : ' + b.meilleure + ' · rebonds : ' + b.rebonds));
+        el('p', {}, el('strong', {}, b.justes + ' sur ' + cours.interactifs.filter(q => q.type !== 'nuage').length), ' bonnes réponses' + (seriesVisibles ? ' · meilleure série : ' + b.meilleure : '') + ' · rebonds : ' + b.rebonds));
       const sv = suite(b.suite); if (sv) s.appendChild(sv);
       // la place n'est connue que sur le podium affiché à toute la classe ; aucune autre place n'est envoyée
       const pl = m.podium ? m.podium.find(p => p.pseudo === moi.pseudo) : null;

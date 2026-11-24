@@ -10,7 +10,7 @@
 | `js/seance.js` | la séance en direct (canaux temps réel, ou mode démo entre les onglets) |
 | `js/messages.js` | la validation stricte de chaque message reçu |
 | `js/chiffre.js` | le chiffrement des réponses pour la page projetée |
-| `js/bareme.js` | le barème, le classement, la progression |
+| `js/bareme.js` | le barème, le classement, la progression, la minuterie (+ 15 s, pause, temps écoulé hors pause) et les séries (flammes) |
 | `js/activites.js` | les autres types de questions (nuage de mots, relier, puzzle de code, ligne fautive) : contrôle d'une réponse, note, ordre d'affichage (fonctions pures) |
 | `js/activites-ui.js` | y répondre au téléphone et en révision (clavier et lecteur d'écran compris) |
 | `cours/` | les cours-quiz (un fichier JSON par cours) et le catalogue de l'accueil |
@@ -31,10 +31,10 @@ python3 -I outils/verifier_cours.py --tous              # tous les cours, et le 
 ## Les tests
 
 ```bash
-node tests/test_moteur.js                                   # barème, pseudo, échappement, schémas
+node tests/test_moteur.js                                   # barème (rapidité avec pause et ajouts), minuterie, séries, pseudo, échappement, schémas
 node tests/test_messages.js                                 # messages forgés : tous rejetés
 python3 -I -m unittest discover -s tests -p "test_v*.py"    # le vérificateur
-python3 -I tests/test_parcours.py                           # Playwright : séance à 2 élèves, injection, mode autonome,
+python3 -I tests/test_parcours.py                           # Playwright : séance à 2 élèves, injection, minuterie et flammes, mode autonome,
                                                             # impression, 320/768/1440 px, clair et obscur
 ```
 

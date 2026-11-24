@@ -6,7 +6,7 @@
    pseudos ne s'affichent que par textContent ; l'état relu dans le stockage est contrôlé. */
 (function () {
   'use strict';
-  const Q = window.QuizzNSI, $ = Q.$, B = Q.bareme, el = Q.el;
+  const Q = window.QuizzNSI, $ = Q.$, B = Q.bareme, el = Q.el, MN = Q.bareme.minuterie;
   let cours, seance = null, st, presents = new Map(), renvoi = null;
   const cle = () => 'animer:' + cours.id;
   const sauver = () => Q.session.ecrire(cle(), st);
@@ -18,7 +18,7 @@
   const qcu = d => !!d && d.type === 'question';
 
   function etatNeuf(code) {
-    return { code: code || Q.nouveauCode(), id: Q.nouvelId(), commence: false, index: 0, f: 0, duree: 45, podium: 'fin',
+    return { code: code || Q.nouveauCode(), id: Q.nouvelId(), commence: false, index: 0, f: 0, duree: 45, podium: 'fin', series: true,
       joueurs: {}, bannis: [], q: {}, ordre: [], fini: false };
   }
 
@@ -30,12 +30,17 @@
     if (!ent(v.index, 0, cours.diapositives.length - 1) || !DUREES.includes(v.duree) || !PODIUMS.includes(v.podium)) return null;
     const qids = new Set(cours.interactifs.map(q => q.id)), parId = new Map(cours.interactifs.map(q => [q.id, q]));
     const st = etatNeuf(v.code);
-    Object.assign(st, { id: v.id, commence: v.commence === true, fini: v.fini === true, index: v.index, f: ent(v.f, 0, 100) ? v.f : 0, duree: v.duree, podium: v.podium });
+    Object.assign(st, { id: v.id, commence: v.commence === true, fini: v.fini === true, index: v.index, f: ent(v.f, 0, 100) ? v.f : 0, duree: v.duree, podium: v.podium, series: v.series !== false });
     st.bannis = Array.isArray(v.bannis) ? v.bannis.filter(c => typeof c === 'string' && /^[a-z0-9]{0,64}$/.test(c)) : [];
     st.ordre = Array.isArray(v.ordre) ? v.ordre.filter(q => qids.has(q)) : [];
     if (v.q && typeof v.q === 'object') for (const [qid, e] of Object.entries(v.q)) {
-      if (!qids.has(qid) || !e || typeof e !== 'object' || !ent(e.ouverte, 0, 1e14) || !(e.fin === null || ent(e.fin, 0, 1e14))) continue;
-      st.q[qid] = { ouverte: e.ouverte, fin: e.fin, ferme: e.ferme === true, revelee: e.revelee === true, raison: typeof e.raison === 'string' ? e.raison.slice(0, 40) : '',
+      if (!qids.has(qid) || !e || typeof e !== 'object' || !ent(e.ouverte, 0, 1e14)) continue;
+      // la minuterie de la question : durée de départ, ajouts de 15 s, pauses (un état d'avant T131 n'a que « fin »)
+      const ancienne = ent(e.fin, 0, 1e14) ? Math.round((e.fin - e.ouverte) / 1000) : 0;
+      const duree = DUREES.includes(e.duree) ? e.duree : DUREES.includes(ancienne) ? ancienne : e.fin === null ? 0 : v.duree;
+      const pauseDepuis = ent(e.pauseDepuis, e.ouverte, 1e14) && duree > 0 && e.ferme !== true ? e.pauseDepuis : null;
+      st.q[qid] = { ouverte: e.ouverte, duree, ajouts: ent(e.ajouts, 0, MN.MAX_AJOUTS) && duree > 0 ? e.ajouts : 0, pauseMs: ent(e.pauseMs, 0, 1e10) ? e.pauseMs : 0, pauseDepuis,
+        parTemps: e.parTemps === true && e.ferme === true, ferme: e.ferme === true, revelee: e.revelee === true, raison: typeof e.raison === 'string' ? e.raison.slice(0, 40) : '',
         rebonds: Array.isArray(e.rebonds) ? e.rebonds.filter(p => Q.filtrerPseudo(p).ok) : [],
         seuil: e.seuil === 2 ? 2 : 1, nuage: parId.get(qid).type === 'nuage' ? nuageRelu(e.nuage) : undefined };
     }
@@ -109,7 +114,7 @@
     $('nbEleves').textContent = enLigne.length; $('nbEleves2').textContent = enLigne.length; $('nbBarre').textContent = txt;
     if (!st.fini) $('qrNb').textContent = 'Dans la séance : ' + txt + '.';
     const items = () => l.map(j => el('li', { class: presents.has(j.id) ? '' : 'absent' },
-      el('span', {}, j.pseudo, presents.has(j.id) ? null : el('small', {}, ' (déconnecté·e)')),
+      el('span', {}, j.pseudo, st.commence ? flammeDe(st.joueurs[j.id]) : null, presents.has(j.id) ? null : el('small', {}, ' (déconnecté·e)')),
       el('button', { type: 'button', class: 'retirer', 'data-retirer': j.id, 'aria-label': 'Retirer le pseudo ' + j.pseudo }, 'Retirer')));
     $('eleves').replaceChildren(...(l.length ? items() : [el('li', { class: 'vide' }, 'Personne pour l\'instant.')]));
     $('eleves2').replaceChildren(...items());
@@ -145,12 +150,13 @@
       if (d.type === 'nuage') { recevoirNuage(d, etat, m, recu); return; }
       if (etat.ferme) return;
       if (!j.rep[d.id]) {
-        if (qcu(d)) { if (m.c === undefined) return; j.rep[d.id] = { c: m.c, ms: recu - etat.ouverte }; }
+        // le temps de réponse : écoulé hors pause (une réponse pendant la pause compte le temps du début de la pause)
+        if (qcu(d)) { if (m.c === undefined) return; j.rep[d.id] = { c: m.c, ms: MN.ecoule(etat, recu) }; }
         else {
           // une réponse d'un autre type est contrôlée contre la diapositive du cours (longueur, indices, mot filtré)
           const a = m.r === undefined ? null : Q.activites.valider(d, m.r);
           if (a === null) return;
-          j.rep[d.id] = { a, ms: recu - etat.ouverte };
+          j.rep[d.id] = { a, ms: MN.ecoule(etat, recu) };
         }
         sauver(); majStatut(); if (d.type === 'nuage') majNuage(d);
       }
@@ -201,7 +207,8 @@
   // Les messages ne portent que des identifiants et des nombres : le texte est dans le fichier du cours.
   function messageQuestion(d) {
     const e = st.q[d.id];
-    return { t: 'question', cours: cours.id, qid: d.id, reste: e && e.fin ? Math.max(0, Math.round(e.fin - Date.now())) : null, duree: st.duree, ferme: !!(e && e.ferme) };
+    const t = Date.now(), duree = e ? MN.accordee(e) : 0, ferme = !!(e && e.ferme);
+    return { t: 'question', cours: cours.id, qid: d.id, reste: duree ? Math.min(duree * 1000, Math.round(MN.reste(e, t))) : null, duree, ferme, pause: !!(e && duree && !ferme && MN.enPause(e)) };
   }
   // La correction ne diffuse que ce que l'écran projeté montre à toute la classe : la bonne réponse,
   // la répartition en nombres, le podium s'il est affiché. Chaque téléphone calcule ses points avec le
@@ -213,11 +220,11 @@
       // un autre type : seulement le nombre de réponses et de réponses tout à fait justes ; chaque téléphone compare
       // sa réponse à la solution du fichier du cours. Les mots du nuage ne sont jamais envoyés aux téléphones.
       const l = joueursActifs().filter(j => j.rep[d.id]);
-      return { t: 'corrige', cours: cours.id, qid: d.id, precedente: k > 0 ? st.ordre[k - 1] : null, duree: st.duree, nb: l.length,
-        justes: l.filter(j => j.rep[d.id].juste === true).length, podium: st.podium === 'chaque' ? podiumPublic() : null };
+      return { t: 'corrige', cours: cours.id, qid: d.id, precedente: k > 0 ? st.ordre[k - 1] : null, duree: MN.accordee(st.q[d.id]), nb: l.length,
+        justes: l.filter(j => j.rep[d.id].juste === true).length, podium: st.podium === 'chaque' ? podiumPublic() : null, series: st.series };
     }
     return { t: 'correction', cours: cours.id, qid: d.id, precedente: k > 0 ? st.ordre[k - 1] : null, bonne: d.bonne, rep: repartition(d),
-      bareme: Object.assign({}, B.BAREME), duree: st.duree, podium: st.podium === 'chaque' ? podiumPublic() : null };
+      bareme: Object.assign({}, B.BAREME), duree: MN.accordee(st.q[d.id]), podium: st.podium === 'chaque' ? podiumPublic() : null, series: st.series };
   }
   function messagePhase() {
     const d = diapo();
@@ -235,6 +242,10 @@
     const p = B.progression(resultats);
     return { justes: p.justes, repondues: p.repondues, serie: p.serie, meilleure: p.meilleure, rebonds: p.rebonds, suite: resultats };
   }
+  // la série en cours d'un·e élève (les flammes) : bonnes réponses d'affilée dans cette séance
+  const serieDe = j => B.serie(bilanJoueur(j).suite);
+  // la flamme et « 3 d'affilée », à côté d'un pseudo, à partir de 2 d'affilée (si le réglage le permet)
+  const flammeDe = j => { if (!st.series || !j) return null; const s = serieDe(j); return s.n >= 2 ? Q.flamme(s.n, false) : null; };
   const repartition = d => B.repartition(joueursActifs().map(j => j.rep[d.id] ? j.rep[d.id].c : null));
   const podium = () => B.classer(joueursActifs().map(j => ({ id: j.id, pseudo: j.pseudo, total: j.total, justes: bilanJoueur(j).justes })));
 
@@ -253,7 +264,8 @@
       let part;
       if (qcu(d)) r.juste = r.c === d.bonne;
       else { const n = Q.activites.noter(d, r.a); r.juste = n.juste; part = n.part; }
-      const p = B.points({ juste: r.juste, ms: r.ms, part }, { duree: st.duree, precedente: pr });
+      // la rapidité : le temps écoulé hors pause, rapporté à la durée accordée (départ + ajouts)
+      const p = B.points({ juste: r.juste, ms: r.ms, part }, { duree: MN.accordee(e), precedente: pr });
       r.gain = p.total; r.detail = p.detail; j.total += p.total;
       if (p.detail.rebond && !j.retire) e.rebonds.push(j.pseudo);
     }
@@ -261,20 +273,59 @@
     st.ordre.push(d.id);
     sauver();
     envoyer(messageCorrection(d));
+    majEleves();
   }
 
   /* ── Ouvrir, fermer, corriger une question ── */
   function ouvrir(d) {
     if (st.q[d.id]) return;
-    st.q[d.id] = { ouverte: Date.now(), fin: st.duree > 0 ? Date.now() + st.duree * 1000 : null, ferme: false, revelee: false, seuil: 1, nuage: d.type === 'nuage' ? Q.activites.nuageVide() : undefined };
+    // la durée choisie au moment où la question s'ouvre (le nuage de mots n'a pas de minuterie)
+    const duree = d.type === 'nuage' ? 0 : st.duree;
+    st.q[d.id] = { ouverte: Date.now(), duree, ajouts: 0, pauseMs: 0, pauseDepuis: null, parTemps: false, ferme: false, revelee: false, seuil: 1, nuage: d.type === 'nuage' ? Q.activites.nuageVide() : undefined };
     sauver();
   }
-  function fermer(d, raison) {
+  function fermer(d, raison, parTemps) {
     const e = st.q[d.id];
     if (!e || e.ferme) return;
-    e.ferme = true; e.raison = raison || 'Réponses fermées.'; sauver();
+    MN.reprendre(e, Date.now()); // une pause en cours s'arrête avec la question
+    e.ferme = true; e.parTemps = !!parTemps; e.raison = raison || 'Réponses fermées.'; sauver();
     envoyer({ t: 'fermee', qid: d.id });
-    majStatut(); majAction();
+    majStatut(); majAction(); majMinuterie();
+  }
+
+  /* ── La minuterie : + 15 s, pause, reprise ──
+     Pour toute la classe : la page projetée change l'état de la question et renvoie le message « question » (temps
+     restant hors pause, durée accordée, pause), que chaque téléphone suit. Le barème compte le temps écoulé hors pause,
+     rapporté à la durée accordée (js/bareme.js). */
+  const minuterieQ = () => { const d = st && st.commence ? diapo() : null; return inter(d) && d.type !== 'nuage' && st.q[d.id] && !st.q[d.id].revelee ? d : null; };
+  // + 15 s : possible tant que la question n'est pas corrigée, même après le zéro (elle rouvre avec 15 s), mais pas
+  // quand tout le monde a déjà répondu (il n'y a plus personne à attendre)
+  const peutAjouter = d => { const e = d && st.q[d.id]; return !!e && e.duree > 0 && e.ajouts < MN.MAX_AJOUTS && (!e.ferme || e.parTemps); };
+  function plus15() {
+    const d = minuterieQ(); if (!peutAjouter(d)) return;
+    const e = st.q[d.id], t = Date.now();
+    if (e.ferme) { e.ferme = false; e.parTemps = false; e.raison = ''; }
+    MN.ajouter(e, t);
+    sauver(); envoyer(messageQuestion(d)); majStatut(); majMinuterie(); majAction();
+    Q.annoncer('15 secondes de plus : il reste ' + Math.ceil(MN.reste(e, t) / 1000) + ' s.');
+  }
+  function basculerPause() {
+    const d = minuterieQ(); if (!d) return;
+    const e = st.q[d.id], t = Date.now();
+    if (e.ferme || !(e.duree > 0)) return;
+    const ok = MN.enPause(e) ? MN.reprendre(e, t) : MN.pause(e, t);
+    if (!ok) return;
+    sauver(); envoyer(messageQuestion(d)); majStatut(); majMinuterie();
+    Q.annoncer(MN.enPause(e) ? 'Minuterie en pause. Les élèves peuvent lire et répondre.' : 'Minuterie relancée.');
+  }
+  function majMinuterie() {
+    const d = minuterieQ(), e = d ? st.q[d.id] : null, avec = !!e && e.duree > 0;
+    $('plus15').disabled = !peutAjouter(d);
+    const p = $('pause'), enP = avec && MN.enPause(e);
+    p.disabled = !avec || e.ferme || (!enP && MN.reste(e, Date.now()) <= 0);
+    p.setAttribute('aria-pressed', String(enP));
+    p.textContent = enP ? '▶ Reprendre (S)' : '‖ Pause (S)';
+    if ($('dureeSuite').value !== String(st.duree)) $('dureeSuite').value = String(st.duree);
   }
 
   /* ── L'affichage ────────────────────────── */
@@ -287,7 +338,7 @@
     $('prec').disabled = st.index === 0;
     if (inter(d)) { ouvrir(d); if (st.q[d.id].revelee) montrerCorrection(d); else if (d.type === 'nuage') majNuage(d); }
     envoyer(messagePhase());
-    majStatut(); majAction();
+    majStatut(); majAction(); majMinuterie();
     $('scene').focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
@@ -303,8 +354,8 @@
       return;
     }
     if (e.revelee) t = n + ' réponse' + (n > 1 ? 's' : '') + ' · correction affichée';
-    else if (e.ferme) t += ' · ' + (e.raison || 'réponses fermées');
-    else if (e.fin) t = '⏱ ' + Math.max(0, Math.ceil((e.fin - Date.now()) / 1000)) + ' s · ' + t;
+    else if (e.ferme) t += ' · ' + (e.raison || 'réponses fermées') + (e.parTemps ? ' (+ 15 s rouvre)' : '');
+    else if (e.duree > 0) t = (MN.enPause(e) ? '‖ En pause · ' : '⏱ ') + Math.ceil(MN.reste(e, Date.now()) / 1000) + ' s · ' + t;
     z.textContent = t;
   }
 
@@ -334,11 +385,20 @@
     const zone = sc.querySelector('.zone-correction');
     zone.replaceChildren(el('p', { class: 'bilan-q' }, el('strong', {}, justes + ' sur ' + total), ' ' + (justes > 1 ? 'ont' : 'a') + ' trouvé la bonne réponse, ' + Q.LETTRES[d.bonne] + '.',
       e.rebonds && e.rebonds.length ? el('span', { class: 'rebonds' }, ' Beaux rebonds : ' + e.rebonds.join(', ') + '.') : null));
+    const ls = ligneSeries(); if (ls) zone.appendChild(ls);
     // le reste vient du fichier du cours (contenu local)
     if (pire >= 0) zone.appendChild(Q.fragmentCours('<div class="erreur-frequente">' + Q.pastille(pire) + '<div><p class="fb-titre">Erreur la plus fréquente</p><p>' + Q.texte(d.options[pire].feedback) + '</p></div></div>'));
     zone.appendChild(Q.fragmentCours(Q.rendreCorrection(d, null, { projection: true })));
     majStatut(); majAction();
     if (st.podium === 'chaque' && joueursActifs().length) setTimeout(montrerPodium, 50);
+  }
+
+  // Les séries en cours, à côté des pseudos (ordre alphabétique : ce n'est pas un classement), à partir de 2 d'affilée.
+  function ligneSeries() {
+    if (!st.series) return null;
+    const l = joueursActifs().map(j => ({ j, s: serieDe(j) })).filter(x => x.s.n >= 2).sort((a, b) => a.j.pseudo.localeCompare(b.j.pseudo, 'fr'));
+    if (!l.length) return null;
+    return el('p', { class: 'series' }, el('strong', {}, 'En série : '), ...l.flatMap((x, i) => [i ? ', ' : '', el('span', { class: 'qui-serie' }, x.j.pseudo, ' ', Q.flamme(x.s.n, x.s.palier))]), '.');
   }
 
   /* ── Les autres types de questions, sur la page projetée ── */
@@ -362,6 +422,7 @@
       const c = d.code.map((_, i) => l.filter(j => j.rep[d.id].a === i).length);
       stats.push(el('ol', { class: 'reussite' }, c.map((k, i) => k || i === d.ligne - 1 ? el('li', { class: i === d.ligne - 1 ? 'bonne' : '' }, el('span', { class: 'q' }, 'L' + (i + 1)), barre(pct(k, n)), el('span', {}, k + ' (' + pct(k, n) + ' %)')) : null).filter(Boolean)));
     }
+    const ls = ligneSeries(); if (ls) stats.push(ls);
     zone.replaceChildren(...stats);
     // la solution vient du fichier du cours (contenu local)
     zone.appendChild(Q.fragmentCours(Q.rendreCorrectionActivite(d, null, { tousOuverts: true })));
@@ -418,7 +479,7 @@
     // d'abord les apparitions progressives de la diapositive, une à une
     if (d.type !== 'question' && fragmentsRestants() > 0) { st.f++; sauver(); Q.montrerFragments($('scene'), st.f); envoyer(messagePhase()); majAction(); return; }
     if (st.index === cours.diapositives.length - 1) { terminer(); return; }
-    if (inter(d) && st.q[d.id] && !st.q[d.id].revelee) { corriger(d); montrerCorrection(d); Q.annoncer(d.type === 'nuage' ? 'Nuage affiché.' : 'Correction affichée.'); return; }
+    if (inter(d) && st.q[d.id] && !st.q[d.id].revelee) { corriger(d); montrerCorrection(d); majMinuterie(); Q.annoncer(d.type === 'nuage' ? 'Nuage affiché.' : 'Correction affichée.'); return; }
     aller(st.index + 1);
   }
   function aller(i) {
@@ -435,7 +496,7 @@
     const n = [];
     if (st.podium !== 'jamais' || final === 'force') {
       n.push(el('ol', { class: 'podium' }, l.filter(j => j.place <= 3).slice(0, 6).map(j => el('li', { class: 'place' + j.place },
-        el('span', { class: 'rang' }, j.place + (j.place === 1 ? 're' : 'e')), el('span', { class: 'qui' }, j.pseudo), el('span', { class: 'pts' }, j.total + ' points')))));
+        el('span', { class: 'rang' }, j.place + (j.place === 1 ? 're' : 'e')), el('span', { class: 'qui' }, j.pseudo, ' ', flammeDe(st.joueurs[j.id])), el('span', { class: 'pts' }, j.total + ' points')))));
     }
     // la progression de la classe : la réussite question par question
     if (justes.length) {
@@ -520,7 +581,7 @@
 
   function demarrerCours() {
     const du = +$('duree').value, po = $('podium').value;
-    st.duree = DUREES.includes(du) ? du : 45; st.podium = PODIUMS.includes(po) ? po : 'fin';
+    st.duree = DUREES.includes(du) ? du : 45; st.podium = PODIUMS.includes(po) ? po : 'fin'; st.series = $('series').value !== 'non';
     st.commence = true; sauver();
     $('accueil').hidden = true; $('scene').hidden = false; $('commandes').hidden = false;
     $('pastilleSeance').hidden = false; $('btnRejoindre').hidden = false; $('btnPodium').hidden = false;
@@ -537,7 +598,7 @@
     st = etatRelu(Q.session.lire('animer:' + cours.id, null));
     const reprise = st && st.commence;
     if (!st) st = etatNeuf();
-    $('duree').value = String(st.duree); $('podium').value = st.podium;
+    $('duree').value = String(st.duree); $('podium').value = st.podium; $('series').value = st.series ? 'oui' : 'non'; $('dureeSuite').value = String(st.duree);
     $('accueil').hidden = false;
     if (reprise) { $('reprendre').hidden = false; $('commencer').textContent = 'Recommencer au début'; }
     connecter();
@@ -553,6 +614,14 @@
     document.addEventListener('click', ev => { const b = ev.target.closest('[data-retirer]'); if (b && Q.messages.estId(b.dataset.retirer)) retirer(b.dataset.retirer); });
     $('prec').addEventListener('click', () => aller(st.index - 1));
     $('action').addEventListener('click', action);
+    $('plus15').addEventListener('click', plus15);
+    $('pause').addEventListener('click', basculerPause);
+    // le temps des questions suivantes : modifiable en cours de séance ; la question déjà ouverte garde le sien
+    $('dureeSuite').addEventListener('change', () => {
+      const v = +$('dureeSuite').value; if (!DUREES.includes(v)) return;
+      st.duree = v; $('duree').value = String(v); sauver();
+      Q.annoncer(v ? 'Questions suivantes : ' + v + ' s.' : 'Questions suivantes : sans minuterie.');
+    });
     $('btnPodium').addEventListener('click', () => montrerPodium('force'));
     $('btnRejoindre').addEventListener('click', () => { const c = $('carteRejoindre'); c.hidden = !c.hidden; $('btnRejoindre').setAttribute('aria-expanded', String(!c.hidden)); });
     $('btnPleinEcran').addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); });
@@ -562,8 +631,12 @@
     document.addEventListener('keydown', ev => {
       if ((ev.key === 'q' || ev.key === 'Q') && !ev.altKey && !ev.ctrlKey && !ev.metaKey && !(ev.target.closest && ev.target.closest('input, select, textarea'))) { ev.preventDefault(); basculerQrGrand(); return; }
       if (!st.commence || $('podiumBoite').open || $('qrBoite').open || $('motsBoite').open) return;
-      if (ev.target.closest && ev.target.closest('input, select, textarea, button, a, summary')) return;
+      if (ev.target.closest && ev.target.closest('input, select, textarea')) return;
       if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
+      // la minuterie : + 15 s (touche + ou T), pause et reprise (touche S), même quand un bouton a le focus
+      if (ev.key === '+' || ev.key === 't' || ev.key === 'T') { ev.preventDefault(); plus15(); return; }
+      if (ev.key === 's' || ev.key === 'S') { ev.preventDefault(); basculerPause(); return; }
+      if (ev.target.closest && ev.target.closest('button, a, summary')) return;
       if (ev.key === 'ArrowRight' || ev.key === 'Enter' || ev.key === ' ' || ev.key === 'PageDown') { ev.preventDefault(); action(); }
       else if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') { ev.preventDefault(); aller(st.index - 1); }
       else if (ev.key === 'p' || ev.key === 'P') montrerPodium('force');
@@ -572,8 +645,9 @@
     setInterval(() => {
       if (!st.commence) return;
       const d = diapo();
-      if (inter(d) && d.type !== 'nuage' && st.q[d.id] && !st.q[d.id].ferme && st.q[d.id].fin && Date.now() >= st.q[d.id].fin) fermer(d, 'Temps écoulé.');
-      majStatut();
+      const e = inter(d) && d.type !== 'nuage' ? st.q[d.id] : null;
+      if (e && !e.ferme && e.duree > 0 && !MN.enPause(e) && MN.reste(e, Date.now()) <= 0) fermer(d, 'Temps écoulé.', true);
+      majStatut(); majMinuterie();
     }, 500);
   }
   demarrer();

@@ -13,7 +13,13 @@
    - relier, puzzle de code : la bonne réponse est notée en proportion de ce qui est juste (3 paires bien
      reliées sur 4 : 75 points sur 100) ; rapidité et rebond seulement si tout est juste ;
    - ligne fautive : comme une question à choix (juste ou faux) ;
-   - nuage de mots : non noté (aucune bonne réponse), il ne compte ni pour les points ni pour les rebonds. */
+   - nuage de mots : non noté (aucune bonne réponse), il ne compte ni pour les points ni pour les rebonds.
+
+   La minuterie (T131) : l'enseignant·e peut ajouter 15 s (autant de fois que voulu, 40 fois au plus), mettre en pause
+   et reprendre. La part de rapidité se calcule sur le temps réellement écoulé hors pause, rapporté à la durée totale
+   accordée (durée de départ + ajouts) : rapidité = 20 × (1 − écoulé / accordée), arrondie, toujours entre 0 et 20.
+   Une réponse donnée pendant la pause compte le temps écoulé au début de la pause (ni gain ni perte). Un ajout fait
+   après le zéro rouvre la question avec 15 s ; le temps passé à zéro n'est pas compté. */
 (function (racine) {
   'use strict';
   const BAREME = { participation: 10, juste: 100, rapidite: 20, rebond: 30 };
@@ -69,7 +75,41 @@
     return { justes, repondues, serie, meilleure, rebonds };
   }
 
-  const api = { BAREME, points, classer, repartition, progression };
+  /* ── La minuterie d'une question (fonctions pures, temps t en millisecondes) ──
+     e : { ouverte: instant d'ouverture, duree: durée de départ en s (0 : sans minuterie), ajouts: nombre de « + 15 s »,
+           pauseMs: temps déjà passé en pause, pauseDepuis: début de la pause en cours (null : la minuterie tourne) } */
+  const DUREES = [0, 20, 30, 45, 60, 90], AJOUT = 15, MAX_AJOUTS = 40, PALIERS = [3, 5, 10];
+  const accordee = e => e && e.duree > 0 ? e.duree + AJOUT * e.ajouts : 0;            // en secondes
+  function ecoule(e, t) {                                                               // hors pause, en ms
+    const pause = e.pauseMs + (e.pauseDepuis != null ? Math.max(0, t - e.pauseDepuis) : 0);
+    return Math.max(0, t - e.ouverte - pause);
+  }
+  const reste = (e, t) => e.duree > 0 ? Math.max(0, accordee(e) * 1000 - ecoule(e, t)) : null;
+  const enPause = e => e.pauseDepuis != null;
+  function pause(e, t) { if (e.duree > 0 && !enPause(e) && reste(e, t) > 0) { e.pauseDepuis = t; return true; } return false; }
+  function reprendre(e, t) { if (!enPause(e)) return false; e.pauseMs += Math.max(0, t - e.pauseDepuis); e.pauseDepuis = null; return true; }
+  // + 15 s : la fin recule de 15 s. Après le zéro, le temps passé à zéro est compté comme une pause : il reste 15 s.
+  function ajouter(e, t) {
+    if (!(e.duree > 0) || e.ajouts >= MAX_AJOUTS) return false;
+    const trop = ecoule(e, t) - accordee(e) * 1000;
+    if (trop > 0) e.pauseMs += trop;
+    e.ajouts++;
+    return true;
+  }
+  // une durée accordée possible (ce que les messages peuvent annoncer) : 0, ou une durée de départ + k × 15 s
+  const dureeAccordeeValide = d => d === 0 || DUREES.some(b => b > 0 && Number.isSafeInteger(d) && d >= b && (d - b) % AJOUT === 0 && (d - b) / AJOUT <= MAX_AJOUTS);
+  const minuterie = { DUREES, AJOUT, MAX_AJOUTS, accordee, ecoule, reste, enPause, pause, reprendre, ajouter, dureeAccordeeValide };
+
+  /* La série en cours (les flammes) : le nombre de bonnes réponses d'affilée dans la séance, à partir des résultats
+     dans l'ordre joué ; une erreur ou une non-réponse la remet à zéro. Rien n'est gardé d'une séance à l'autre.
+     palier : vrai quand la série vient d'atteindre 3, 5 ou 10 (petite animation). casse : la série d'au moins 2
+     vient de s'arrêter (on écrit « nouvelle série à la prochaine », sans message négatif). */
+  function serie(resultats) {
+    const n = progression(resultats).serie, avant = resultats.length ? progression(resultats.slice(0, -1)).serie : 0;
+    return { n, palier: n > avant && PALIERS.includes(n), casse: n === 0 && avant >= 2 };
+  }
+
+  const api = { BAREME, points, classer, repartition, progression, serie, PALIERS, minuterie };
   racine.QuizzNSI = racine.QuizzNSI || {};
   racine.QuizzNSI.bareme = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

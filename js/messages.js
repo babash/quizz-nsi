@@ -7,7 +7,8 @@
    Seule exception au « ni texte ni pseudo libre » : le message « nuage », qui porte les mots du nuage affichés au
    tableau (chacun repasse le filtre des mots, js/activites.js), sans leur auteur·rice.
    Ce que le canal diffuse se limite à ce que l'écran projeté montre déjà à toute la classe : la bonne
-   réponse, la répartition des réponses (en nombres), le podium quand il est affiché. Chaque téléphone
+   réponse, la répartition des réponses (en nombres), le podium quand il est affiché, l'état de la minuterie (temps restant,
+   pause) et le réglage « Afficher les séries » ; jamais la série d'un·e élève (chaque téléphone calcule la sienne). Chaque téléphone
    calcule ses propres points ; les réponses des élèves arrivent chiffrées pour la page projetée.
    Fonctions pures, testées par tests/test_messages.js. */
 (function (racine) {
@@ -45,6 +46,10 @@
     return { participation: v.participation, juste: v.juste, rapidite: v.rapidite, rebond: v.rebond };
   }
   const NONCE = /^[0-9a-f]{16}$/;
+  /* Une durée accordée à une question, en secondes : 0 (sans minuterie), ou une durée de départ (20, 30, 45, 60, 90)
+     plus k fois 15 s, k de 0 à 40 (« + 15 s », js/bareme.js : minuterie). Toute autre valeur fait rejeter le message. */
+  const DEPARTS = [20, 30, 45, 60, 90], AJOUT = 15, MAX_AJOUTS = 40;
+  const dureeAccordee = d => d === 0 || (Number.isSafeInteger(d) && DEPARTS.some(b => d >= b && (d - b) % AJOUT === 0 && (d - b) / AJOUT <= MAX_AJOUTS));
 
   /* Messages de la page projetée vers les élèves. Ils ne portent que ce que l'écran projeté montre
      déjà à toute la classe : jamais la réponse ni les points d'un·e élève. */
@@ -55,10 +60,13 @@
         return cles(m, ['t']) ? { t: 'attente' } : null;
       case 'notion':
         return cles(m, ['t', 'cours', 'n', 'f']) && estCours(m.cours) && entier(m.n, 0, MAX_Q) && entier(m.f, 0, 100) ? { t: 'notion', cours: m.cours, n: m.n, f: m.f } : null;
+      // reste : le temps restant hors pause (ms), jamais plus que la durée accordée ; pause : la minuterie est arrêtée
+      // (seulement avec une minuterie et une question ouverte)
       case 'question':
-        if (!cles(m, ['t', 'cours', 'qid', 'reste', 'duree', 'ferme']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.ferme !== 'boolean' || !entier(m.duree, 0, 3600)) return null;
-        if (!(m.reste === null || entier(m.reste, 0, 3600000))) return null;
-        return { t: 'question', cours: m.cours, qid: m.qid, reste: m.reste, duree: m.duree, ferme: m.ferme };
+        if (!cles(m, ['t', 'cours', 'qid', 'reste', 'duree', 'ferme', 'pause']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.ferme !== 'boolean' || typeof m.pause !== 'boolean' || !dureeAccordee(m.duree)) return null;
+        if (m.duree === 0 ? m.reste !== null : !entier(m.reste, 0, m.duree * 1000)) return null;
+        if (m.pause && (m.duree === 0 || m.ferme)) return null;
+        return { t: 'question', cours: m.cours, qid: m.qid, reste: m.reste, duree: m.duree, ferme: m.ferme, pause: m.pause };
       case 'fermee':
         return cles(m, ['t', 'qid']) && estQid(m.qid) ? { t: 'fermee', qid: m.qid } : null;
       case 'recus':
@@ -69,20 +77,20 @@
       case 'refus':
         return cles(m, ['t', 'id', 'raison']) && estId(m.id) && (m.raison === 'pris' || m.raison === 'invalide') ? { t: 'refus', pourMoi: m.id === moiId, raison: m.raison } : null;
       case 'correction': {
-        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'bonne', 'rep', 'bareme', 'duree', 'podium']) || !estCours(m.cours) || !estQid(m.qid)) return null;
-        if (!(m.precedente === null || estQid(m.precedente)) || !entier(m.bonne, 0, 3) || !entier(m.duree, 0, 3600)) return null;
+        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'bonne', 'rep', 'bareme', 'duree', 'podium', 'series']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.series !== 'boolean') return null;
+        if (!(m.precedente === null || estQid(m.precedente)) || !entier(m.bonne, 0, 3) || !dureeAccordee(m.duree)) return null;
         if (!Array.isArray(m.rep) || m.rep.length !== 4 || !m.rep.every(n => entier(n, 0, MAX_ELEVES))) return null;
         const b = bareme(m.bareme); if (!b) return null;
         const pd = podium(m.podium); if (pd === undefined) return null;
-        return { t: 'correction', cours: m.cours, qid: m.qid, precedente: m.precedente, bonne: m.bonne, rep: m.rep.slice(), bareme: b, duree: m.duree, podium: pd };
+        return { t: 'correction', cours: m.cours, qid: m.qid, precedente: m.precedente, bonne: m.bonne, rep: m.rep.slice(), bareme: b, duree: m.duree, podium: pd, series: m.series };
       }
       // la correction d'une question d'un autre type (relier, puzzle, ligne fautive, nuage de mots) : seulement le
       // nombre de réponses et le nombre de réponses tout à fait justes, comme à l'écran ; la solution vient du fichier du cours
       case 'corrige': {
-        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'duree', 'nb', 'justes', 'podium']) || !estCours(m.cours) || !estQid(m.qid)) return null;
-        if (!(m.precedente === null || estQid(m.precedente)) || !entier(m.duree, 0, 3600) || !entier(m.nb, 0, MAX_ELEVES) || !entier(m.justes, 0, MAX_ELEVES) || m.justes > m.nb) return null;
+        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'duree', 'nb', 'justes', 'podium', 'series']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.series !== 'boolean') return null;
+        if (!(m.precedente === null || estQid(m.precedente)) || !dureeAccordee(m.duree) || !entier(m.nb, 0, MAX_ELEVES) || !entier(m.justes, 0, MAX_ELEVES) || m.justes > m.nb) return null;
         const pd = podium(m.podium); if (pd === undefined) return null;
-        return { t: 'corrige', cours: m.cours, qid: m.qid, precedente: m.precedente, duree: m.duree, nb: m.nb, justes: m.justes, podium: pd };
+        return { t: 'corrige', cours: m.cours, qid: m.qid, precedente: m.precedente, duree: m.duree, nb: m.nb, justes: m.justes, podium: pd, series: m.series };
       }
       // le nuage de mots, une fois montré par l'enseignant·e : les mots affichés au tableau et leur nombre de voix,
       // jamais l'auteur·rice ; chaque mot doit passer le filtre des mots (js/activites.js) sans être modifié
@@ -146,6 +154,6 @@
     return { id: p.id, role: 'eleve', pseudo: f.ok ? f.pseudo : null };
   }
 
-  Q.messages = { versEleve, versHote, reponse, formeReponse, presence, estId, estQid, estCours };
+  Q.messages = { versEleve, versHote, reponse, formeReponse, presence, estId, estQid, estCours, dureeAccordee };
   if (typeof module !== 'undefined' && module.exports) module.exports = Q.messages;
 })(typeof window !== 'undefined' ? window : globalThis);

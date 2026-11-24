@@ -20,16 +20,16 @@ const CLE = { x: 'A'.repeat(43), y: 'B'.repeat(43) };
 const VERS_ELEVE = {
   attente: { t: 'attente' },
   notion: { t: 'notion', cours: 'piles-files', n: 3, f: 2 },
-  question: { t: 'question', cours: 'piles-files', qid: 'q01', reste: 30000, duree: 45, ferme: false },
+  question: { t: 'question', cours: 'piles-files', qid: 'q01', reste: 30000, duree: 45, ferme: false, pause: false },
   fermee: { t: 'fermee', qid: 'q01' },
   recus: { t: 'recus', qid: 'q01', n: ['00112233aabbccdd', 'ffeeddccbbaa9988'] },
   retire: { t: 'retire', id: MOI },
   refus: { t: 'refus', id: MOI, raison: 'pris' },
   correction: { t: 'correction', cours: 'piles-files', qid: 'q02', precedente: 'q01', bonne: 3, rep: [1, 2, 0, 0],
-    bareme: { participation: 10, juste: 100, rapidite: 20, rebond: 30 }, duree: 45, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }] },
+    bareme: { participation: 10, juste: 100, rapidite: 20, rebond: 30 }, duree: 45, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: true },
   fin: { t: 'fin', cours: 'piles-files', podium: [{ pseudo: 'Ixo', total: 500, place: 1 }] },
   nuage: { t: 'nuage', cours: 'demo-types-de-questions', qid: 'a01', mots: [{ k: 0, m: 'boucle', n: 3 }, { k: 4, m: 'tant-que', n: 1 }] },
-  corrige: { t: 'corrige', cours: 'revision-conditions-boucles', qid: 'a02', precedente: 'q05', duree: 0, nb: 3, justes: 1, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }] },
+  corrige: { t: 'corrige', cours: 'revision-conditions-boucles', qid: 'a02', precedente: 'q05', duree: 0, nb: 3, justes: 1, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: false },
 };
 const VERS_HOTE = { bonjour: { t: 'bonjour', id: MOI }, rep: { t: 'rep', de: CLE, iv: 'abcdefghijklmnop', donnees: 'QUJDRA' } };
 
@@ -100,6 +100,29 @@ for (const mots of [[{ k: 0, m: 'Boucle', n: 1 }], [{ k: 0, m: '<b>x</b>', n: 1 
   Array.from({ length: 201 }, (_, k) => ({ k, m: 'mot', n: 1 }))]) { assert.equal(M.versEleve(nuageAvec(mots), MOI), null, JSON.stringify(mots).slice(0, 80)); n++; }
 assert.deepEqual(M.versEleve(nuageAvec([]), MOI).mots, []); // un mot supprimé : la liste suivante ne le porte plus
 n += 3;
+// la minuterie (T131) : durée accordée = 0 ou une durée de départ + k × 15 s (k de 0 à 40) ; reste borné par cette durée ;
+// la pause seulement avec une minuterie et une question ouverte
+const questionAvec = c => Object.assign(copie(VERS_ELEVE.question), c);
+for (const c of [{ pause: true }, { duree: 60, reste: 60000 }, { duree: 90, reste: 0 }, { duree: 620, reste: 1 }, { duree: 0, reste: null }, { duree: 75, reste: 75000, pause: true }])
+  assert.ok(M.versEleve(questionAvec(c), MOI), 'question valide refusée : ' + JSON.stringify(c));
+for (const c of [{ pause: true, ferme: true }, { pause: true, duree: 0, reste: null }, { duree: 635 }, { duree: 46 }, { duree: 91 }, { duree: 3600 }, { duree: 10 }, { duree: 15 },
+  { duree: 45, reste: 45001 }, { duree: 45, reste: null }, { duree: 0, reste: 1000 }, { duree: 0, reste: 0 }, { duree: 45, reste: 1.5 }, { duree: -15 }, { duree: 45.0000001 }, { pause: 1 }, { pause: 'oui' }, { pause: null }]) {
+  assert.equal(M.versEleve(questionAvec(c), MOI), null, 'question forgée acceptée : ' + JSON.stringify(c)); n++;
+}
+const sansPause = copie(VERS_ELEVE.question); delete sansPause.pause;
+assert.equal(M.versEleve(sansPause, MOI), null, 'question sans « pause »'); n++;
+for (const t of ['correction', 'corrige']) {
+  for (const duree of [46, 635, 3600, -1, 91]) { assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE[t]), { duree }), MOI), null, t + ' duree ' + duree); n++; }
+  for (const duree of [0, 20, 35, 105, 620]) assert.ok(M.versEleve(Object.assign(copie(VERS_ELEVE[t]), { duree }), MOI), t + ' duree valide ' + duree);
+  for (const series of [1, 'oui', null, {}]) { assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE[t]), { series }), MOI), null, t + ' series ' + series); n++; }
+  const sans = copie(VERS_ELEVE[t]); delete sans.series; assert.equal(M.versEleve(sans, MOI), null, t + ' sans series'); n++;
+  // jamais la série d'un·e élève dans le message
+  assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE[t]), { serie: 3 }), MOI), null); n++;
+}
+// les mêmes bornes que la minuterie du moteur (js/bareme.js)
+const MN = require(path.join(__dirname, '..', 'js', 'bareme.js')).minuterie;
+for (let d = -20; d <= 800; d++) assert.equal(M.dureeAccordee(d), MN.dureeAccordeeValide(d), 'durée ' + d);
+
 // types inconnus, prototypes, valeurs non objets
 for (const v of [null, 3, 'attente', [], { t: 'inconnu' }, { t: { toString: () => 'attente' } }, JSON.parse('{"t":"attente","__proto__":{"x":1}}')]) {
   assert.equal(M.versEleve(v, MOI), null, JSON.stringify(v)); assert.equal(M.versHote(v), null); n++;

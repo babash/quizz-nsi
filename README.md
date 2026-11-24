@@ -14,9 +14,9 @@ QuizzNSI fait partie des [Ressources NSI et SNT](https://babash.github.io/Babash
 
 ## Une séance en trois étapes
 
-1. **Tu** ouvres [la page d'animation](https://babash.github.io/quizz-nsi/animer.html?cours=piles-files) et la projettes : un code de 4 lettres, un lien et un QR code s'affichent. Tu choisis le temps par question (sans minuterie, ou de 20 s à 1 min 30) et le classement (à la fin, après chaque question, ou aucun).
+1. **Tu** ouvres [la page d'animation](https://babash.github.io/quizz-nsi/animer.html?cours=piles-files) et la projettes : un code de 4 lettres, un lien et un QR code s'affichent. Tu choisis le temps par question (sans minuterie, ou de 20 s à 1 min 30), le classement (à la fin, après chaque question, ou aucun) et l'affichage des séries (les flammes : oui ou non).
 2. **Les élèves** rejoignent avec le QR code, le lien ou le code, depuis un téléphone ou un ordinateur, avec un prénom ou un pseudo (jamais un nom de famille). Un pseudo déplacé se retire d'un clic : l'élève en choisit un autre. À tout moment, **QR code en grand** (ou la touche **Q**) affiche le QR code et le code de la séance en très grand, lisibles du fond de la classe ; Q ou Échap les referme. Un·e élève en retard rejoint en cours de route : son téléphone arrive directement sur la diapositive ou la question en cours.
-3. **Tu avances dans le cours** (flèches, Entrée), 15 minutes pour une introduction, 20 à 45 pour une révision : les téléphones suivent les diapositives ; à chaque question, l'écran compte les réponses, puis **Montrer la réponse** affiche la répartition, l'erreur la plus fréquente avec son explication, et le feedback de chaque option.
+3. **Tu avances dans le cours** (flèches, Entrée), 15 minutes pour une introduction, 20 à 45 pour une révision : les téléphones suivent les diapositives ; à chaque question, l'écran compte les réponses, puis **Montrer la réponse** affiche la répartition, l'erreur la plus fréquente avec son explication, et le feedback de chaque option. Pendant une question, tu ajoutes 15 s, tu mets la minuterie en pause et tu changes le temps des questions suivantes ([la minuterie](#la-minuterie-et-les-flammes)).
 
 **À la fin de la séance, le quiz se rejoue.** Le téléphone de chaque élève propose « Rejouer le quiz seul·e », et la page projetée affiche un QR code « rejouer » (dans le podium, et en grand avec la touche Q) : chacun·e rejoue les questions sans l'enseignant·e, dans un nouvel ordre et avec les réponses mélangées, corrigées tout de suite. Rien n'est envoyé ; l'ordre et les réponses restent dans l'onglet du téléphone, effacés à sa fermeture. Le lien : `revision.html?cours=<id>&rejouer`.
 
@@ -97,6 +97,22 @@ Toutes les questions notées sont numérotées ensemble, quel que soit leur type
 
 Chaque question a un objectif affiché, quatre options tirées d'erreurs fréquentes et un feedback pour chacune. Chaque code affiché a été exécuté par le vérificateur.
 
+## La minuterie et les flammes
+
+**La minuterie, côté enseignant·e** (en bas de la page projetée, pendant une question) :
+
+| Commande | Bouton | Touche | Ce qui se passe |
+|---|---|---|---|
+| Ajouter du temps | **+ 15 s** | **T** ou **+** | La fin de la question recule de 15 s pour toute la classe, autant de fois que tu veux (40 fois au plus, 10 min). Après le zéro, tant que la réponse n'est pas montrée, la question se rouvre avec 15 s. |
+| Mettre en pause | **Pause** puis **Reprendre** | **S** | La minuterie s'arrête sur tous les écrans. Les élèves peuvent toujours lire **et répondre** : une réponse donnée pendant la pause compte le temps du début de la pause, sans gain ni perte de rapidité. |
+| Changer le temps | menu **Ensuite** | | Sans minuterie, 20 s, 30 s, 45 s, 1 min ou 1 min 30 : le temps s'applique aux questions suivantes ; la question déjà ouverte garde le sien. |
+
+« + 15 s » et « Pause » sont grisés sans minuterie, et quand il n'y a plus rien à attendre (tout le monde a répondu, ou la réponse est montrée). Tout se retrouve après un rechargement de la page projetée, pause comprise.
+
+**Ce que voient les élèves** : le temps restant, recalculé à chaque ajout ; en pause, « ‖ En pause · 23 s » dans un cadre pointillé et la phrase « Le temps est arrêté : tu peux lire et répondre » (lisible sans les couleurs). Un·e élève qui arrive ou revient pendant la question, ou pendant la pause, retrouve le même état. Après le zéro, « + 15 s » réaffiche la question sur le téléphone de celles et ceux qui n'ont pas répondu.
+
+**Les flammes** : le nombre de bonnes réponses **d'affilée dans la séance en cours**. À partir de 2 d'affilée, une petite flamme dessinée et « 3 d'affilée » s'affichent après la correction, sur le téléphone de l'élève et sur l'écran projeté, à côté de son prénom ou pseudo (ligne « En série » sous la correction, dans l'ordre alphabétique ; liste des élèves ; podium). À 3, 5 et 10 d'affilée, la flamme bouge un instant (pas d'animation si l'appareil demande moins d'animations). Une erreur ou une question sans réponse lance une nouvelle série, sans reproche : « Nouvelle série à la prochaine. » Ce n'est pas une série de jours : rien n'est gardé d'une séance à l'autre, rien de plus n'est envoyé ni enregistré. Les séries ne rapportent aucun point. Le réglage **Afficher les séries : non** (à l'accueil de la séance, à côté du classement) les cache partout.
+
 ## Pour quels usages
 
 | Usage | Comment |
@@ -112,13 +128,13 @@ Chaque question a un objectif affiché, quatre options tirées d'erreurs fréque
 - **Le pourquoi avant la définition** : la notion arrive comme la réponse à un problème que la classe a senti.
 - **Un cours très court, on apprend par les questions** : un écran de quelques mots, présenté à l'oral, puis une ou deux questions dont les feedbacks expliquent.
 - **Les erreurs expliquées, la correction immédiate** : chaque option a son explication, montrée tout de suite ; en révision, les essais sont illimités.
-- **La progression valorisée** : le rebond récompense la bonne réponse qui suit une erreur ; le podium compte peu et n'apparaît qu'à la fin.
+- **La progression valorisée** : le rebond récompense la bonne réponse qui suit une erreur ; les flammes saluent les bonnes réponses d'affilée, dans la séance seulement ; le podium compte peu et n'apparaît qu'à la fin.
 - **Entraide en îlots** : un téléphone pour deux ou pour l'îlot, et le débat avant de répondre.
 
 ## Données des élèves
 
 - **Enregistré en ligne** (canaux temps réel de Supabase, sans aucune table) : rien. Le prénom ou le pseudo et les réponses passent en direct dans la séance, sans être gardés en ligne. Pas d'adresse électronique, pas de nom de famille.
-- **Visible par les autres** : pendant la séance seulement, ce que montre l'écran projeté (les pseudos présents, la répartition des réponses, les rebonds, le podium quand il est affiché, et les mots du nuage, sans les pseudos, au tableau et sur les téléphones, quand l'enseignant·e montre le nuage). Les réponses partent chiffrées pour la page projetée ; une fausse page projetée, ouverte par quelqu'un qui connaît le code, les reçoit aussi (voir les risques acceptés, [docs/DONNEES.md](docs/DONNEES.md)).
+- **Visible par les autres** : pendant la séance seulement, ce que montre l'écran projeté (les pseudos présents, la répartition des réponses, les rebonds, les flammes des séries de 2 et plus si le réglage est sur « oui », le podium quand il est affiché, et les mots du nuage, sans les pseudos, au tableau et sur les téléphones, quand l'enseignant·e montre le nuage). Les réponses partent chiffrées pour la page projetée ; une fausse page projetée, ouverte par quelqu'un qui connaît le code, les reçoit aussi (voir les risques acceptés, [docs/DONNEES.md](docs/DONNEES.md)).
 - **Le nuage de mots** : le seul texte libre d'élève qui circule. Les mots partent chiffrés vers la page projetée ; rien ne s'affiche avant « Montrer le nuage » ; ensuite, les mots du tableau (jamais leur auteur·rice) partent en clair vers les téléphones de la classe, qui votent. Chaque mot est filtré (un ou deux mots, sans caractère spécial) et affiché comme du texte ; l'enseignant·e supprime un mot à tout moment, partout. Rien n'est gardé, ni en ligne ni sur les téléphones. Le filtre ne juge pas le sens : un mot déplacé s'affiche jusqu'à sa suppression (risques décrits dans [docs/DONNEES.md](docs/DONNEES.md)).
 - **Sur l'appareil** : le code de séance, le pseudo, un identifiant, les réponses et les points de la séance (pas les mots ni les voix du nuage), effacés à la fin de la séance, et sinon au premier chargement d'une page de QuizzNSI après 12 heures ; en révision, la progression du mode autonome, gardée un jour après le dernier passage ; pour rejouer le quiz, l'ordre tiré et les réponses, dans l'onglet seulement (effacés à sa fermeture).
 - **Pour effacer** : rien à effacer en ligne ; sur l'appareil, « Quitter » ou « Recommencer à zéro », ou l'effacement des données du navigateur.
@@ -132,9 +148,12 @@ Le détail : [docs/DONNEES.md](docs/DONNEES.md).
 | Répondre, même faux | +10 | oser répondre |
 | Bonne réponse | +100 | l'essentiel : réfléchir |
 | Rapidité (avec une minuterie, et seulement si c'est juste) | de +20 à 0 | un peu d'élan, sans écraser la réflexion |
+| Série (les flammes) | 0 | le plaisir d'enchaîner, sans points en plus |
 | Rebond : une bonne réponse juste après une erreur | +30 | valoriser la progression, pas seulement les meilleur·e·s |
 
 Les autres types de questions : **relier** et **puzzle de code** rapportent la bonne réponse en proportion de ce qui est juste (3 paires sur 5 : +60 au lieu de +100 ; rapidité et rebond seulement si tout est juste) ; **la ligne fautive** se note comme une question à choix ; **le nuage de mots** n'est pas noté (il n'a pas de bonne réponse).
+
+**La rapidité avec la pause et les ajouts** : rapidité = 20 × (1 − temps écoulé ÷ durée accordée), arrondie, où le temps écoulé est compté **hors pause** depuis l'ouverture de la question, et la durée accordée est la durée de départ plus les ajouts (30 s + 2 × 15 s = 60 s). Elle reste toujours entre 0 et +20. Une réponse donnée pendant la pause compte le temps du début de la pause ; le temps passé à zéro avant un « + 15 s » n'est pas compté. Tout le monde est mesuré sur la même durée accordée : un ajout ne change pas l'ordre des plus rapides. La page projetée mesure le temps à la réception de chaque réponse ; un téléphone ne peut ni arrêter ni ralentir la minuterie.
 
 Chaque téléphone calcule ses propres points ; la page projetée fait seule foi pour le podium. La place d'un·e élève n'est connue que s'il ou elle est sur le podium affiché.
 

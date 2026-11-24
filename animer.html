@@ -53,7 +53,13 @@
         <label for="podium">Classement</label>
         <select id="podium"><option value="fin" selected>Podium à la fin seulement</option><option value="chaque">Podium après chaque question</option><option value="jamais">Pas de classement</option></select>
       </div>
-      <p class="aide">Barème : répondre +10 ; bonne réponse +100 ; rapidité jusqu'à +20 (avec une minuterie) ; rebond +30 (bonne réponse juste après une erreur).</p>
+      <div class="ligne-reglage">
+        <label for="series">Afficher les séries</label>
+        <select id="series" aria-describedby="aideSeries"><option value="oui" selected>Oui : les flammes</option><option value="non">Non</option></select>
+      </div>
+      <p class="aide" id="aideSeries">La flamme s'affiche à partir de 2 bonnes réponses d'affilée. Une série compte les bonnes réponses d'affilée dans cette séance seulement ; une erreur ou une question sans réponse en lance une nouvelle. Rien n'est gardé après la séance.</p>
+      <p class="aide">Barème : répondre +10 ; bonne réponse +100 ; rapidité jusqu'à +20 (avec une minuterie, sur le temps écoulé hors pause) ; rebond +30 (bonne réponse juste après une erreur).</p>
+      <p class="aide">Pendant une question : <b>+ 15 s</b> (touche + ou T) et <b>Pause</b> (touche S) ; le temps des questions suivantes se change à tout moment, en bas de l'écran.</p>
       <p><button class="bouton fort" type="button" id="commencer">Commencer le cours</button> <button class="bouton" type="button" id="reprendre" hidden>Reprendre</button></p>
       <p class="aide">Sans élève connecté·e, le cours marche aussi, comme un simple diaporama.</p>
     </div>
@@ -107,9 +113,15 @@
   <span class="compteur" id="compteur"></span>
   <div class="progression" aria-hidden="true"><span id="barre"></span></div>
   <span class="statut-q" id="statutQ" role="status"></span>
+  <div class="minuterie" role="group" aria-label="Minuterie de la question">
+    <button class="bouton petit" type="button" id="plus15" aria-keyshortcuts="+ T" disabled>+ 15 s (T)</button>
+    <button class="bouton petit" type="button" id="pause" aria-keyshortcuts="S" aria-pressed="false" disabled>‖ Pause (S)</button>
+    <label for="dureeSuite" class="duree-suite">Ensuite<span class="visuel-cache"> : le temps des questions suivantes</span>
+      <select id="dureeSuite" title="Le temps des questions suivantes (la question ouverte garde le sien)"><option value="0">sans minuterie</option><option value="20">20 s</option><option value="30">30 s</option><option value="45" selected>45 s</option><option value="60">1 min</option><option value="90">1 min 30</option></select></label>
+  </div>
   <button class="bouton fort" type="button" id="action">Suivante →</button>
 </nav>
-<footer class="pied">QuizzNSI · Babash - NSI Tani Malandi · code MIT, contenus CC BY-SA 4.0 · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · au clavier : flèches, Entrée, P (podium), J (code), Q (QR code en grand)</footer>
+<footer class="pied">QuizzNSI · Babash - NSI Tani Malandi · code MIT, contenus CC BY-SA 4.0 · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · au clavier : flèches, Entrée, P (podium), J (code), Q (QR code en grand), T ou + (15 s de plus), S (pause ou reprise)</footer>
 <script src="config.js"></script>
 <script src="vendor/temps-reel.js"></script>
 <script src="vendor/qrcode.js"></script>
