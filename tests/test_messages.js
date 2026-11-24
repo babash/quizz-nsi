@@ -31,7 +31,7 @@ const VERS_ELEVE = {
   nuage: { t: 'nuage', cours: 'demo-types-de-questions', qid: 'a01', mots: [{ k: 0, m: 'boucle', n: 3 }, { k: 4, m: 'tant-que', n: 1 }] },
   corrige: { t: 'corrige', cours: 'revision-conditions-boucles', qid: 'a02', precedente: 'q05', duree: 0, nb: 3, justes: 1, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: false, retenus: ['0011223344556677', '8899aabbccddeeff'] },
 };
-const VERS_HOTE = { bonjour: { t: 'bonjour', id: MOI }, rep: { t: 'rep', de: CLE, iv: 'abcdefghijklmnop', donnees: 'QUJDRA' } };
+const VERS_HOTE = { bonjour: { t: 'bonjour', id: MOI }, rep: { t: 'rep', iv: 'abcdefghijklmnop', donnees: 'QUJD'.repeat(133) + 'QU' } };
 
 // tous les chemins des feuilles d'un objet (les champs à forger)
 function chemins(o, base = []) {
@@ -74,6 +74,11 @@ for (const [type, m] of Object.entries(VERS_HOTE)) {
     if (ch[0] === 't') continue;
     for (const v of FORGES) { assert.equal(M.versHote(remplacer(m, ch, v)), null, `${type}.${ch.join('.')} accepté`); n++; }
   }
+}
+// T131b, écoute passive : l'enveloppe d'une réponse ne porte ni clé ni identifiant, et a une longueur constante
+assert.equal(globalThis.QuizzNSI.chiffre.DONNEES, 534);
+for (const f of [{ de: CLE }, { id: MOI }, { donnees: 'QUJD'.repeat(133) + 'Q' }, { donnees: 'QUJD'.repeat(134) }, { donnees: 'QUJDRA' }]) {
+  assert.equal(M.versHote(Object.assign(copie(VERS_HOTE.rep), f)), null, 'enveloppe ' + Object.keys(f)); n++;
 }
 // l'ancien format, avec les résultats de chaque élève, est refusé
 assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE.correction), { res: { [AUTRE]: { c: 1 } } }), MOI), null);
@@ -171,11 +176,40 @@ assert.equal(globalThis.__pwned, undefined);
   assert.ok(C.estGarde(e1.cle));
   const e2 = await C.eleve(JSON.parse(JSON.stringify(e1.cle)));
   assert.deepEqual(e2.publique, e1.publique, 'la clé gardée redonne la même clé publique');
+  const E1 = C.empreinte(e1.publique);
+  // trois élèves (clés reliées par la présence) et un faussaire
+  const autres = [await C.eleve(), await C.eleve()], faux = await C.eleve(), connues = [E1, ...autres.map(e => C.empreinte(e.publique))];
   const env = await e2.chiffrer({ id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd', k: 0 }, h.publique);
-  assert.deepEqual(env.de, e1.publique);
-  assert.equal((await h.dechiffrer(env)).c, 2);
-  const faux = await C.eleve(), fe = await faux.chiffrer({ id: MOI, qid: 'q01', c: 3, n: '00112233aabbccdd', k: 30 }, h.publique);
-  assert.equal(await h.dechiffrer(Object.assign({}, fe, { de: e1.publique })), null, 'enveloppe au nom d\'un·e autre : illisible');
+  const lu = await h.dechiffrer(env, connues);
+  assert.equal(lu.objet.c, 2); assert.equal(lu.de, E1, 'la page projetée sait quelle clé a déchiffré');
+  // un envoi au nom d'un·e autre, avec la clé du faussaire (inconnue) : illisible pour la page projetée
+  const fe = await faux.chiffrer({ id: MOI, qid: 'q01', c: 3, n: '00112233aabbccdd', k: 30 }, h.publique);
+  assert.equal(await h.dechiffrer(fe, connues), null, 'clé inconnue : illisible'); n++;
+  assert.equal(await h.dechiffrer(env, connues.slice(1)), null, 'clé non reliée : illisible'); n++;
+  assert.equal(await h.dechiffrer(Object.assign({}, env, { iv: 'AAAAAAAAAAAAAAAA' }), connues), null); n++;
+  // écoute passive : un tiers qui connaît toutes les clés publiques et tous les identifiants ne relie aucune enveloppe
+  // à un·e élève : mêmes champs, même longueur, aucune valeur publique dedans, quel que soit le contenu (choix, k, puzzle, mot)
+  const contenus = [{ id: MOI, qid: 'q01', c: 0, n: '00112233aabbccdd', k: 0 }, { id: MOI, qid: 'q01', c: 3, n: '00112233aabbccdd', k: 30 },
+    { id: AUTRE, qid: 'a02', r: Array.from({ length: 16 }, (_, i) => [15, 6]), n: '00112233aabbccdd', k: 12 }, { id: AUTRE, qid: 'a01', r: 'ççççççççççç ççççççççççç', n: '00112233aabbccdd', k: 0 },
+    { id: AUTRE, qid: 'a01', r: { vote: 99999 }, n: '00112233aabbccdd', k: 0 }];
+  const publics = [MOI, AUTRE, ...[e1, ...autres].flatMap(e => [e.publique.x, e.publique.y])];
+  const envs = [];
+  for (const [i, c] of contenus.entries()) envs.push(await [e1, ...autres][i % 3].chiffrer(c, h.publique));
+  for (const v of envs) {
+    assert.deepEqual(Object.keys(v).sort(), ['donnees', 'iv'], 'enveloppe : iv et donnees seulement');
+    assert.equal(v.donnees.length, C.DONNEES, 'enveloppe de longueur constante');
+    assert.ok(!publics.some(x => JSON.stringify(v).includes(x)), 'une valeur publique dans l\'enveloppe');
+    assert.ok(M.versHote(Object.assign({ t: 'rep' }, v)));
+    n++;
+  }
+  for (const [i, v] of envs.entries()) assert.equal((await h.dechiffrer(v, connues)).de, C.empreinte([e1, ...autres][i % 3].publique));
+  await assert.rejects(e1.chiffrer({ r: 'x'.repeat(400) }, h.publique)); // trop long : jamais envoyé (la longueur trahirait)
+  // le coût pour 35 élèves : une tentative par clé reliée, en parallèle
+  const classe = []; for (let i = 0; i < 34; i++) classe.push(await C.eleve());
+  const toutes = [...classe.map(e => C.empreinte(e.publique)), E1];
+  await h.dechiffrer(env, toutes); // clés communes dérivées une fois (cache)
+  let t = process.hrtime.bigint(); for (let i = 0; i < 50; i++) assert.ok(await h.dechiffrer(env, toutes)); t = Number(process.hrtime.bigint() - t) / 50e6;
+  console.log('coût : ' + t.toFixed(2) + ' ms par réponse reçue pour 35 élèves (35 tentatives, clés communes en cache)');
   for (const g of [null, {}, { x: e1.cle.x, y: e1.cle.y }, Object.assign({}, e1.cle, { d: BALISE }), Object.assign({}, e1.cle, { z: 1 }), Object.assign({}, e1.cle, { d: 'A'.repeat(43) })]) {
     const e = await C.eleve(g); assert.ok(C.estGarde(e.cle)); n++;
     if (g && g.d === 'A'.repeat(43)) assert.notDeepEqual(e.publique, e1.publique); // une clé illisible : une nouvelle paire

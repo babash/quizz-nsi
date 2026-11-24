@@ -129,7 +129,8 @@
      lien : l'empreinte de la clé publique reliée à l'identifiant de l'élève (null : pas encore reliée) ;
      avant : null ou { v, ms, k, n } (le choix retenu, n : le nombre tiré au hasard de son envoi) ;
      envoi : { de, v, k, n } (de : l'empreinte de la clé de l'expéditeur, lue sur l'enveloppe chiffrée).
-     Un envoi d'une autre clé est ignoré ; une clé pas encore reliée l'est au premier envoi accepté. L'accusé de
+     Un envoi d'une autre clé est ignoré (la page projetée relie la clé dès la présence, js/animer.js ; sans lien, la
+     première clé acceptée serait reliée). L'accusé de
      réception (accuse) ne part que pour un envoi retenu, ou pour le même envoi reçu deux fois : jamais pour un
      changement ignoré. Renvoie { lien, rep, accuse }. */
   function recevoir(lien, avant, envoi, ms, egal) {

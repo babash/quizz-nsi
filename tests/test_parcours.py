@@ -107,6 +107,21 @@ PIEGE = """
 """
 
 
+def non_attribuable(espion, reps):
+    """Écoute passive (T131b) : un tiers qui lit tout le canal et toutes les présences (pseudos, identifiants, clés
+    publiques) ne doit pouvoir relier aucune réponse chiffrée à un pseudo : l'enveloppe ne porte que iv et donnees,
+    sans identifiant ni clé, et toutes les enveloppes ont la même longueur."""
+    pres = [p for p in espion.evaluate("window.__pres") if p and p.get("role") == "eleve"]
+    publics = {p.get("id") for p in pres} | {c for p in pres if isinstance(p.get("cle"), dict) for c in (p["cle"].get("x"), p["cle"].get("y"))}
+    publics.discard(None)
+    assert pres and any(isinstance(p.get("cle"), dict) for p in pres), "l'espion aurait dû voir les présences et leurs clés"
+    for m in reps:
+        assert set(m) == {"t", "iv", "donnees"}, f"enveloppe attribuable (champ en plus) : {sorted(m)}"
+        texte = json.dumps(m)
+        assert not any(v in texte for v in publics), "une enveloppe porte un identifiant ou une clé publique d'élève"
+    assert len({len(m["donnees"]) for m in reps}) == 1, f"enveloppes de longueurs différentes : {sorted({len(m['donnees']) for m in reps})}"
+
+
 def forges(moi, autre):
     """Pour chaque type de message et chaque champ (imbriqué compris), des copies avec une valeur forgée."""
     import copy
@@ -115,18 +130,19 @@ def forges(moi, autre):
         {"t": "attente"},
         {"t": "notion", "cours": "piles-files", "n": 1, "f": 0},
         {"t": "question", "cours": "piles-files", "qid": "q01", "reste": 1000, "duree": 45, "ferme": False, "pause": False},
-        {"t": "fermee", "qid": "q01"},
+        {"t": "fermee", "qid": "q01", "retenus": ["00112233aabbccdd"]},
         {"t": "recus", "qid": "q01", "n": ["00112233aabbccdd"]},
         {"t": "retire", "id": moi},
         {"t": "refus", "id": moi, "raison": "pris"},
         {"t": "correction", "cours": "piles-files", "qid": "q01", "precedente": None, "bonne": 1, "rep": [1, 1, 0, 0],
          "bareme": {"participation": 10, "juste": 100, "rapidite": 20, "rebond": 30}, "duree": 0,
-         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}], "series": True},
+         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}], "series": True, "retenus": ["00112233aabbccdd"]},
         {"t": "fin", "cours": "piles-files", "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}]},
         {"t": "corrige", "cours": "piles-files", "qid": "q01", "precedente": None, "duree": 0, "nb": 2, "justes": 1,
-         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}], "series": True},
+         "podium": [{"pseudo": "Kobalt", "total": 110, "place": 1}], "series": True, "retenus": ["00112233aabbccdd"]},
         {"t": "bonjour", "id": autre},
-        {"t": "rep", "de": cle, "iv": "abcdefghijklmnop", "donnees": "QUJDRA"},
+        {"t": "rep", "iv": "abcdefghijklmnop", "donnees": "QUJD" * 133 + "QU"},
+        {"t": "rep", "de": cle, "iv": "abcdefghijklmnop", "donnees": "QUJD" * 133 + "QU"},
     ]
     valeurs = [BALISE, 10 ** 300, -1, 2.5, {"html": BALISE}, [BALISE], BALISE * 2000, True]
 
@@ -200,10 +216,23 @@ def injection(nav, base):
     }""", ["quizz-nsi:" + code, liste, BALISE, moi])
     prof.wait_for_timeout(1500)
     attendre_texte(prof, "#autreHote", "une autre page projetée")  # la présence forgée d'une page projetée
+    # présence usurpée (T131b) : l'identifiant ET la clé publique d'un·e élève (deux valeurs publiques), recopiés avec un
+    # autre pseudo, un pseudo piégé, un pseudo vide ou une autre clé : ni renommage, ni refus, ni retrait de l'élève
+    cle0 = eleves[0].evaluate("() => { const c = JSON.parse(sessionStorage.getItem('quizz-nsi:eleve')).cle; return { x: c.x, y: c.y }; }")
+    attaque.evaluate("""([canal, moi, cle, balise]) => {
+        const bc = new BroadcastChannel('faux:' + canal), autre = { x: 'A'.repeat(43), y: 'B'.repeat(43) };
+        bc.postMessage({ k: 'p', cle: 'u1', info: { id: moi, pseudo: 'Usurpe', role: 'eleve', cle } });
+        bc.postMessage({ k: 'p', cle: 'u2', info: { id: moi, pseudo: balise, role: 'eleve', cle } });
+        bc.postMessage({ k: 'p', cle: 'u3', info: { id: moi, pseudo: 'Usurpe', role: 'eleve', cle: autre } });
+        bc.postMessage({ k: 'p', cle: 'u4', info: { id: moi, pseudo: 'Usurpe', role: 'eleve' } });
+    }""", ["quizz-nsi:" + code, moi, cle0, BALISE])
+    prof.wait_for_timeout(1200)
+    assert "Usurpe" not in prof.inner_text("#eleves") and "Kobalt " + MARQUE in prof.inner_text("#eleves"), "présence usurpée : pseudo changé"
+    assert eleves[0].is_hidden("#entree") and eleves[0].is_visible('button.option[data-choix="1"]'), "présence usurpée : l'élève a été sorti·e de la séance"
     # un espion écoute tout le canal pendant la suite de la séance
     espion = ctx.new_page()
     espion.goto(base + "index.html")
-    espion.evaluate("canal => { window.__vus = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); }; }", "quizz-nsi:" + code)
+    espion.evaluate("canal => { window.__vus = []; window.__pres = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); else if (data.k === 'p') window.__pres.push(data.info); }; bc.postMessage({ k: 'p', cle: 'espion', info: { id: 'eeeeeeeeeeeeeeee', role: 'spectateur' } }); }", "quizz-nsi:" + code)
     # la séance continue normalement après l'attaque
     eleves[0].click('button.option[data-choix="1"]')
     eleves[1].click('button.option[data-choix="0"]')
@@ -237,11 +266,10 @@ def injection(nav, base):
         texte = json.dumps(m)
         if m.get("t") in ("rep", "correction", "fin", "recus", "question"):
             assert moi not in texte and autre not in texte, f"identifiant d'élève diffusé : {texte[:120]}"
-        if m.get("t") == "rep":
-            assert set(m) == {"t", "de", "iv", "donnees"}, f"réponse en clair : {texte[:120]}"
         if m.get("t") in ("correction", "fin"):
             assert "res" not in m, "résultats individuels diffusés"
-    print(f"  confidentialité : {len(vus)} messages écoutés, {len(reps)} réponses chiffrées, aucun résultat individuel")
+    non_attribuable(espion, reps)
+    print(f"  confidentialité : {len(vus)} messages écoutés, {len(reps)} réponses chiffrées, aucun résultat individuel, aucun envoi attribuable")
     print(f"  injection : {len(liste)} messages forgés et 5 présences forgées ignorés (la fausse page projetée est signalée) ; aucun innerHTML ne reçoit de donnée du canal")
     ctx.close()
 
@@ -779,7 +807,7 @@ def autres_types(nav, base):
     code = prof.inner_text("#code").strip()
     espion = ctx.new_page()
     espion.goto(base + "index.html")
-    espion.evaluate("canal => { window.__vus = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); }; }", "quizz-nsi:" + code)
+    espion.evaluate("canal => { window.__vus = []; window.__pres = []; const bc = new BroadcastChannel('faux:' + canal); bc.onmessage = ({ data }) => { if (data.k === 'b') window.__vus.push(data.payload); else if (data.k === 'p') window.__pres.push(data.info); }; bc.postMessage({ k: 'p', cle: 'espion', info: { id: 'eeeeeeeeeeeeeeee', role: 'spectateur' } }); }", "quizz-nsi:" + code)
     tel = []
     for pseudo, theme in (("Kobalt", "light"), ("Ixo", "dark")):
         e = ctx.new_page()
@@ -920,11 +948,10 @@ def autres_types(nav, base):
         else:
             assert all(set(w) == {"k", "m", "n"} for w in m["mots"]), "un mot part avec autre chose que son numéro et ses voix"
             assert "kobalt" not in t and "ixo" not in t, "un pseudo est parti avec le nuage"
-        if m.get("t") == "rep":
-            assert set(m) == {"t", "de", "iv", "donnees"}
+    non_attribuable(espion, [m for m in vus if m.get("t") == "rep"])  # mots, voix, relier, puzzle, ligne : même longueur
     assert "motpiege" not in json.dumps(nuages[-1]), "le mot supprimé a disparu du dernier nuage envoyé"
     assert any(m.get("t") == "corrige" for m in vus)
-    print(f"  autres types : nuage (filtré, frein, caché puis montré, voix, mot supprimé partout), relier (60 points pour 3 paires sur 5), puzzle, ligne fautive ; {len(vus)} messages écoutés, mots seulement dans « nuage », sans pseudo, aucune réponse en clair")
+    print(f"  autres types : nuage (filtré, frein, caché puis montré, voix, mot supprimé partout), relier (60 points pour 3 paires sur 5), puzzle, ligne fautive ; {len(vus)} messages écoutés, mots seulement dans « nuage », sans pseudo, aucune réponse en clair ni attribuable")
     ctx.close()
 
 

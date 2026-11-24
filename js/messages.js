@@ -132,9 +132,10 @@
   function versHote(m) {
     if (!objet(m) || typeof m.t !== 'string') return null;
     if (m.t === 'bonjour') return cles(m, ['t', 'id']) && estId(m.id) ? { t: 'bonjour', id: m.id } : null;
-    // une réponse arrive chiffrée (js/chiffre.js) : on ne contrôle ici que l'enveloppe
-    if (m.t === 'rep') return cles(m, ['t', 'de', 'iv', 'donnees']) && Q.chiffre && Q.chiffre.estClePublique(m.de) && typeof m.iv === 'string' && /^[A-Za-z0-9_-]{16}$/.test(m.iv)
-      && typeof m.donnees === 'string' && /^[A-Za-z0-9_-]{1,400}$/.test(m.donnees) ? { t: 'rep', de: { x: m.de.x, y: m.de.y }, iv: m.iv, donnees: m.donnees } : null;
+    // une réponse arrive chiffrée (js/chiffre.js) : on ne contrôle ici que l'enveloppe, sans identifiant ni clé de
+    // l'expéditeur, et de longueur constante
+    if (m.t === 'rep') return cles(m, ['t', 'iv', 'donnees']) && Q.chiffre && typeof m.iv === 'string' && /^[A-Za-z0-9_-]{16}$/.test(m.iv)
+      && typeof m.donnees === 'string' && m.donnees.length === Q.chiffre.DONNEES && /^[A-Za-z0-9_-]+$/.test(m.donnees) ? { t: 'rep', iv: m.iv, donnees: m.donnees } : null;
     return null;
   }
   /* Le contenu déchiffré d'une réponse : { id, qid, c, n } pour une question à choix (c de 0 à 3),
@@ -159,7 +160,7 @@
   }
 
   /* Une entrée de présence. Les élèves : { id, pseudo, role: 'eleve', cle } ; l'hôte : { id, role: 'hote', cle }.
-     cle : la clé publique de l'appareil (déjà lisible dans chaque réponse envoyée) ; la page projetée y relie
+     cle : la clé publique de l'appareil (jamais sur l'enveloppe d'une réponse, js/chiffre.js) ; la page projetée y relie
      l'identifiant de l'élève (js/animer.js) : un autre appareil ne peut pas se faire passer pour lui ou elle.
      Supabase ajoute presence_ref : c'est la seule clé de plus permise. */
   function presence(p) {

@@ -94,21 +94,21 @@
     $('autreHote').textContent = autres.length ? 'Attention : une autre page projetée est ouverte sur cette séance (onglet dupliqué, autre ordinateur ?). Ferme-la : les réponses des élèves risquent de n\'arriver qu\'à l\'une des deux.' : '';
     const valides = toutes.filter(p => p.role === 'eleve');
     for (const p of valides) {
-      /* Un identifiant est relié à la clé publique de son appareil (js/chiffre.js) dès qu'elle est vue : dans la présence,
-         ou au premier envoi accepté. Une entrée de présence qui porte cet identifiant avec une autre clé (ou sans clé) vient
-         d'un autre appareil : elle est ignorée, sans rien changer ni envoyer (ni pseudo, ni refus, ni retrait). L'identifiant
-         d'un·e élève n'est connu des autres qu'une fois sa présence publiée, avec sa clé : personne ne peut le devancer. */
-      const de = Q.chiffre.empreinte(p.cle), dej = st.joueurs[p.id];
-      if (dej && dej.de && de !== dej.de) continue;
-      if (!p.pseudo) { envoyer({ t: 'refus', id: p.id, raison: 'invalide' }); continue; }
-      const f = { pseudo: p.pseudo };
-      const c = Q.clePseudo(f.pseudo);
-      const j = st.joueurs[p.id];
-      if (st.bannis.includes(c)) { if (!j || !j.retire || j.cle !== c) envoyer({ t: 'retire', id: p.id }); if (j) j.retire = true; continue; }
+      /* Un identifiant est relié, dès sa première présence, à la clé publique de son appareil (js/chiffre.js) et à son
+         pseudo. Une entrée de présence qui porte cet identifiant avec une autre clé, sans clé, ou avec un autre pseudo
+         (même en recopiant l'identifiant et la clé, deux valeurs publiques) est ignorée, sans rien changer ni envoyer : ni
+         pseudo, ni refus, ni retrait. Un pseudo ne change donc jamais sous un même identifiant (le téléphone qui veut un autre
+         pseudo repart avec un nouvel identifiant). L'identifiant d'un·e élève n'est connu des autres qu'une fois sa présence
+         publiée, avec sa clé : personne ne peut le devancer. */
+      const de = Q.chiffre.empreinte(p.cle), j = st.joueurs[p.id];
+      if (j && ((j.de && de !== j.de) || !p.pseudo || Q.clePseudo(p.pseudo) !== j.cle)) continue;
+      if (!p.pseudo || (!j && !de)) { envoyer({ t: 'refus', id: p.id, raison: 'invalide' }); continue; }
+      const c = Q.clePseudo(p.pseudo);
+      if (st.bannis.includes(c)) { if (!j || !j.retire) envoyer({ t: 'retire', id: p.id }); if (j) j.retire = true; continue; }
       const pris = Object.entries(st.joueurs).some(([id, k]) => id !== p.id && !k.retire && k.cle === c && (presents.has(id) || valides.some(x => x.id === id)));
-      if (pris && (!j || j.cle !== c)) { envoyer({ t: 'refus', id: p.id, raison: 'pris' }); continue; }
-      if (!j) { st.joueurs[p.id] = { pseudo: f.pseudo, cle: c, rep: {}, total: 0, de }; neuf = true; }
-      else { if (j.retire && j.cle !== c) { j.retire = false; neuf = true; } j.pseudo = f.pseudo; j.cle = c; if (!j.de && de) j.de = de; }
+      if (pris && !j) { envoyer({ t: 'refus', id: p.id, raison: 'pris' }); continue; }
+      if (!j) { st.joueurs[p.id] = { pseudo: p.pseudo, cle: c, rep: {}, total: 0, de }; neuf = true; }
+      else if (!j.de && de) j.de = de; // un état d'avant T131b, sans clé reliée
       presents.set(p.id, p);
     }
     sauver();
@@ -150,17 +150,18 @@
     if (env.t === 'rep') {
       if (!st.commence || !cleHote) return;
       const recu = Date.now();
-      const m = Q.messages.reponse(await cleHote.dechiffrer(env)); // illisible ou forgée : ignorée
+      /* L'enveloppe ne dit pas qui l'envoie (js/chiffre.js) : la page projetée essaie les clés reliées aux élèves (non
+         retiré·e·s) ; seule la bonne déchiffre. L'identifiant déchiffré doit être celui de l'élève relié·e à cette clé :
+         aucun téléphone ne touche à la réponse d'un·e autre. Sinon : ignoré, sans accusé. */
+      const x0 = await cleHote.dechiffrer(env, Object.values(st.joueurs).filter(j => !j.retire && j.de).map(j => j.de));
+      const m = x0 && Q.messages.reponse(x0.objet); // illisible, forgée ou d'une clé inconnue : ignorée
       if (!m) return;
       const d = diapo(), etat = inter(d) ? st.q[d.id] : null;
       if (!etat || m.qid !== d.id) return;
       const j = st.joueurs[m.id];
-      if (!j || j.retire) return;
-      // aucun téléphone ne touche à la réponse d'un·e autre : l'envoi doit venir de la clé reliée à cet identifiant
-      // (sinon : ignoré, sans accusé) ; une clé pas encore reliée l'est au premier envoi accepté
-      const de = Q.chiffre.empreinte(env.de);
-      if (!de || (j.de && j.de !== de)) return;
-      if (d.type === 'nuage') { if (!j.de) { j.de = de; sauver(); } recevoirNuage(d, etat, m, recu); return; }
+      if (!j || j.retire || !j.de || j.de !== x0.de) return;
+      const de = x0.de;
+      if (d.type === 'nuage') { recevoirNuage(d, etat, m, recu); return; }
       if (etat.ferme) return; // après le zéro ou la correction : plus rien n'est accepté (pas d'accusé)
       // le choix reçu : une réponse d'un autre type est contrôlée contre la diapositive du cours (longueur, indices)
       const v = qcu(d) ? (m.c === undefined ? null : m.c) : (m.r === undefined ? null : Q.activites.valider(d, m.r));
@@ -173,7 +174,6 @@
       // rien de retenu (autre appareil, envoi plus ancien) : pas d'accusé, le téléphone ne dira pas « reçue »
       if (!x.accuse) return;
       if (x.rep !== ancien) {
-        j.de = x.lien;
         j.rep[d.id] = qcu(d) ? { c: x.rep.v, ms: x.rep.ms, k: x.rep.k, n: x.rep.n } : { a: x.rep.v, ms: x.rep.ms, k: x.rep.k, n: x.rep.n }; sauver(); majStatut();
       }
       // l'accusé de réception ne porte qu'un nombre tiré au hasard par le téléphone, pas son identifiant
