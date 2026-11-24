@@ -140,7 +140,7 @@ def t(s):
 
 
 def mots_de_recherche(c, notions):
-    """Ce que la recherche lit : le titre, les mots-clés, les notions (libellés et synonymes du site)."""
+    """Ce que la recherche lit : le titre, les mots-clés, les notions (libellés, alternatifs et mots du code du site)."""
     morceaux = [c["titre"]] + c.get("mots_cles", [])
     for x in c.get("notions", []):
         n = notions[x]
@@ -153,14 +153,14 @@ def carte(c, types, notions, niveaux):
     demo = c.get("demonstration") is True
     ty = types.get(c.get("gabarit"), {})
     puce = "Démonstration" if demo else ty.get("puce", "")
-    meta = "un exemple de chaque type, non noté" if demo else f"{c['questions']} questions · {c['duree_minutes']}&#xA0;min"
+    meta = "un exemple de chaque type de question" if demo else f"{c['questions']} questions · {c['duree_minutes']}&#xA0;min"
     classe = "qz-carte" + (" rev" if c.get("gabarit") == "revision" else "") + (" demo" if demo else "")
     libelles = ", ".join(notions[x]["libelle"] for x in c["notions"])
     return (
         f'<li class="{classe}" data-cours="{i}" data-niveau="{a(niveaux[c["niveau"]]["id"])}" data-type="{a(c.get("gabarit", "demonstration"))}"'
         f' data-notions="{a(" ".join(c["notions"]))}" data-mots="{a(mots_de_recherche(c, notions))}">'
         f'<span class="puce">{t(puce)}</span>'
-        f'<h4 id="t-{i}">{t(c["titre"])}</h4>'
+        f'<h3 id="t-{i}">{t(c["titre"])}</h3>'
         f'<p class="qz-meta">{meta}</p>'
         f'<p class="qz-notions"><span class="visuel-cache">Notions travaillées : </span>{t(libelles)}</p>'
         f'<div class="qz-actions">'

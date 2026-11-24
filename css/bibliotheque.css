@@ -67,7 +67,7 @@ main { max-width: 90rem; margin: 0 auto; }
 .qz-carte.rev .puce { border-style: dashed; }
 .qz-carte.demo { border-color: var(--td-trait); }
 .qz-carte .puce { align-self: flex-start; }
-.qz-carte h4 { margin: 4px 0 0; font: 700 1.08rem/1.25 var(--td-texte); }
+.qz-carte h3 { margin: 4px 0 0; font: 700 1.08rem/1.25 var(--td-texte); }
 .qz-meta { margin: 0; font-size: .92rem; color: var(--td-encre-douce); }
 .qz-notions { margin: 0 0 6px; font-size: .82rem; color: var(--td-encre-douce); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .qz-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }

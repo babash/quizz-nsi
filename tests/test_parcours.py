@@ -1189,7 +1189,7 @@ def rendus(nav, base):
 
 def bibliotheque(nav, base):
     """L'accueil rangé en bibliothèque, affiné comme la bibliothèque du site : cases Niveau, Type et Notions
-    travaillées avec leur nombre, puces des filtres actifs, recherche sans accents (synonymes du thésaurus compris),
+    travaillées avec leur nombre, puces des filtres actifs, recherche sans accents (alternatifs du thésaurus compris),
     adresse (et anciennes adresses), aucun résultat, clavier, sans JavaScript, et les deux actions de cinq cartes
     qui ouvrent les mêmes adresses qu'avant."""
     with open(os.path.join(RACINE, "cours", "catalogue.json"), encoding="utf-8") as f:
@@ -1244,11 +1244,11 @@ def bibliotheque(nav, base):
         assert p.locator(visibles).count() == piles
         p.click("#puces .lien-bouton")
         assert p.locator(visibles).count() == total and p.is_hidden("#puces")
-        # la recherche, sans accents, dans les titres, les mots-clés et les notions (synonymes du site)
+        # la recherche, sans accents, dans les titres, les mots-clés et les notions (alternatifs du site)
         p.fill("#recherche", "RECURSIVITE")
         assert p.locator(visibles).count() == 2, "récursivité : le cours et le tri fusion"
         p.fill("#recherche", "poo")
-        assert p.locator(visibles).count() == 2, "POO : un synonyme du thésaurus du site"
+        assert p.locator(visibles).count() == 2, "POO : un alternatif du thésaurus du site"
         p.fill("#recherche", "noeud")
         assert p.is_visible(".qz-carte[data-cours=arbres-binaires]")
         # aucun résultat ici, mais sans les filtres
@@ -1303,7 +1303,7 @@ def bibliotheque(nav, base):
     assert p.locator(".qz-carte:visible").count() == len(cat["cours"]), "sans JavaScript : la liste complète"
     assert p.is_hidden("#filtres")
     ctx.close()
-    print(f"  bibliothèque : {total} cours-quiz ; cases Niveau, Type, Notions travaillées et leurs nombres, puces, recherche sans accents et synonymes, adresse (et ancienne), aucun résultat, clavier, 5 cartes ouvertes, sans JavaScript, 3 largeurs")
+    print(f"  bibliothèque : {total} cours-quiz ; cases Niveau, Type, Notions travaillées et leurs nombres, puces, recherche sans accents et alternatifs, adresse (et ancienne), aucun résultat, clavier, 5 cartes ouvertes, sans JavaScript, 3 largeurs")
 
 
 def main():
