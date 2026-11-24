@@ -23,6 +23,7 @@
   }
 
   // L'état relu dans le stockage de l'onglet a pu être modifié : on ne garde que ce qui est conforme.
+  const NONCE = /^[0-9a-f]{16}$/, EMPREINTE = /^[A-Za-z0-9_-]{86}$/;
   const DUREES = [0, 20, 30, 45, 60, 90], PODIUMS = ['fin', 'chaque', 'jamais'];
   function etatRelu(v) {
     const ent = (x, a, b) => Number.isSafeInteger(x) && x >= a && x <= b;
@@ -53,13 +54,14 @@
         const k = ent(r.k, 0, B.MAX_CHANGEMENTS) ? r.k : 0;
         if (dq.type === 'question') { if (!ent(r.c, 0, 3)) continue; rep[qid] = { c: r.c, ms: r.ms, k }; }
         else { const a = Q.activites.valider(dq, r.a); if (a === null) continue; rep[qid] = { a, ms: r.ms, k }; }
+        if (typeof r.n === 'string' && NONCE.test(r.n)) rep[qid].n = r.n; // le nombre tiré au hasard de l'envoi retenu
         if (typeof r.juste === 'boolean' && ent(r.gain, 0, 1000) && r.detail && typeof r.detail === 'object') {
           const d = {}; let ok = true;
           for (const k of ['participation', 'juste', 'rapidite', 'rebond']) { if (!ent(r.detail[k], 0, 1000)) ok = false; d[k] = r.detail[k]; }
           if (ok) Object.assign(rep[qid], { juste: r.juste, gain: r.gain, detail: d });
         }
       }
-      st.joueurs[id] = { pseudo: j.pseudo, cle: Q.clePseudo(j.pseudo), rep, total: j.total, retire: j.retire === true };
+      st.joueurs[id] = { pseudo: j.pseudo, cle: Q.clePseudo(j.pseudo), rep, total: j.total, retire: j.retire === true, de: typeof j.de === 'string' && EMPREINTE.test(j.de) ? j.de : null };
     }
     return st;
   }
@@ -92,6 +94,12 @@
     $('autreHote').textContent = autres.length ? 'Attention : une autre page projetée est ouverte sur cette séance (onglet dupliqué, autre ordinateur ?). Ferme-la : les réponses des élèves risquent de n\'arriver qu\'à l\'une des deux.' : '';
     const valides = toutes.filter(p => p.role === 'eleve');
     for (const p of valides) {
+      /* Un identifiant est relié à la clé publique de son appareil (js/chiffre.js) dès qu'elle est vue : dans la présence,
+         ou au premier envoi accepté. Une entrée de présence qui porte cet identifiant avec une autre clé (ou sans clé) vient
+         d'un autre appareil : elle est ignorée, sans rien changer ni envoyer (ni pseudo, ni refus, ni retrait). L'identifiant
+         d'un·e élève n'est connu des autres qu'une fois sa présence publiée, avec sa clé : personne ne peut le devancer. */
+      const de = Q.chiffre.empreinte(p.cle), dej = st.joueurs[p.id];
+      if (dej && dej.de && de !== dej.de) continue;
       if (!p.pseudo) { envoyer({ t: 'refus', id: p.id, raison: 'invalide' }); continue; }
       const f = { pseudo: p.pseudo };
       const c = Q.clePseudo(f.pseudo);
@@ -99,8 +107,8 @@
       if (st.bannis.includes(c)) { if (!j || !j.retire || j.cle !== c) envoyer({ t: 'retire', id: p.id }); if (j) j.retire = true; continue; }
       const pris = Object.entries(st.joueurs).some(([id, k]) => id !== p.id && !k.retire && k.cle === c && (presents.has(id) || valides.some(x => x.id === id)));
       if (pris && (!j || j.cle !== c)) { envoyer({ t: 'refus', id: p.id, raison: 'pris' }); continue; }
-      if (!j) { st.joueurs[p.id] = { pseudo: f.pseudo, cle: c, rep: {}, total: 0 }; neuf = true; }
-      else { if (j.retire && j.cle !== c) { j.retire = false; neuf = true; } j.pseudo = f.pseudo; j.cle = c; }
+      if (!j) { st.joueurs[p.id] = { pseudo: f.pseudo, cle: c, rep: {}, total: 0, de }; neuf = true; }
+      else { if (j.retire && j.cle !== c) { j.retire = false; neuf = true; } j.pseudo = f.pseudo; j.cle = c; if (!j.de && de) j.de = de; }
       presents.set(p.id, p);
     }
     sauver();
@@ -148,7 +156,11 @@
       if (!etat || m.qid !== d.id) return;
       const j = st.joueurs[m.id];
       if (!j || j.retire) return;
-      if (d.type === 'nuage') { recevoirNuage(d, etat, m, recu); return; }
+      // aucun téléphone ne touche à la réponse d'un·e autre : l'envoi doit venir de la clé reliée à cet identifiant
+      // (sinon : ignoré, sans accusé) ; une clé pas encore reliée l'est au premier envoi accepté
+      const de = Q.chiffre.empreinte(env.de);
+      if (!de || (j.de && j.de !== de)) return;
+      if (d.type === 'nuage') { if (!j.de) { j.de = de; sauver(); } recevoirNuage(d, etat, m, recu); return; }
       if (etat.ferme) return; // après le zéro ou la correction : plus rien n'est accepté (pas d'accusé)
       // le choix reçu : une réponse d'un autre type est contrôlée contre la diapositive du cours (longueur, indices)
       const v = qcu(d) ? (m.c === undefined ? null : m.c) : (m.r === undefined ? null : Q.activites.valider(d, m.r));
@@ -156,9 +168,14 @@
       // changer d'avis : le dernier choix compte, et son instant (hors pause) pour la rapidité (js/bareme.js, retenir) ;
       // le temps hors pause : un choix fait pendant la pause compte le temps du début de la pause. Rien n'est affiché
       // de ces changements : le compteur ne voit qu'une réponse par élève.
-      const avant = j.rep[d.id], ancien = avant ? { v: qcu(d) ? avant.c : avant.a, ms: avant.ms, k: avant.k || 0 } : null;
-      const r = B.retenir(ancien, { v, k: m.k }, MN.ecoule(etat, recu), (x, y) => JSON.stringify(x) === JSON.stringify(y));
-      if (r !== ancien) { j.rep[d.id] = qcu(d) ? { c: r.v, ms: r.ms, k: r.k } : { a: r.v, ms: r.ms, k: r.k }; sauver(); majStatut(); }
+      const avant = j.rep[d.id], ancien = avant ? { v: qcu(d) ? avant.c : avant.a, ms: avant.ms, k: avant.k || 0, n: avant.n } : null;
+      const x = B.recevoir(j.de, ancien, { de, v, k: m.k, n: m.n }, MN.ecoule(etat, recu), (a, b) => JSON.stringify(a) === JSON.stringify(b));
+      // rien de retenu (autre appareil, envoi plus ancien) : pas d'accusé, le téléphone ne dira pas « reçue »
+      if (!x.accuse) return;
+      if (x.rep !== ancien) {
+        j.de = x.lien;
+        j.rep[d.id] = qcu(d) ? { c: x.rep.v, ms: x.rep.ms, k: x.rep.k, n: x.rep.n } : { a: x.rep.v, ms: x.rep.ms, k: x.rep.k, n: x.rep.n }; sauver(); majStatut();
+      }
       // l'accusé de réception ne porte qu'un nombre tiré au hasard par le téléphone, pas son identifiant
       accuses.add(m.n);
       if (!accuseMinuterie) accuseMinuterie = setTimeout(() => { envoyer({ t: 'recus', qid: d.id, n: [...accuses] }); accuses = new Set(); accuseMinuterie = null; }, 400);
@@ -211,6 +228,10 @@
   // La correction ne diffuse que ce que l'écran projeté montre à toute la classe : la bonne réponse,
   // la répartition en nombres, le podium s'il est affiché. Chaque téléphone calcule ses points avec le
   // barème et la question corrigée juste avant (pour le rebond).
+  /* Les choix retenus : le nombre tiré au hasard (n) de l'envoi retenu de chaque élève qui a répondu, trié. Chaque
+     téléphone y reconnaît le sien et sait ainsi quel choix compte (un changement arrivé après la fermeture n'y est pas) ;
+     pour les autres, ce ne sont que des nombres. */
+  const retenusDe = d => [...new Set(joueursActifs().map(j => j.rep[d.id] && j.rep[d.id].n).filter(n => typeof n === 'string' && NONCE.test(n)))].sort();
   const podiumPublic = () => podium().filter(j => j.place <= 3).slice(0, 20).map(j => ({ pseudo: j.pseudo, total: j.total, place: j.place }));
   function messageCorrection(d) {
     const k = st.ordre.indexOf(d.id);
@@ -219,10 +240,10 @@
       // sa réponse à la solution du fichier du cours. Les mots du nuage ne sont jamais envoyés aux téléphones.
       const l = joueursActifs().filter(j => j.rep[d.id]);
       return { t: 'corrige', cours: cours.id, qid: d.id, precedente: k > 0 ? st.ordre[k - 1] : null, duree: MN.accordee(st.q[d.id]), nb: l.length,
-        justes: l.filter(j => j.rep[d.id].juste === true).length, podium: st.podium === 'chaque' ? podiumPublic() : null, series: st.series };
+        justes: l.filter(j => j.rep[d.id].juste === true).length, podium: st.podium === 'chaque' ? podiumPublic() : null, series: st.series, retenus: retenusDe(d) };
     }
     return { t: 'correction', cours: cours.id, qid: d.id, precedente: k > 0 ? st.ordre[k - 1] : null, bonne: d.bonne, rep: repartition(d),
-      bareme: Object.assign({}, B.BAREME), duree: MN.accordee(st.q[d.id]), podium: st.podium === 'chaque' ? podiumPublic() : null, series: st.series };
+      bareme: Object.assign({}, B.BAREME), duree: MN.accordee(st.q[d.id]), podium: st.podium === 'chaque' ? podiumPublic() : null, series: st.series, retenus: retenusDe(d) };
   }
   function messagePhase() {
     const d = diapo();
@@ -287,7 +308,7 @@
     if (!e || e.ferme) return;
     MN.reprendre(e, Date.now()); // une pause en cours s'arrête avec la question
     e.ferme = true; e.parTemps = !!parTemps; e.raison = raison || 'Réponses fermées.'; sauver();
-    envoyer({ t: 'fermee', qid: d.id });
+    envoyer({ t: 'fermee', qid: d.id, retenus: retenusDe(d) });
     majStatut(); majAction(); majMinuterie();
   }
 

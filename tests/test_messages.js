@@ -21,15 +21,15 @@ const VERS_ELEVE = {
   attente: { t: 'attente' },
   notion: { t: 'notion', cours: 'piles-files', n: 3, f: 2 },
   question: { t: 'question', cours: 'piles-files', qid: 'q01', reste: 30000, duree: 45, ferme: false, pause: false },
-  fermee: { t: 'fermee', qid: 'q01' },
+  fermee: { t: 'fermee', qid: 'q01', retenus: ['00112233aabbccdd', 'ffeeddccbbaa9988'] },
   recus: { t: 'recus', qid: 'q01', n: ['00112233aabbccdd', 'ffeeddccbbaa9988'] },
   retire: { t: 'retire', id: MOI },
   refus: { t: 'refus', id: MOI, raison: 'pris' },
   correction: { t: 'correction', cours: 'piles-files', qid: 'q02', precedente: 'q01', bonne: 3, rep: [1, 2, 0, 0],
-    bareme: { participation: 10, juste: 100, rapidite: 20, rebond: 30 }, duree: 45, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: true },
+    bareme: { participation: 10, juste: 100, rapidite: 20, rebond: 30 }, duree: 45, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: true, retenus: ['0011223344556677'] },
   fin: { t: 'fin', cours: 'piles-files', podium: [{ pseudo: 'Ixo', total: 500, place: 1 }] },
   nuage: { t: 'nuage', cours: 'demo-types-de-questions', qid: 'a01', mots: [{ k: 0, m: 'boucle', n: 3 }, { k: 4, m: 'tant-que', n: 1 }] },
-  corrige: { t: 'corrige', cours: 'revision-conditions-boucles', qid: 'a02', precedente: 'q05', duree: 0, nb: 3, justes: 1, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: false },
+  corrige: { t: 'corrige', cours: 'revision-conditions-boucles', qid: 'a02', precedente: 'q05', duree: 0, nb: 3, justes: 1, podium: [{ pseudo: 'Kobalt', total: 400, place: 1 }], series: false, retenus: ['0011223344556677', '8899aabbccddeeff'] },
 };
 const VERS_HOTE = { bonjour: { t: 'bonjour', id: MOI }, rep: { t: 'rep', de: CLE, iv: 'abcdefghijklmnop', donnees: 'QUJDRA' } };
 
@@ -130,12 +130,30 @@ for (const t of ['correction', 'corrige']) {
 const MN = require(path.join(__dirname, '..', 'js', 'bareme.js')).minuterie;
 for (let d = -20; d <= 800; d++) assert.equal(M.dureeAccordee(d), MN.dureeAccordeeValide(d), 'durée ' + d);
 
+// T131b, défaut 2 : « retenus » (les nombres tirés au hasard des envois retenus) à la fermeture et à la correction :
+// obligatoire, liste de nombres au format strict, sans doublon, jamais plus que de réponses ; rien d'autre (ni identifiant
+// ni choix) n'y passe
+for (const t of ['fermee', 'correction', 'corrige']) {
+  const sans = copie(VERS_ELEVE[t]); delete sans.retenus; assert.equal(M.versEleve(sans, MOI), null, t + ' sans retenus'); n++;
+  assert.deepEqual(M.versEleve(Object.assign(copie(VERS_ELEVE[t]), { retenus: [] }), MOI).retenus, []);
+  for (const rt of [null, 'abc', {}, [MOI, MOI], ['0011223344556677', '0011223344556677'], ['ABCDEF0123456789'], ['0011'], [1], [[MOI]], [{ id: MOI, c: 2 }], [MOI + 'aa'], Array(100001).fill(MOI)]) {
+    assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE[t]), { retenus: rt }), MOI), null, t + ' retenus ' + JSON.stringify(rt).slice(0, 40)); n++;
+  }
+}
+assert.equal(M.versEleve(Object.assign(copie(VERS_ELEVE.corrige), { nb: 1 }), MOI), null, 'corrige : plus de retenus que de réponses'); n++;
+// T131b, défaut 1 : la présence d'un·e élève porte la clé publique de son appareil (facultative, au format strict)
+assert.deepEqual(M.presence({ id: MOI, pseudo: 'Ixo', role: 'eleve', cle: CLE }), { id: MOI, role: 'eleve', pseudo: 'Ixo', cle: CLE });
+assert.equal(M.presence({ id: MOI, pseudo: 'Ixo', role: 'eleve' }).cle, null);
+for (const cle of [null, BALISE, {}, { x: 'A'.repeat(43) }, { x: 'A'.repeat(43), y: 'B'.repeat(42) }, { x: 'A'.repeat(43), y: 'B'.repeat(43), d: 'C'.repeat(43) }, { x: BALISE, y: 'B'.repeat(43) }, ['A'.repeat(43), 'B'.repeat(43)]]) {
+  assert.equal(M.presence({ id: MOI, pseudo: 'Ixo', role: 'eleve', cle }), null, 'clé de présence ' + JSON.stringify(cle).slice(0, 40)); n++;
+}
+
 // types inconnus, prototypes, valeurs non objets
 for (const v of [null, 3, 'attente', [], { t: 'inconnu' }, { t: { toString: () => 'attente' } }, JSON.parse('{"t":"attente","__proto__":{"x":1}}')]) {
   assert.equal(M.versEleve(v, MOI), null, JSON.stringify(v)); assert.equal(M.versHote(v), null); n++;
 }
 // présence : pseudo filtré, rôle permis, clés permises
-assert.deepEqual(M.presence({ id: MOI, pseudo: 'Zéphyr', role: 'eleve', presence_ref: 'x' }), { id: MOI, role: 'eleve', pseudo: 'Zéphyr' });
+assert.deepEqual(M.presence({ id: MOI, pseudo: 'Zéphyr', role: 'eleve', presence_ref: 'x' }), { id: MOI, role: 'eleve', pseudo: 'Zéphyr', cle: null });
 assert.deepEqual(M.presence({ id: MOI, role: 'hote', cle: CLE }), { id: MOI, role: 'hote', cle: CLE });
 assert.equal(M.presence({ id: MOI, role: 'hote', cle: { x: BALISE, y: 'B'.repeat(43) } }), null);
 assert.equal(M.presence({ id: MOI, pseudo: BALISE, role: 'eleve' }).pseudo, null);
@@ -146,4 +164,22 @@ assert.equal(M.presence({ id: MOI, pseudo: 'Ixo', role: 'eleve', html: '<b>' }),
 assert.equal(M.presence({ id: MOI, pseudo: {}, role: 'eleve' }), null);
 n += 7;
 assert.equal(globalThis.__pwned, undefined);
-console.log(n + ' messages forgés rejetés, aucun accepté');
+// T131b, défaut 1, le chiffrement : la paire de clés gardée sur le téléphone redonne la même clé publique après un
+// rechargement ; un faussaire qui met la clé publique d'un·e autre sur son enveloppe ne peut pas être déchiffré
+(async () => {
+  const C = globalThis.QuizzNSI.chiffre, h = await C.hote(), e1 = await C.eleve();
+  assert.ok(C.estGarde(e1.cle));
+  const e2 = await C.eleve(JSON.parse(JSON.stringify(e1.cle)));
+  assert.deepEqual(e2.publique, e1.publique, 'la clé gardée redonne la même clé publique');
+  const env = await e2.chiffrer({ id: MOI, qid: 'q01', c: 2, n: '00112233aabbccdd', k: 0 }, h.publique);
+  assert.deepEqual(env.de, e1.publique);
+  assert.equal((await h.dechiffrer(env)).c, 2);
+  const faux = await C.eleve(), fe = await faux.chiffrer({ id: MOI, qid: 'q01', c: 3, n: '00112233aabbccdd', k: 30 }, h.publique);
+  assert.equal(await h.dechiffrer(Object.assign({}, fe, { de: e1.publique })), null, 'enveloppe au nom d\'un·e autre : illisible');
+  for (const g of [null, {}, { x: e1.cle.x, y: e1.cle.y }, Object.assign({}, e1.cle, { d: BALISE }), Object.assign({}, e1.cle, { z: 1 }), Object.assign({}, e1.cle, { d: 'A'.repeat(43) })]) {
+    const e = await C.eleve(g); assert.ok(C.estGarde(e.cle)); n++;
+    if (g && g.d === 'A'.repeat(43)) assert.notDeepEqual(e.publique, e1.publique); // une clé illisible : une nouvelle paire
+  }
+  assert.equal(C.empreinte(e1.publique), e1.publique.x + e1.publique.y); assert.equal(C.empreinte({ x: 'a' }), null);
+  console.log(n + ' messages forgés rejetés, aucun accepté');
+})().catch(e => { console.error(e); process.exit(1); });

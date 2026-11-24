@@ -182,6 +182,50 @@ essai('changer d\'avis : les séries et le rebond se jugent sur la réponse fina
   assert.equal(B.serie(finales.slice(0, 2)).n, 2);
 });
 
+/* T131b, défaut 1 : aucun téléphone ne touche à la réponse d'un·e autre. La page projetée relie l'identifiant à la clé
+   publique de son appareil ; un envoi d'une autre clé (un faussaire qui a lu l'identifiant dans la présence) est ignoré,
+   sans accusé ; l'accusé ne part que pour un envoi retenu. */
+const ILYES = 'I'.repeat(86), FAUX = 'F'.repeat(86);
+const recevoirTous = (lien, envois) => envois.reduce((e, [de, v, k, n, ms]) => { const x = B.recevoir(e.lien, e.rep, { de, v, k, n }, ms, egal); e.accuses.push(x.accuse); return { lien: x.lien, rep: x.rep, accuses: e.accuses }; }, { lien, rep: null, accuses: [] });
+essai('défaut 1 : un faux envoi au nom d\'un·e autre, k = 30, après sa réponse : ignoré, sans accusé ; son vrai changement compte', () => {
+  const e = recevoirTous(ILYES, [[ILYES, 1, 0, 'n0', 11000], [FAUX, 2, 30, 'nf', 11500], [ILYES, 3, 1, 'n1', 12000]]);
+  assert.deepEqual(e.rep, { v: 3, ms: 12000, k: 1, n: 'n1' });
+  assert.deepEqual(e.accuses, [true, false, true]);
+  assert.equal(e.lien, ILYES);
+});
+essai('défaut 1 : devancer un·e élève (avant sa réponse, clé reliée par la présence) : ignoré', () => {
+  const e = recevoirTous(ILYES, [[FAUX, 2, 30, 'nf', 1000], [FAUX, 2, 0, 'nf2', 1000], [ILYES, 1, 0, 'n0', 3000]]);
+  assert.deepEqual(e.rep, { v: 1, ms: 3000, k: 0, n: 'n0' });
+  assert.deepEqual(e.accuses, [false, false, true]);
+});
+essai('défaut 1 : une clé pas encore reliée l\'est au premier envoi accepté, puis tient', () => {
+  const e = recevoirTous(null, [[ILYES, 1, 0, 'n0', 1000], [FAUX, 2, 30, 'nf', 2000]]);
+  assert.equal(e.lien, ILYES); assert.deepEqual(e.accuses, [true, false]); assert.equal(e.rep.v, 1);
+  assert.deepEqual(B.recevoir(null, null, { de: '', v: 1, k: 0, n: 'x' }, 0, egal), { lien: null, rep: null, accuse: false });
+  assert.deepEqual(B.recevoir(null, null, { de: ILYES, v: null, k: 0, n: 'x' }, 0, egal), { lien: null, rep: null, accuse: false }); // refusé : ne relie rien
+});
+essai('défaut 1 : pas d\'accusé pour un changement ignoré ; le même envoi reçu deux fois en reçoit un', () => {
+  const e = recevoirTous(ILYES, [[ILYES, 0, 0, 'n0', 1000], [ILYES, 2, 2, 'n2', 5000], [ILYES, 1, 1, 'n1', 6000], [ILYES, 2, 2, 'n2', 7000], [ILYES, 3, 2, 'n9', 7500]]);
+  assert.deepEqual(e.rep, { v: 2, ms: 5000, k: 2, n: 'n2' });
+  assert.deepEqual(e.accuses, [true, true, false, true, false]);
+});
+/* T131b, défaut 2 : le téléphone affiche et compte le choix que la page projetée a retenu (liste « retenus »). */
+essai('défaut 2 : un changement arrivé après la fermeture : le téléphone retrouve le choix retenu et les mêmes points', () => {
+  const envois = [['n0', 0, 2000], ['n1', 1, 19500]]; // faux à 2 s, puis la bonne réponse (1) à 19,5 s, arrivée trop tard
+  const r = B.retenuParmi(envois, ['aaaaaaaaaaaaaaaa', 'n0']);
+  assert.deepEqual(r, { v: 0, ms: 2000 });
+  assert.equal(B.points({ juste: r.v === 1, ms: r.ms }, { duree: 20 }).total, 10); // comme la page projetée, et pas 110
+  assert.deepEqual(B.retenuParmi(envois, ['n1']), { v: 1, ms: 19500 });
+});
+essai('défaut 2 : la première réponse arrivée trop tard : aucun choix retenu, 0 point des deux côtés', () => {
+  assert.equal(B.retenuParmi([['n0', 1, 19900]], ['bbbbbbbbbbbbbbbb']), null);
+  assert.equal(B.points(null, { duree: 20 }).total, 0);
+  assert.equal(B.retenuParmi([], ['n0']), null); assert.equal(B.retenuParmi(null, ['n0']), null); assert.equal(B.retenuParmi([['n0', 1, 0]], null), null);
+});
+essai('défaut 2 : accusé perdu (A reçu, B retenu sans accusé, C trop tard) : le téléphone retrouve B', () => {
+  assert.deepEqual(B.retenuParmi([['nA', 0, 1000], ['nB', 1, 5000], ['nC', 2, 19800]], ['nB']), { v: 1, ms: 5000 });
+});
+
 essai('durées accordées possibles', () => {
   for (const d of [0, 20, 30, 35, 45, 60, 90, 105, 620, 690]) assert.ok(MN.dureeAccordeeValide(d), d);
   for (const d of [-15, 1, 10, 15, 21, 46, 91, 635, 691, 3600, 2.5, NaN, '45']) assert.equal(MN.dureeAccordeeValide(d), false, String(d));

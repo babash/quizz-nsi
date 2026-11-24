@@ -1,5 +1,5 @@
 /* QuizzNSI : le barème du mode « en classe » (MIT, Babash - NSI Tani Malandi).
-   Fonctions pures, sans page ni réseau : elles sont testées par tests/test_bareme.js (node).
+   Fonctions pures, sans page ni réseau : elles sont testées par tests/test_moteur.js (node).
 
    Barème proposé (à valider par l'enseignant·e) :
    - répondre, même faux : +10 (on ose répondre) ;
@@ -125,7 +125,32 @@
     return { v: nouveau.v, ms, k: nouveau.k };
   }
 
-  const api = { BAREME, points, classer, repartition, progression, serie, PALIERS, minuterie, retenir, MAX_CHANGEMENTS };
+  /* Recevoir un envoi sur la page projetée (T131b) : aucun téléphone ne touche à la réponse d'un·e autre.
+     lien : l'empreinte de la clé publique reliée à l'identifiant de l'élève (null : pas encore reliée) ;
+     avant : null ou { v, ms, k, n } (le choix retenu, n : le nombre tiré au hasard de son envoi) ;
+     envoi : { de, v, k, n } (de : l'empreinte de la clé de l'expéditeur, lue sur l'enveloppe chiffrée).
+     Un envoi d'une autre clé est ignoré ; une clé pas encore reliée l'est au premier envoi accepté. L'accusé de
+     réception (accuse) ne part que pour un envoi retenu, ou pour le même envoi reçu deux fois : jamais pour un
+     changement ignoré. Renvoie { lien, rep, accuse }. */
+  function recevoir(lien, avant, envoi, ms, egal) {
+    const rien = { lien, rep: avant, accuse: false };
+    if (!envoi || typeof envoi.de !== 'string' || !envoi.de || (lien && lien !== envoi.de)) return rien;
+    const ancien = avant ? { v: avant.v, ms: avant.ms, k: avant.k || 0 } : null;
+    const r = retenir(ancien, { v: envoi.v, k: envoi.k }, ms, egal);
+    if (r === ancien) return { lien, rep: avant, accuse: !!avant && avant.n === envoi.n };
+    return { lien: lien || envoi.de, rep: { v: r.v, ms: r.ms, k: r.k, n: envoi.n }, accuse: true };
+  }
+  /* Sur le téléphone : parmi ses envois d'une question ([n, choix, instant], dans l'ordre), celui que la page projetée
+     a retenu, d'après la liste « retenus » de la fermeture ou de la correction : { v, ms }, ou null (aucun envoi retenu :
+     arrivé trop tard, ou jamais arrivé). Le téléphone affiche et compte ce choix-là, comme la page projetée. */
+  function retenuParmi(envois, retenus) {
+    if (!Array.isArray(envois) || !Array.isArray(retenus)) return null;
+    const vus = new Set(retenus);
+    for (let i = envois.length - 1; i >= 0; i--) if (Array.isArray(envois[i]) && vus.has(envois[i][0])) return { v: envois[i][1], ms: envois[i][2] };
+    return null;
+  }
+
+  const api = { BAREME, points, classer, repartition, progression, serie, PALIERS, minuterie, retenir, recevoir, retenuParmi, MAX_CHANGEMENTS };
   racine.QuizzNSI = racine.QuizzNSI || {};
   racine.QuizzNSI.bareme = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

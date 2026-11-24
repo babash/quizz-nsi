@@ -46,19 +46,40 @@
     };
   }
 
-  /* Un téléphone : chiffrer un objet pour une clé publique de la page projetée. */
-  async function eleve() {
-    const p = await paire(), cles = new Map();
+  /* Un téléphone : chiffrer un objet pour une clé publique de la page projetée.
+     garde : la paire de clés du téléphone, gardée sur l'appareil pour la séance ({ x, y, d } en base64url, voir
+     js/rejoindre.js) ; la page projetée relie l'identifiant de l'élève à cette clé publique (js/animer.js), et un
+     rechargement de la page doit donc retrouver la même. Sans garde valable (ou illisible), une nouvelle paire.
+     La partie privée ne sort jamais de l'appareil : elle n'est ni envoyée ni affichée. */
+  const estGarde = v => estClePublique(v && typeof v === 'object' ? { x: v.x, y: v.y } : null) && typeof v.d === 'string' && v.d.length === 43 && B64.test(v.d) && Object.keys(v).length === 3;
+  async function eleve(garde) {
+    let prive = null, publique = null, cle = null;
+    if (estGarde(garde)) {
+      try {
+        prive = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: garde.x, y: garde.y, d: garde.d, ext: true }, ECDH, false, ['deriveKey']);
+        publique = { x: garde.x, y: garde.y }; cle = { x: garde.x, y: garde.y, d: garde.d };
+      } catch (e) { prive = null; }
+    }
+    if (!prive) {
+      // extractible une seule fois, pour être gardée sur l'appareil ; la clé importée ensuite ne l'est plus
+      const p = await crypto.subtle.generateKey(ECDH, true, ['deriveKey']);
+      const j = await crypto.subtle.exportKey('jwk', p.privateKey);
+      prive = p.privateKey; publique = { x: j.x, y: j.y }; cle = { x: j.x, y: j.y, d: j.d };
+    }
+    const cles = new Map();
     return {
+      publique, cle,
       async chiffrer(objet, publiqueHote) {
         const k = publiqueHote.x + publiqueHote.y;
-        if (!cles.has(k)) cles.set(k, cleCommune(p.prive, publiqueHote));
+        if (!cles.has(k)) cles.set(k, cleCommune(prive, publiqueHote));
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const donnees = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await cles.get(k), new TextEncoder().encode(JSON.stringify(objet)));
-        return { de: p.publique, iv: versB64(iv), donnees: versB64(donnees) };
+        return { de: publique, iv: versB64(iv), donnees: versB64(donnees) };
       },
     };
   }
+  // l'empreinte d'une clé publique (ce que la page projetée relie à l'identifiant d'un·e élève)
+  const empreinte = c => estClePublique(c) ? c.x + c.y : null;
 
-  Q.chiffre = { disponible, hote, eleve, estClePublique };
+  Q.chiffre = { disponible, hote, eleve, estClePublique, estGarde, empreinte };
 })(typeof window !== 'undefined' ? window : globalThis);

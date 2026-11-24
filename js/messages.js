@@ -9,7 +9,9 @@
    Ce que le canal diffuse se limite à ce que l'écran projeté montre déjà à toute la classe : la bonne
    réponse, la répartition des réponses (en nombres), le podium quand il est affiché, l'état de la minuterie (temps restant,
    pause) et le réglage « Afficher les séries » ; jamais la série d'un·e élève (chaque téléphone calcule la sienne). Chaque téléphone
-   calcule ses propres points ; les réponses des élèves arrivent chiffrées pour la page projetée.
+   calcule ses propres points ; les réponses des élèves arrivent chiffrées pour la page projetée. À la fermeture et à la
+   correction, la liste des nombres tirés au hasard des envois retenus (« retenus ») dit à chaque téléphone, et à lui seul,
+   quel choix compte.
    Fonctions pures, testées par tests/test_messages.js. */
 (function (racine) {
   'use strict';
@@ -46,6 +48,14 @@
     return { participation: v.participation, juste: v.juste, rapidite: v.rapidite, rebond: v.rebond };
   }
   const NONCE = /^[0-9a-f]{16}$/;
+  /* Les choix retenus par la page projetée, à la fermeture et à la correction : la liste des nombres tirés au hasard
+     (n) des envois retenus, un par élève qui a répondu, triée. Chaque téléphone y reconnaît le sien (lui seul sait
+     quel envoi porte quel n) ; personne d'autre n'y lit ni qui a répondu ni quoi. Toute valeur hors format, ou un
+     même nombre deux fois, fait rejeter le message. */
+  function retenus(v) {
+    if (!Array.isArray(v) || v.length > MAX_ELEVES || !v.every(x => typeof x === 'string' && NONCE.test(x))) return null;
+    return new Set(v).size === v.length ? v.slice() : null;
+  }
   /* Une durée accordée à une question, en secondes : 0 (sans minuterie), ou une durée de départ (20, 30, 45, 60, 90)
      plus k fois 15 s, k de 0 à 40 (« + 15 s », js/bareme.js : minuterie). Toute autre valeur fait rejeter le message. */
   const DEPARTS = [20, 30, 45, 60, 90], AJOUT = 15, MAX_AJOUTS = 40;
@@ -68,7 +78,7 @@
         if (m.pause && (m.duree === 0 || m.ferme)) return null;
         return { t: 'question', cours: m.cours, qid: m.qid, reste: m.reste, duree: m.duree, ferme: m.ferme, pause: m.pause };
       case 'fermee':
-        return cles(m, ['t', 'qid']) && estQid(m.qid) ? { t: 'fermee', qid: m.qid } : null;
+      { if (!cles(m, ['t', 'qid', 'retenus']) || !estQid(m.qid)) return null; const rt = retenus(m.retenus); return rt ? { t: 'fermee', qid: m.qid, retenus: rt } : null; }
       case 'recus':
         if (!cles(m, ['t', 'qid', 'n']) || !estQid(m.qid) || !Array.isArray(m.n) || m.n.length > MAX_ELEVES || !m.n.every(x => typeof x === 'string' && NONCE.test(x))) return null;
         return { t: 'recus', qid: m.qid, n: m.n.slice() };
@@ -77,20 +87,22 @@
       case 'refus':
         return cles(m, ['t', 'id', 'raison']) && estId(m.id) && (m.raison === 'pris' || m.raison === 'invalide') ? { t: 'refus', pourMoi: m.id === moiId, raison: m.raison } : null;
       case 'correction': {
-        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'bonne', 'rep', 'bareme', 'duree', 'podium', 'series']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.series !== 'boolean') return null;
+        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'bonne', 'rep', 'bareme', 'duree', 'podium', 'series', 'retenus']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.series !== 'boolean') return null;
+        const rt = retenus(m.retenus); if (!rt) return null;
         if (!(m.precedente === null || estQid(m.precedente)) || !entier(m.bonne, 0, 3) || !dureeAccordee(m.duree)) return null;
         if (!Array.isArray(m.rep) || m.rep.length !== 4 || !m.rep.every(n => entier(n, 0, MAX_ELEVES))) return null;
         const b = bareme(m.bareme); if (!b) return null;
         const pd = podium(m.podium); if (pd === undefined) return null;
-        return { t: 'correction', cours: m.cours, qid: m.qid, precedente: m.precedente, bonne: m.bonne, rep: m.rep.slice(), bareme: b, duree: m.duree, podium: pd, series: m.series };
+        return { t: 'correction', cours: m.cours, qid: m.qid, precedente: m.precedente, bonne: m.bonne, rep: m.rep.slice(), bareme: b, duree: m.duree, podium: pd, series: m.series, retenus: rt };
       }
       // la correction d'une question d'un autre type (relier, puzzle, ligne fautive, nuage de mots) : seulement le
       // nombre de réponses et le nombre de réponses tout à fait justes, comme à l'écran ; la solution vient du fichier du cours
       case 'corrige': {
-        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'duree', 'nb', 'justes', 'podium', 'series']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.series !== 'boolean') return null;
+        if (!cles(m, ['t', 'cours', 'qid', 'precedente', 'duree', 'nb', 'justes', 'podium', 'series', 'retenus']) || !estCours(m.cours) || !estQid(m.qid) || typeof m.series !== 'boolean') return null;
+        const rt = retenus(m.retenus); if (!rt || rt.length > m.nb) return null;
         if (!(m.precedente === null || estQid(m.precedente)) || !dureeAccordee(m.duree) || !entier(m.nb, 0, MAX_ELEVES) || !entier(m.justes, 0, MAX_ELEVES) || m.justes > m.nb) return null;
         const pd = podium(m.podium); if (pd === undefined) return null;
-        return { t: 'corrige', cours: m.cours, qid: m.qid, precedente: m.precedente, duree: m.duree, nb: m.nb, justes: m.justes, podium: pd, series: m.series };
+        return { t: 'corrige', cours: m.cours, qid: m.qid, precedente: m.precedente, duree: m.duree, nb: m.nb, justes: m.justes, podium: pd, series: m.series, retenus: rt };
       }
       // le nuage de mots, une fois montré par l'enseignant·e : les mots affichés au tableau et leur nombre de voix,
       // jamais l'auteur·rice ; chaque mot doit passer le filtre des mots (js/activites.js) sans être modifié
@@ -146,16 +158,19 @@
     return null;
   }
 
-  /* Une entrée de présence. Les élèves : { id, pseudo, role: 'eleve' } ; l'hôte : { id, role: 'hote' }.
+  /* Une entrée de présence. Les élèves : { id, pseudo, role: 'eleve', cle } ; l'hôte : { id, role: 'hote', cle }.
+     cle : la clé publique de l'appareil (déjà lisible dans chaque réponse envoyée) ; la page projetée y relie
+     l'identifiant de l'élève (js/animer.js) : un autre appareil ne peut pas se faire passer pour lui ou elle.
      Supabase ajoute presence_ref : c'est la seule clé de plus permise. */
   function presence(p) {
     if (!objet(p) || !estId(p.id)) return null;
     if (p.role === 'hote') return cles(p, ['id', 'role', 'cle', 'presence_ref']) && (p.cle === undefined || (Q.chiffre && Q.chiffre.estClePublique(p.cle))) ? { id: p.id, role: 'hote', cle: p.cle ? { x: p.cle.x, y: p.cle.y } : null } : null;
-    if (p.role !== 'eleve' || !cles(p, ['id', 'pseudo', 'role', 'presence_ref']) || typeof p.pseudo !== 'string' || p.pseudo.length > 64) return null;
+    if (p.role !== 'eleve' || !cles(p, ['id', 'pseudo', 'role', 'cle', 'presence_ref']) || typeof p.pseudo !== 'string' || p.pseudo.length > 64) return null;
+    if (p.cle !== undefined && !(Q.chiffre && Q.chiffre.estClePublique(p.cle))) return null;
     const f = Q.filtrerPseudo(p.pseudo);
-    return { id: p.id, role: 'eleve', pseudo: f.ok ? f.pseudo : null };
+    return { id: p.id, role: 'eleve', pseudo: f.ok ? f.pseudo : null, cle: p.cle ? { x: p.cle.x, y: p.cle.y } : null };
   }
 
-  Q.messages = { versEleve, versHote, reponse, formeReponse, presence, estId, estQid, estCours, dureeAccordee };
+  Q.messages = { versEleve, versHote, reponse, formeReponse, presence, retenus, estId, estQid, estCours, dureeAccordee };
   if (typeof module !== 'undefined' && module.exports) module.exports = Q.messages;
 })(typeof window !== 'undefined' ? window : globalThis);
