@@ -172,16 +172,17 @@ On vérifie la bonne réponse, et aussi ce qu'affirment les feedbacks des distra
 `cours/catalogue.json` est la seule source de la bibliothèque de l'accueil : une ligne par cours, dans l'ordre de l'année.
 
 ```json
-{ "id": "arbres-binaires", "titre": "Arbres binaires", "niveau": "Terminale NSI", "theme": "nsi-tle-2019.structures-de-donnees", "gabarit": "introduction", "questions": 12, "duree_minutes": 15, "notions": ["arbre binaire", "nœud", "racine", "feuille", "taille", "hauteur"] }
+{ "id": "arbres-binaires", "titre": "Arbres binaires", "niveau": "Terminale NSI", "theme": "nsi-tle-2019.structures-de-donnees", "gabarit": "introduction", "questions": 12, "duree_minutes": 15, "notions": ["donnees.arbre", "algo.arbre"], "mots_cles": ["arbre binaire", "nœud", "racine", "feuille", "taille", "hauteur"] }
 ```
 
 | Champ | Contenu |
 |---|---|
 | `niveau` | un des `niveaux` du catalogue (`"Seconde SNT"`, `"Première NSI"`, `"Terminale NSI"`), le même que celui du cours |
-| `theme` | l'identifiant d'un des `themes` du catalogue, du même niveau : les rubriques du programme de 2019, aux intitulés exacts, repris du référentiel du site Ressources NSI et SNT (`donnees/referentiels/programmes.json`). Les chaînes de caractères vont dans « Langages et programmation » |
 | `gabarit` | le type : `introduction` (« Cours-quiz d'introduction ») ou `revision` (« Révision ») ; une démonstration a `"demonstration": true` à la place |
 | `questions`, `duree_minutes` | comme dans le cours |
-| `notions` | les mots que la recherche de l'accueil trouve, en plus du titre (sans tenir compte des accents ni des majuscules) |
+| `notions` | de 2 à 5 identifiants pris dans la liste fermée `notions` du catalogue : le filtre « Notions travaillées » de l'accueil. Cette liste reprend le thésaurus du site Ressources NSI et SNT (`donnees/referentiels/notions.json`) : mêmes identifiants, mêmes libellés, mêmes synonymes (`alternatifs`, lus par la recherche). Pas de quasi-doublon (« Liste » et « Listes »), et chaque notion de la liste sert au moins une fois. Pour une nouvelle notion, on la copie du thésaurus du site |
+| `mots_cles` | des mots de plus pour la recherche (sans tenir compte des accents ni des majuscules) ; ils ne s'affichent pas en filtre |
+| `theme` | l'identifiant d'un des `themes` du catalogue, du même niveau : la rubrique du programme de 2019 (intitulés exacts, repris de `donnees/referentiels/programmes.json` du site ; les chaînes de caractères vont dans « Langages et programmation »). Une donnée, pas un filtre |
 
 Puis :
 
@@ -190,6 +191,6 @@ python3 -I outils/bibliotheque.py --ecrire   # réécrit la bibliothèque de ind
 python3 -I outils/verifier_cours.py --tous    # le contrôle complet
 ```
 
-Avec `--tous`, le vérificateur contrôle que le catalogue cite chaque cours et seulement eux, que `questions`, `gabarit`, `duree_minutes` et `niveau` disent la même chose que le cours, que chaque thème existe et appartient au bon niveau, que chaque cours a ses notions, et que la bibliothèque de `index.html` est à jour.
+Avec `--tous`, le vérificateur contrôle que le catalogue cite chaque cours et seulement eux, que `questions`, `gabarit`, `duree_minutes` et `niveau` disent la même chose que le cours, que chaque thème existe et appartient au bon niveau, que chaque cours a de 2 à 5 notions de la liste fermée et ses mots-clés, et que la bibliothèque de `index.html` est à jour.
 
 Les liens : `revision.html?cours=<id>`, `animer.html?cours=<id>`, `imprimer.html?cours=<id>` et `imprimer.html?cours=<id>&corrige`.

@@ -5,7 +5,7 @@
 | Fichier | Rôle |
 |---|---|
 | `index.html`, `animer.html`, `rejoindre.html`, `revision.html`, `imprimer.html` | l'accueil, la page projetée, la page élève, le mode autonome, la version à imprimer |
-| `js/accueil.js`, `css/bibliotheque.css` | l'accueil rangé en bibliothèque : filtres (niveau, thème, type), recherche sans accents, compteur annoncé, état « aucun résultat », filtres gardés dans l'adresse |
+| `js/accueil.js`, `css/bibliotheque.css` | l'accueil rangé en bibliothèque, affiné comme la bibliothèque du site (`assets/bibliotheque.js`) : cases Niveau, Type et Notions travaillées avec leur nombre, puces des filtres actifs, recherche sans accents (synonymes compris), compteur annoncé, état « aucun résultat », filtres dans l'adresse (`q`, `niv`, `type`, `notion`, comme sur le site) |
 | `css/socle-provisoire.css` | le socle du design des applications (piste B), chargé par l'accueil seulement, **à remplacer** par `assets/signal-commun.css` et `assets/applis.css` du site quand ils seront publiés |
 | `js/commun.js` | lecture d'un cours, mise en forme du texte, coloration du Python, schémas SVG, pseudo, stockage, thème |
 | `js/diapos.js` | le rendu des diapositives, des questions, des corrections et des apparitions progressives |

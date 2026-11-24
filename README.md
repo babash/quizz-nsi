@@ -28,19 +28,12 @@ Une seule page projetée par séance : si une deuxième est ouverte (onglet dupl
 
 22 cours-quiz d'introduction, un par fiche de [FichesNSI](https://babash.github.io/fiches-nsi/), et 3 révisions. Le titre ouvre le mode autonome.
 
-**[L'accueil](https://babash.github.io/quizz-nsi/) les range en bibliothèque** : par niveau, puis par thème du programme officiel de 2019 (« Langages et programmation », « Structures de données »…). Tu filtres par niveau, par thème et par type (cours-quiz d'introduction ou révision), et tu cherches un mot dans les titres et les notions (« pile », « recursivite » : les accents ne comptent pas). Chaque carte a deux actions, **Animer en classe** et **Réviser seul·e**, et ses questions à imprimer. Les filtres restent dans l'adresse : un lien comme [`?niveau=terminale-nsi&type=revision`](https://babash.github.io/quizz-nsi/?niveau=terminale-nsi&type=revision) se partage tel quel. Sans JavaScript, l'accueil montre la liste complète.
+**[L'accueil](https://babash.github.io/quizz-nsi/) les range en bibliothèque, par niveau, et s'affine comme [la bibliothèque du site](https://babash.github.io/Babash-NSI-SNT/bibliotheque/)** : des cases « Niveau », « Type » (cours-quiz d'introduction ou révision) et « Notions travaillées », chacune avec le nombre de quiz qu'elle donne ; plusieurs notions cochées, c'est l'une ou l'autre ; une puce par filtre actif, à retirer d'un clic. Les notions sont celles du thésaurus du site, avec les mêmes libellés (« Boucle », « Piles », « Files », « Récursivité », « Langage SQL »…), de 2 à 5 par quiz ; seules celles du niveau choisi sont proposées. La recherche lit les titres, les mots-clés et les notions avec leurs synonymes (« POO », « dichotomie », « recursivite » : les accents ne comptent pas). Chaque carte a deux actions, **Animer en classe** et **Réviser seul·e**, et ses questions à imprimer. Les filtres restent dans l'adresse, avec les noms du site : un lien comme [`?niv=terminale&notion=donnees.pile`](https://babash.github.io/quizz-nsi/?niv=terminale&notion=donnees.pile) se partage tel quel. Sans JavaScript, l'accueil montre la liste complète. Le thème du programme de 2019 reste une donnée du catalogue, sans être un filtre.
 
-| Niveau | Thème du programme | Cours-quiz |
-|---|---|---|
-| Première NSI | Représentation des données : types et valeurs de base | 1 |
-| Première NSI | Représentation des données : types construits | 3 |
-| Première NSI | Langages et programmation | 5 (dont 1 révision) |
-| Première NSI | Algorithmique | 4 |
-| Terminale NSI | Structures de données | 6 (dont 2 révisions) |
-| Terminale NSI | Bases de données | 1 |
-| Terminale NSI | Architectures matérielles, systèmes d'exploitation et réseaux | 2 |
-| Terminale NSI | Langages et programmation | 1 |
-| Terminale NSI | Algorithmique | 2 |
+| Niveau | Notions travaillées (nombre de quiz) |
+|---|---|
+| Première NSI | Boucle (3), Coût et complexité (3), Types construits (3), Fonction (2), Instruction conditionnelle (2), Tableaux et listes Python (2), puis une fois : Algorithmes de tri, Algorithmes gloutons, Chaînes de caractères, Dictionnaires, Écriture binaire et hexadécimale, p-uplets, Parcours séquentiel d'un tableau, Recherche dichotomique, Représentation des données, Spécification, Stratégies algorithmiques, Types de données, Variable |
+| Terminale NSI | Files (3), Piles (3), Arbres (2), Programmation orientée objet (2), Récursivité (2), puis une fois : Algorithmes de tri, Algorithmes sur les arbres, Arbres binaires de recherche, Classe et instance, Dictionnaires, Diviser pour régner, Fonction, Graphes, Interface et implémentation, Langage SQL, Modèle relationnel, Ordonnancement, Parcours en largeur, Processus, Protocoles de communication, Routage, Tableaux et listes Python |
 
 **Première NSI** (12 introductions, 1 révision, dans l'ordre de l'année)
 

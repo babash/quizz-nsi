@@ -339,11 +339,12 @@ class TestCatalogue(unittest.TestCase):
     """Le contrôle du catalogue de l'accueil (verifier_cours.py --tous) et de sa bibliothèque (outils/bibliotheque.py)."""
     def entree(self, i, n=12, **autres):
         e = {"id": i, "titre": i, "niveau": "Terminale NSI", "theme": "nsi-tle-2019.structures-de-donnees",
-             "gabarit": "introduction", "questions": n, "duree_minutes": 15, "notions": ["pile", "file"]}
+             "gabarit": "introduction", "questions": n, "duree_minutes": 15, "notions": ["donnees.pile", "donnees.file"],
+             "mots_cles": ["pile", "file"]}
         e.update(autres)
         return {k: v for k, v in e.items() if v is not None}
 
-    def essai(self, ids, n=12, entrees=None, index=None):
+    def essai(self, ids, n=12, entrees=None, index=None, vocab=None):
         import contextlib, io, shutil
         with open(os.path.join(RACINE, "cours", "catalogue.json"), encoding="utf-8") as f:
             vrai = json.load(f)
@@ -354,6 +355,8 @@ class TestCatalogue(unittest.TestCase):
             shutil.copy(os.path.join(RACINE, "cours", "piles-files.json"), os.path.join(d, "cours"))
             cat = {k: vrai[k] for k in ("format", "niveaux", "types", "themes")}
             cat["cours"] = entrees if entrees is not None else [self.entree(i, n) for i in ids]
+            utiles = {x for c in cat["cours"] for x in (c.get("notions") or []) if isinstance(c.get("notions"), list)}
+            cat["notions"] = vocab if vocab is not None else [x for x in vrai["notions"] if x["id"] in utiles]
             with open(os.path.join(d, "cours", "catalogue.json"), "w", encoding="utf-8") as f:
                 json.dump(cat, f)
             if index is not None:
@@ -400,11 +403,31 @@ class TestCatalogue(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("« niveau » vaut 'Première NSI', le cours dit 'Terminale NSI'", sortie)
 
-    def test_type_et_notions(self):
-        code, sortie = self.essai([], entrees=[self.entree("piles-files", gabarit="atelier", notions=[])])
+    def test_type_et_mots_cles(self):
+        code, sortie = self.essai([], entrees=[self.entree("piles-files", gabarit="atelier", mots_cles=[])])
         self.assertEqual(code, 1)
         self.assertIn("type (gabarit) 'atelier' inconnu", sortie)
-        self.assertIn("« notions » doit être une liste de mots non vide", sortie)
+        self.assertIn("« mots_cles » doit être une liste de mots non vide", sortie)
+
+    def test_notions_de_2_a_5(self):
+        for ns in (["donnees.pile"], ["donnees.pile", "donnees.file", "prog.poo", "prog.boucle", "prog.fonction", "algo.tri"]):
+            code, sortie = self.essai([], entrees=[self.entree("piles-files", notions=ns)])
+            self.assertEqual(code, 1)
+            self.assertIn("doit citer de 2 à 5 notions", sortie)
+
+    def test_notion_hors_liste_fermee(self):
+        vocab = [{"id": "donnees.pile", "libelle": "Piles"}]
+        code, sortie = self.essai([], entrees=[self.entree("piles-files")], vocab=vocab)
+        self.assertEqual(code, 1)
+        self.assertIn("notion 'donnees.file' absente de la liste fermée", sortie)
+
+    def test_quasi_doublon_et_notion_inutile(self):
+        vocab = [{"id": "donnees.pile", "libelle": "Piles"}, {"id": "donnees.file", "libelle": "Files"},
+                 {"id": "donnees.pile2", "libelle": "pile"}]
+        code, sortie = self.essai([], entrees=[self.entree("piles-files")], vocab=vocab)
+        self.assertEqual(code, 1)
+        self.assertIn("quasi-doublon", sortie)
+        self.assertIn("aucun cours ne la travaille", sortie)
 
     def test_accueil_a_jour(self):
         page = lambda debut: lambda cat: "<main>" + debut + "<!-- bibliotheque:fin --></main>"
@@ -418,6 +441,7 @@ class TestCatalogue(unittest.TestCase):
     def test_recherche_sans_accents(self):
         import bibliotheque as B
         self.assertEqual(B.sans_accents("Récursivité  Nœud ÉLÈVE"), "recursivite noeud eleve")
+        self.assertEqual(B.racine_du_mot("Listes"), B.racine_du_mot("liste"))
 
 
 class TestCaracteres(unittest.TestCase):
