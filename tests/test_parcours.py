@@ -860,6 +860,91 @@ def rendus(nav, base):
     print(f"  rendus : {len(pages)} pages × 3 largeurs × 2 thèmes, sans défilement horizontal")
 
 
+def bibliotheque(nav, base):
+    """L'accueil rangé en bibliothèque : filtres, recherche sans accents, adresse, aucun résultat, clavier,
+    sans JavaScript, et les deux actions de cinq cartes qui ouvrent les mêmes adresses qu'avant."""
+    with open(os.path.join(RACINE, "cours", "catalogue.json"), encoding="utf-8") as f:
+        cat = json.load(f)
+    classe = [c for c in cat["cours"] if c.get("demonstration") is not True]
+    total = len(classe)
+    for largeur in (320, 768, 1440):
+        ctx = contexte(nav, base, viewport={"width": largeur, "height": 900})
+        p = ctx.new_page()
+        surveiller(p, f"bibliothèque {largeur}")
+        p.goto(base + "index.html")
+        assert p.locator(".qz-niveau:not(.qz-decouvrir) .qz-carte:visible").count() == total, "toutes les cartes au départ"
+        assert p.is_visible("#recherche"), "la recherche est visible"
+        if largeur < 900:
+            p.click("#plus-filtres > summary")
+        # niveau, puis type
+        p.check("input[name=niveau][value=terminale-nsi]")
+        n_tle = sum(1 for c in classe if c["niveau"] == "Terminale NSI")
+        assert p.locator(".qz-carte:not(.qz-cache)").count() >= n_tle
+        assert p.locator(".qz-niveau[data-niveau=premiere-nsi]").is_hidden(), "Première cachée"
+        p.uncheck("input[name=type][value=introduction]")
+        n_rev = sum(1 for c in classe if c["niveau"] == "Terminale NSI" and c.get("gabarit") == "revision")
+        assert p.locator(".qz-niveau:not(.qz-decouvrir) .qz-carte:visible").count() == n_rev
+        assert "niveau=terminale-nsi" in p.url and "type=revision" in p.url, p.url
+        # l'adresse rouvre le même état
+        p.goto(p.url)
+        assert p.locator(".qz-niveau:not(.qz-decouvrir) .qz-carte:visible").count() == n_rev, "filtres relus dans l'adresse"
+        p.click("#tout-montrer")
+        assert p.locator(".qz-niveau:not(.qz-decouvrir) .qz-carte:visible").count() == total
+        # la recherche, sans accents, dans les titres et les notions
+        p.fill("#recherche", "RECURSIVITE")
+        assert p.locator(".qz-niveau:not(.qz-decouvrir) .qz-carte:visible").count() == 2, "récursivité : le cours et le tri fusion"
+        p.fill("#recherche", "noeud")
+        assert p.is_visible(".qz-carte[data-cours=arbres-binaires]")
+        # aucun résultat ici, mais ailleurs
+        p.check("input[name=niveau][value=premiere-nsi]")
+        p.fill("#recherche", "pile")
+        p.wait_for_timeout(600)
+        assert p.is_visible("#aucun"), "état « aucun résultat »"
+        assert "Aucun cours-quiz" in p.inner_text("#compteur")
+        p.click("#aucun button.p")
+        assert p.locator(".qz-niveau:not(.qz-decouvrir) .qz-carte:visible").count() >= 3 and p.is_hidden("#aucun")
+        p.fill("#recherche", "zzzz")
+        p.wait_for_timeout(600)
+        assert "Effacer la recherche" in p.inner_text("#aucun")
+        large = p.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
+        assert large <= 0, f"bibliothèque à {largeur} px : défilement horizontal de {large} px"
+        ctx.close()
+    # au clavier seul : la recherche, puis la première action de la première carte trouvée
+    ctx = contexte(nav, base, viewport={"width": 1440, "height": 900})
+    p = ctx.new_page()
+    surveiller(p, "bibliothèque clavier")
+    p.goto(base + "index.html")
+    p.focus("#recherche")
+    p.keyboard.type("dichotomique")
+    for _ in range(40):
+        p.keyboard.press("Tab")
+        if p.evaluate("() => document.activeElement.matches('.qz-carte .bt.p')"):
+            break
+    assert p.evaluate("() => document.activeElement.getAttribute('href')") == "animer.html?cours=dichotomie"
+    p.keyboard.press("Enter")
+    p.wait_for_url("**/animer.html?cours=dichotomie")
+    # les deux actions de cinq cartes : les adresses d'avant, et la page s'ouvre
+    for i in ("variables", "chaines", "revision-conditions-boucles", "sql", "revision-poo-piles-files"):
+        for action, adresse in (("Animer en classe", f"animer.html?cours={i}"), ("Réviser seul·e", f"revision.html?cours={i}")):
+            p.goto(base + "index.html")
+            lien = p.locator(f".qz-carte[data-cours={i}] a.bt", has_text=action)
+            assert lien.get_attribute("href") == adresse, f"{i} : {action}"
+            lien.click()
+            p.wait_for_url("**/" + adresse)
+            with open(os.path.join(RACINE, "cours", i + ".json"), encoding="utf-8") as f:
+                titre = json.load(f)["titre"]  # le titre du cours lui-même : la page l'a bien chargé
+            p.wait_for_function("t => document.body.innerText.includes(t)", arg=titre, timeout=8000)
+    ctx.close()
+    # sans JavaScript : la liste complète, les filtres cachés
+    ctx = nav.new_context(java_script_enabled=False)
+    p = ctx.new_page()
+    p.goto(base + "index.html")
+    assert p.locator(".qz-carte:visible").count() == len(cat["cours"]), "sans JavaScript : la liste complète"
+    assert p.is_hidden("#filtres")
+    ctx.close()
+    print(f"  bibliothèque : {total} cours-quiz, filtres, recherche sans accents, adresse, aucun résultat, clavier, 5 cartes ouvertes, sans JavaScript, 3 largeurs")
+
+
 def main():
     s, base = serveur()
     with sync_playwright() as pw:
@@ -869,6 +954,7 @@ def main():
         qr_et_retard(nav, base)
         autres_types(nav, base)
         stockage(nav, base)
+        bibliotheque(nav, base)
         sans_chiffrement(nav, base)
         autonome(nav, base)
         rejouer(nav, base)

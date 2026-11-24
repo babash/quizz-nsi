@@ -28,6 +28,20 @@ Une seule page projetée par séance : si une deuxième est ouverte (onglet dupl
 
 22 cours-quiz d'introduction, un par fiche de [FichesNSI](https://babash.github.io/fiches-nsi/), et 3 révisions. Le titre ouvre le mode autonome.
 
+**[L'accueil](https://babash.github.io/quizz-nsi/) les range en bibliothèque** : par niveau, puis par thème du programme officiel de 2019 (« Langages et programmation », « Structures de données »…). Tu filtres par niveau, par thème et par type (cours-quiz d'introduction ou révision), et tu cherches un mot dans les titres et les notions (« pile », « recursivite » : les accents ne comptent pas). Chaque carte a deux actions, **Animer en classe** et **Réviser seul·e**, et ses questions à imprimer. Les filtres restent dans l'adresse : un lien comme [`?niveau=terminale-nsi&type=revision`](https://babash.github.io/quizz-nsi/?niveau=terminale-nsi&type=revision) se partage tel quel. Sans JavaScript, l'accueil montre la liste complète.
+
+| Niveau | Thème du programme | Cours-quiz |
+|---|---|---|
+| Première NSI | Représentation des données : types et valeurs de base | 1 |
+| Première NSI | Représentation des données : types construits | 3 |
+| Première NSI | Langages et programmation | 5 (dont 1 révision) |
+| Première NSI | Algorithmique | 4 |
+| Terminale NSI | Structures de données | 6 (dont 2 révisions) |
+| Terminale NSI | Bases de données | 1 |
+| Terminale NSI | Architectures matérielles, systèmes d'exploitation et réseaux | 2 |
+| Terminale NSI | Langages et programmation | 1 |
+| Terminale NSI | Algorithmique | 2 |
+
 **Première NSI** (12 introductions, 1 révision, dans l'ordre de l'année)
 
 | Cours-quiz | Gabarit | Liens |
