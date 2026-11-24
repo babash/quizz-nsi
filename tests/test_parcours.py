@@ -1214,10 +1214,9 @@ def bibliotheque(nav, base):
         p.check("#f-niv-terminale")
         assert p.locator(".qz-niveau[data-niveau=premiere]").is_hidden(), "Première cachée"
         assert p.locator(visibles).count() == len(tle)
-        # seules les notions de la Terminale sont proposées, avec leur nombre (au téléphone, repliées comme sur le site)
-        if largeur < 900:
-            assert p.is_hidden("#f-notion-donnees-pile")
-            p.click("details.facette > summary:has-text('Notions travaillées')")
+        # seules les notions de la Terminale sont proposées, avec leur nombre (repliées au départ, comme sur le site)
+        assert p.is_hidden("#f-notion-donnees-pile")
+        p.click("details.facette > summary:has-text('Notions travaillées')")
         assert p.locator("#f-notion-donnees-binaire").count() == 0, "une notion de Première n'est pas proposée"
         piles = sum(1 for c in tle if "donnees.pile" in c["notions"])
         assert p.inner_text("label[for=f-notion-donnees-pile] .nb") == str(piles)
@@ -1232,8 +1231,7 @@ def bibliotheque(nav, base):
         assert p.locator(visibles).count() == n_rev, "filtres relus dans l'adresse"
         # deux notions d'un même filtre : l'une OU l'autre ; les puces ; tout retirer
         p.uncheck("#f-type-revision")
-        if largeur < 900:
-            p.click("details.facette > summary:has-text('Notions travaillées')")
+        p.click("details.facette > summary:has-text('Notions travaillées')")
         p.check("#f-notion-donnees-pile")
         p.check("#f-notion-prog-recursivite")
         attendu = sum(1 for c in tle if {"donnees.pile", "prog.recursivite"} & set(c["notions"]))

@@ -126,8 +126,8 @@
       const d = el('details', { class: 'facette' }, [
         el('summary', null, [F.titre, choisis.length ? el('span', { class: 'nb' }, ' (' + choisis.length + ')') : null])
       ]);
-      // comme sur le site : les notions repliées au départ, sauf à côté de la bibliothèque (grand écran) ou si l'une est cochée
-      d.open = ouverts[cle] !== undefined ? ouverts[cle] : (F.id !== 'notion' || large.matches || choisis.length > 0);
+      // exactement comme sur le site (assets/bibliotheque.js) : Niveau et Type ouverts, les notions repliées sauf si l'une est cochée
+      d.open = ouverts[cle] !== undefined ? ouverts[cle] : (F.id !== 'notion' || choisis.length > 0);
       d.addEventListener('toggle', () => { ouverts[cle] = d.open; });
       d.append(el('ul', { class: 'filtre-valeurs' }, vals.map(v => el('li', null, caseFiltre(F, v, n[v] || 0)))));
       facettes.append(d);

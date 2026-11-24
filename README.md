@@ -32,7 +32,7 @@ Une seule page projetée par séance : si une deuxième est ouverte (onglet dupl
 
 | Niveau | Notions travaillées (nombre de quiz) |
 |---|---|
-| Première NSI | Boucle (3), Coût et complexité (3), Types construits (3), Fonction (2), Instruction conditionnelle (2), Tableaux et listes Python (2), puis une fois : Algorithmes de tri, Algorithmes gloutons, Chaînes de caractères, Dictionnaires, Écriture binaire et hexadécimale, p-uplets, Parcours séquentiel d'un tableau, Recherche dichotomique, Représentation des données, Stratégies algorithmiques, Types de données, Valeur renvoyée, Variable |
+| Première NSI | Boucle (3), Coût et complexité (3), Types construits (3), Fonction (2), Instruction conditionnelle (2), Tableaux et listes Python (2), puis une fois : Algorithmes de tri, Algorithmes gloutons, Chaînes de caractères, Dictionnaires, Écriture binaire et hexadécimale, p-uplets, Parcours séquentiel d'un tableau, Recherche dichotomique, Représentation des données, Stratégies algorithmiques, Tests, Types de données, Variable |
 | Terminale NSI | Files (3), Piles (3), Arbres (2), Programmation orientée objet (2), Récursivité (2), puis une fois : Algorithmes de tri, Algorithmes sur les arbres, Arbres binaires de recherche, Classe et instance, Dictionnaires, Diviser pour régner, Fonction, Graphes, Interface et implémentation, Langage SQL, Modèle relationnel, Ordonnancement, Parcours en largeur, Processus, Protocoles de communication, Routage, Tableaux et listes Python |
 
 **Première NSI** (12 introductions, 1 révision, dans l'ordre de l'année)
