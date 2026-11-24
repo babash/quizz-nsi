@@ -1,0 +1,73 @@
+/* QuizzNSI · l'accueil rangé en bibliothèque (T134), d'après la maquette validée (T133, point 9).
+   S'appuie sur le socle (css/socle-provisoire.css aujourd'hui, assets/applis.css du site demain) :
+   ce fichier ne garde que ce qui est propre à la bibliothèque (classes qz-*). Code MIT, Babash - NSI Tani Malandi. */
+
+main { max-width: 90rem; margin: 0 auto; }
+/* le bouton d'affichage clair ou obscur n'est pas un filtre : pas de marque « enfoncé » */
+.ap-barre [data-bascule-theme] { white-space: nowrap; flex: none; }
+.ap-barre [data-bascule-theme][aria-pressed="true"] { box-shadow: none; text-decoration: none; }
+
+/* l'en-tête : le titre et l'entrée de l'élève */
+.qz-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 28px; padding: 22px 16px 16px; border-bottom: 1px solid var(--td-trait); }
+.qz-intro { flex: 1 1 26rem; min-width: 0; }
+.qz-intro p { margin: .5rem 0 0; max-width: 44rem; font-size: 1.1rem; }
+.qz-rejoindre { flex: 0 1 22rem; box-shadow: 4px 4px 0 var(--td-neon-2); }
+.qz-rejoindre h2 { font: 700 1.1rem/1.3 var(--td-texte); margin: 0 0 4px; }
+.qz-rejoindre p { margin: 0 0 10px; font-size: .95rem; }
+
+/* deux colonnes : chercher et filtrer, puis la bibliothèque */
+.qz-corps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 18px 16px 24px; }
+@media (min-width: 900px) {
+  .qz-corps { grid-template-columns: 17rem minmax(0, 1fr); gap: 28px; padding: 18px 24px 28px; }
+  .qz-filtres { position: sticky; top: 12px; align-self: start; max-height: calc(100vh - 24px); overflow-y: auto; padding: 2px 4px 2px 2px; }
+}
+.qz-aide { margin: 4px 0 0; font-size: .85rem; color: var(--td-encre-douce); }
+.qz-plus { margin-top: 12px; }
+.qz-plus > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; gap: 8px; list-style: none; border: 1.4px solid var(--td-trait-fort); padding: 6px 10px; }
+.qz-plus > summary::-webkit-details-marker { display: none; }
+.qz-plus > summary::after { content: "▾"; margin-left: auto; }
+.qz-plus[open] > summary::after { content: "▴"; }
+@media (min-width: 900px) {
+  .qz-plus > summary { display: none; } /* toujours ouvert à côté de la bibliothèque (js/accueil.js) */
+}
+.qz-filtres fieldset { border: 0; border-top: 1.4px solid var(--td-trait-fort); margin: 14px 0 0; padding: 6px 0 0; min-width: 0; }
+.qz-filtres legend { font: 400 .95rem/1 var(--td-signal); text-transform: uppercase; letter-spacing: .06em; padding: 0 6px 0 0; }
+.qz-filtres fieldset label { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; font-size: .95rem; line-height: 1.3; cursor: pointer; }
+.qz-filtres input[type="radio"], .qz-filtres input[type="checkbox"] { width: 18px; height: 18px; margin: 1px 0 0; flex: none; accent-color: var(--td-accent); }
+.qz-filtres .qz-bientot { color: var(--td-encre-douce); cursor: default; }
+.qz-f-sous { margin: 8px 0 2px; font-size: .8rem; font-weight: 700; color: var(--td-encre-douce); }
+.qz-tout { margin-top: 14px; }
+
+/* la bibliothèque */
+.qz-compteur { margin: 0 0 4px; font-weight: 700; }
+.qz-titre-niveau { font: 700 clamp(1.6rem, 4.5vw, 2.2rem)/1.1 var(--td-titres); margin: 18px 0 0; }
+.qz-titre-niveau.petit { font-size: 1.3rem; }
+.qz-niveau:first-of-type .qz-titre-niveau { margin-top: 6px; }
+.qz-theme { font: 700 1.15rem/1.3 var(--td-texte); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px dashed var(--td-trait); }
+.qz-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 10px; list-style: none; margin: 0; padding: 0; }
+.qz-decouvrir .qz-grille { margin-top: 10px; }
+
+/* une carte par quiz : « Cours-quiz » (cadre plein) ou « Révision » (cadre pointillé) */
+.qz-carte { border: 1.4px solid var(--td-trait-fort); padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; background: var(--td-panneau); min-width: 0; }
+.qz-carte.rev { border-style: dashed; }
+.qz-carte.rev .puce { border-style: dashed; }
+.qz-carte.demo { border-color: var(--td-trait); }
+.qz-carte .puce { align-self: flex-start; }
+.qz-carte h4 { margin: 4px 0 0; font: 700 1.08rem/1.25 var(--td-texte); }
+.qz-meta { margin: 0; font-size: .92rem; color: var(--td-encre-douce); }
+.qz-notions { margin: 0 0 6px; font-size: .82rem; color: var(--td-encre-douce); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qz-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
+.qz-actions .bt { flex: 1 1 auto; min-height: 40px; padding: 6px 10px; font-size: .95rem; }
+.qz-papier { margin: 6px 0 0; font-size: .82rem; color: var(--td-encre-douce); }
+.qz-papier a { color: var(--td-encre); }
+.qz-cache { display: none !important; }
+
+/* aucun résultat */
+.qz-aucun { margin-top: 12px; }
+.qz-aucun h2 { font: 700 1.1rem/1.3 var(--td-texte); margin: 0 0 6px; }
+.qz-aucun p { margin: 0 0 8px; }
+.qz-aucun .qz-actions { margin-top: 6px; }
+.qz-aucun .qz-actions .bt { flex: 0 1 auto; }
+
+.qz-info { margin: 0 16px 24px; padding: 10px 14px; border-left: 3px solid var(--td-trait-fort); background: var(--td-panneau-2); font-size: .95rem; }
+@media (min-width: 900px) { .qz-info { margin: 0 24px 28px; } }

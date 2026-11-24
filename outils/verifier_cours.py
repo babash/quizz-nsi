@@ -780,6 +780,22 @@ def main(args):
             erreurs_catalogue = 1
         else:
             print(f"== cours/catalogue.json : {len(ids)} cours, conforme")
+        # la bibliothèque de l'accueil : niveaux, thèmes du programme, types, notions, et index.html à jour
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        try:
+            import bibliotheque
+        except ImportError:
+            bibliotheque = None
+        finally:
+            sys.path.pop(0)
+        if bibliotheque is not None:
+            racine_depot = os.path.dirname(racine)
+            if os.path.exists(os.path.join(racine_depot, "index.html")):
+                erreurs_catalogue = max(erreurs_catalogue, bibliotheque.main([], racine_depot))
+            else:
+                for x in bibliotheque.controler(cat):
+                    print("  ERREUR · cours/catalogue.json · " + x)
+                    erreurs_catalogue = 1
     if not fichiers:
         print(__doc__)
         return 2
@@ -792,7 +808,7 @@ def main(args):
             entree = next((x for x in cat.get("cours", []) if x.get("id") == info["cours"].get("id")), None)
             if entree:
                 n = len(info["questions"]) + (len([d for d in info["autres"] if d.get("type") != "nuage"]) if info["gabarit"] == "introduction" else 0)
-                for champ, attendu in (("questions", n), ("gabarit", info["gabarit"]), ("duree_minutes", info["cours"].get("duree_minutes"))):
+                for champ, attendu in (("questions", n), ("gabarit", info["gabarit"]), ("duree_minutes", info["cours"].get("duree_minutes")), ("niveau", info["cours"].get("niveau"))):
                     if champ in entree and entree[champ] != attendu:
                         r.erreur("cours/catalogue.json", f"« {champ} » vaut {entree[champ]!r}, le cours dit {attendu!r}")
         print(f"== {chemin}")

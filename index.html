@@ -3,108 +3,158 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QuizzNSI · cours-quiz en direct</title>
-<meta name="description" content="Des cours en diapositives avec des questions à choix, à suivre en classe, chacun·e depuis son téléphone, seul·e en révision, ou sur papier.">
+<title>QuizzNSI · la bibliothèque des cours-quiz</title>
+<meta name="description" content="Les cours-quiz de NSI, rangés par niveau puis par thème du programme : un cours court en diapositives et des questions tout de suite, à animer en classe sur les téléphones des élèves ou à réviser seul·e.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/polices.css">
-<link rel="stylesheet" href="css/quizz.css">
+<!-- Le socle provisoire : à remplacer par le socle des applications du site (assets/signal-commun.css et assets/applis.css), voir l'en-tête du fichier. -->
+<link rel="stylesheet" href="css/socle-provisoire.css">
+<link rel="stylesheet" href="css/bibliotheque.css">
 <script>try{var t=localStorage.getItem('quizz-nsi:theme');t=t&&JSON.parse(t);if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
-<body>
+<body data-appli="quizz">
 <a class="evitement" href="#contenu">Aller au contenu</a>
-<header class="barre">
-  <a class="marque" href="index.html">Quizz<b>NSI</b></a>
-  <span class="titre-page">Cours-quiz en direct</span>
-  <div class="actions"><button class="bouton petit" type="button" data-bascule-theme>Affichage obscur</button></div>
+<header class="ap-barre">
+  <a class="ap-logo" href="index.html">Quizz<b>NSI</b></a>
+  <span class="ap-lieu">La bibliothèque des cours-quiz</span>
+  <span class="esp"></span>
+  <button class="bt mini" type="button" data-bascule-theme>Affichage obscur</button>
 </header>
-<main id="contenu" tabindex="-1" class="accueil">
-  <h1>Un cours court, des questions tout de suite</h1>
-  <p>Une notion par diapositive, puis une question pour la pratiquer. Chaque réponse a son explication, juste ou fausse.</p>
-  <div class="chemins">
-    <section class="cadre chemin">
-      <h2>J'ai un code de séance</h2>
-      <p>Élève : rejoins la séance de ta classe depuis ton téléphone, avec ton prénom ou un pseudo.</p>
-      <a class="bouton fort" href="rejoindre.html">Rejoindre</a>
+<div class="pl-bandeau" aria-hidden="true"></div>
+<main id="contenu" tabindex="-1">
+  <header class="qz-tete">
+    <div class="qz-intro">
+      <h1 class="ap-titre">Les <span class="neon">cours-quiz</span></h1>
+      <p>15 minutes pour entrer dans une notion : en classe sur le grand écran, chacun·e répond depuis son téléphone, ou seul·e pour réviser. Chaque réponse a son explication, juste ou fausse.</p>
+    </div>
+    <section class="carte qz-rejoindre" aria-labelledby="titre-rejoindre">
+      <h2 id="titre-rejoindre">Tu as un code de séance ?</h2>
+      <p>Rejoins la séance de ta classe depuis ton téléphone, avec ton prénom ou un pseudo.</p>
+      <a class="bt p" href="rejoindre.html">Rejoindre la séance</a>
     </section>
-    <section class="cadre chemin">
-      <h2>Réviser seul·e</h2>
-      <p>Le même cours et les mêmes questions, corrigées tout de suite. Sans compte, rien n'est envoyé.</p>
-      <a class="bouton" href="revision.html?cours=piles-files">Réviser</a>
-    </section>
-    <section class="cadre chemin">
-      <h2>Animer en classe</h2>
-      <p>Enseignant·e : projette le cours ; avec un code et un QR code, les élèves répondent en direct.</p>
-      <a class="bouton" href="animer.html?cours=piles-files">Animer</a>
-    </section>
-  </div>
-  <h2>Les cours</h2>
-  <div id="cours">
-  <h3>Première NSI</h3>
-  <ul class="cours-liste">
-    <li class="cadre"><strong>Variables et opérateurs</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=variables">réviser</a> · <a href="animer.html?cours=variables">animer</a> · <a href="imprimer.html?cours=variables">imprimer</a> · <a href="imprimer.html?cours=variables&amp;corrige">corrigé</a> · <a href="revision.html?cours=variables&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Conditions et boucles</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=conditions-boucles">réviser</a> · <a href="animer.html?cours=conditions-boucles">animer</a> · <a href="imprimer.html?cours=conditions-boucles">imprimer</a> · <a href="imprimer.html?cours=conditions-boucles&amp;corrige">corrigé</a> · <a href="revision.html?cours=conditions-boucles&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Fonctions</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=fonctions">réviser</a> · <a href="animer.html?cours=fonctions">animer</a> · <a href="imprimer.html?cours=fonctions">imprimer</a> · <a href="imprimer.html?cours=fonctions&amp;corrige">corrigé</a> · <a href="revision.html?cours=fonctions&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Révision : conditions, boucles, fonctions</strong> · révision · 20 questions · 25&nbsp;min · <a href="revision.html?cours=revision-conditions-boucles">réviser</a> · <a href="animer.html?cours=revision-conditions-boucles">animer</a> · <a href="imprimer.html?cours=revision-conditions-boucles">imprimer</a> · <a href="imprimer.html?cours=revision-conditions-boucles&amp;corrige">corrigé</a> · <a href="revision.html?cours=revision-conditions-boucles&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Chaînes de caractères</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=chaines">réviser</a> · <a href="animer.html?cours=chaines">animer</a> · <a href="imprimer.html?cours=chaines">imprimer</a> · <a href="imprimer.html?cours=chaines&amp;corrige">corrigé</a> · <a href="revision.html?cours=chaines&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Binaire et hexadécimal</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=binaire">réviser</a> · <a href="animer.html?cours=binaire">animer</a> · <a href="imprimer.html?cours=binaire">imprimer</a> · <a href="imprimer.html?cours=binaire&amp;corrige">corrigé</a> · <a href="revision.html?cours=binaire&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Tableaux (listes)</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=listes">réviser</a> · <a href="animer.html?cours=listes">animer</a> · <a href="imprimer.html?cours=listes">imprimer</a> · <a href="imprimer.html?cours=listes&amp;corrige">corrigé</a> · <a href="revision.html?cours=listes&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>P-uplets (tuples)</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=tuples">réviser</a> · <a href="animer.html?cours=tuples">animer</a> · <a href="imprimer.html?cours=tuples">imprimer</a> · <a href="imprimer.html?cours=tuples&amp;corrige">corrigé</a> · <a href="revision.html?cours=tuples&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Dictionnaires</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=dictionnaires">réviser</a> · <a href="animer.html?cours=dictionnaires">animer</a> · <a href="imprimer.html?cours=dictionnaires">imprimer</a> · <a href="imprimer.html?cours=dictionnaires&amp;corrige">corrigé</a> · <a href="revision.html?cours=dictionnaires&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Parcours d'un tableau</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=parcours-tableau">réviser</a> · <a href="animer.html?cours=parcours-tableau">animer</a> · <a href="imprimer.html?cours=parcours-tableau">imprimer</a> · <a href="imprimer.html?cours=parcours-tableau&amp;corrige">corrigé</a> · <a href="revision.html?cours=parcours-tableau&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Tris par sélection et insertion</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=tris">réviser</a> · <a href="animer.html?cours=tris">animer</a> · <a href="imprimer.html?cours=tris">imprimer</a> · <a href="imprimer.html?cours=tris&amp;corrige">corrigé</a> · <a href="revision.html?cours=tris&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Recherche dichotomique</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=dichotomie">réviser</a> · <a href="animer.html?cours=dichotomie">animer</a> · <a href="imprimer.html?cours=dichotomie">imprimer</a> · <a href="imprimer.html?cours=dichotomie&amp;corrige">corrigé</a> · <a href="revision.html?cours=dichotomie&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Algorithmes gloutons</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=gloutons">réviser</a> · <a href="animer.html?cours=gloutons">animer</a> · <a href="imprimer.html?cours=gloutons">imprimer</a> · <a href="imprimer.html?cours=gloutons&amp;corrige">corrigé</a> · <a href="revision.html?cours=gloutons&amp;rejouer">rejouer</a></li>
-  </ul>
-  <h3>Terminale NSI</h3>
-  <ul class="cours-liste">
-    <li class="cadre"><strong>Programmation objet</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=poo">réviser</a> · <a href="animer.html?cours=poo">animer</a> · <a href="imprimer.html?cours=poo">imprimer</a> · <a href="imprimer.html?cours=poo&amp;corrige">corrigé</a> · <a href="revision.html?cours=poo&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Piles et files</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=piles-files">réviser</a> · <a href="animer.html?cours=piles-files">animer</a> · <a href="imprimer.html?cours=piles-files">imprimer</a> · <a href="imprimer.html?cours=piles-files&amp;corrige">corrigé</a> · <a href="revision.html?cours=piles-files&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Révision : piles et files</strong> · révision · 20 questions · 30&nbsp;min · <a href="revision.html?cours=revision-piles-files">réviser</a> · <a href="animer.html?cours=revision-piles-files">animer</a> · <a href="imprimer.html?cours=revision-piles-files">imprimer</a> · <a href="imprimer.html?cours=revision-piles-files&amp;corrige">corrigé</a> · <a href="revision.html?cours=revision-piles-files&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Révision : POO, piles, files et rappels</strong> · révision · 20 questions · 20&nbsp;min · <a href="revision.html?cours=revision-poo-piles-files">réviser</a> · <a href="animer.html?cours=revision-poo-piles-files">animer</a> · <a href="imprimer.html?cours=revision-poo-piles-files">imprimer</a> · <a href="imprimer.html?cours=revision-poo-piles-files&amp;corrige">corrigé</a> · <a href="revision.html?cours=revision-poo-piles-files&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Récursivité</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=recursivite">réviser</a> · <a href="animer.html?cours=recursivite">animer</a> · <a href="imprimer.html?cours=recursivite">imprimer</a> · <a href="imprimer.html?cours=recursivite&amp;corrige">corrigé</a> · <a href="revision.html?cours=recursivite&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Tri fusion</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=tri-fusion">réviser</a> · <a href="animer.html?cours=tri-fusion">animer</a> · <a href="imprimer.html?cours=tri-fusion">imprimer</a> · <a href="imprimer.html?cours=tri-fusion&amp;corrige">corrigé</a> · <a href="revision.html?cours=tri-fusion&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Arbres binaires</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=arbres-binaires">réviser</a> · <a href="animer.html?cours=arbres-binaires">animer</a> · <a href="imprimer.html?cours=arbres-binaires">imprimer</a> · <a href="imprimer.html?cours=arbres-binaires&amp;corrige">corrigé</a> · <a href="revision.html?cours=arbres-binaires&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Arbres binaires de recherche</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=abr">réviser</a> · <a href="animer.html?cours=abr">animer</a> · <a href="imprimer.html?cours=abr">imprimer</a> · <a href="imprimer.html?cours=abr&amp;corrige">corrigé</a> · <a href="revision.html?cours=abr&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Graphes</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=graphes">réviser</a> · <a href="animer.html?cours=graphes">animer</a> · <a href="imprimer.html?cours=graphes">imprimer</a> · <a href="imprimer.html?cours=graphes&amp;corrige">corrigé</a> · <a href="revision.html?cours=graphes&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Bases de données et SQL</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=sql">réviser</a> · <a href="animer.html?cours=sql">animer</a> · <a href="imprimer.html?cours=sql">imprimer</a> · <a href="imprimer.html?cours=sql&amp;corrige">corrigé</a> · <a href="revision.html?cours=sql&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Processus et ordonnancement</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=processus">réviser</a> · <a href="animer.html?cours=processus">animer</a> · <a href="imprimer.html?cours=processus">imprimer</a> · <a href="imprimer.html?cours=processus&amp;corrige">corrigé</a> · <a href="revision.html?cours=processus&amp;rejouer">rejouer</a></li>
-    <li class="cadre"><strong>Routage : RIP et OSPF</strong> · introduction · 12 questions · 15&nbsp;min · <a href="revision.html?cours=routage">réviser</a> · <a href="animer.html?cours=routage">animer</a> · <a href="imprimer.html?cours=routage">imprimer</a> · <a href="imprimer.html?cours=routage&amp;corrige">corrigé</a> · <a href="revision.html?cours=routage&amp;rejouer">rejouer</a></li>
-  </ul>
-  <h3>Démonstration</h3>
-  <ul class="cours-liste">
-    <li class="cadre"><strong>Démonstration : les types de questions</strong> · démonstration des types de questions · <a href="revision.html?cours=demo-types-de-questions">réviser</a> · <a href="animer.html?cours=demo-types-de-questions">animer</a> · <a href="imprimer.html?cours=demo-types-de-questions">imprimer</a> · <a href="imprimer.html?cours=demo-types-de-questions&amp;corrige">corrigé</a> · <a href="revision.html?cours=demo-types-de-questions&amp;rejouer">rejouer</a></li>
-  </ul>
-  </div>
-  <p class="info">Rien n'est enregistré en ligne. En classe, le prénom ou le pseudo et les réponses passent seulement en direct dans la séance ; sur le téléphone, ils sont effacés à la fin de la séance (et sinon au premier chargement d'une page de QuizzNSI après 12 heures). Tu veux d'abord essayer seul·e ? Ouvre l'animation <a href="animer.html?cours=piles-files&amp;demo">en mode démo</a> : la séance passe alors entre les onglets de ton navigateur.</p>
+  </header>
+<!-- bibliotheque:debut -->
+<div class="qz-corps">
+<aside class="qz-filtres" id="filtres" aria-label="Chercher et filtrer" hidden>
+<form id="form-filtres" role="search" aria-label="Chercher un cours-quiz">
+<label class="lab" for="recherche">Chercher</label>
+<input id="recherche" name="q" type="search" class="champ" placeholder="pile, tri, SQL…" autocomplete="off" spellcheck="false" aria-describedby="aide-recherche">
+<p class="qz-aide" id="aide-recherche">Dans les titres et les notions ; les accents ne comptent pas.</p>
+<details class="qz-plus" id="plus-filtres"><summary>Niveau, type et thème</summary>
+<fieldset class="qz-f-niveau"><legend>Niveau</legend>
+<label><input type="radio" name="niveau" value="" checked> Tous les niveaux</label>
+<label class="qz-bientot"><input type="radio" name="niveau" value="seconde-snt" disabled> Seconde SNT (bientôt)</label>
+<label><input type="radio" name="niveau" value="premiere-nsi"> Première NSI</label>
+<label><input type="radio" name="niveau" value="terminale-nsi"> Terminale NSI</label>
+</fieldset>
+<fieldset class="qz-f-type"><legend>Type</legend>
+<label><input type="checkbox" name="type" value="introduction" checked> Cours-quiz d'introduction</label>
+<label><input type="checkbox" name="type" value="revision" checked> Révision</label>
+</fieldset>
+<fieldset class="qz-f-theme"><legend>Thème du programme</legend>
+<div class="qz-f-groupe" data-niveau="premiere-nsi"><p class="qz-f-sous" aria-hidden="true">Première NSI</p>
+<label><input type="checkbox" name="theme" value="nsi-1re-2019.types-de-base" checked> Représentation des données : types et valeurs de base<span class="visuel-cache"> (Première NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-1re-2019.types-construits" checked> Représentation des données : types construits<span class="visuel-cache"> (Première NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-1re-2019.langages" checked> Langages et programmation<span class="visuel-cache"> (Première NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-1re-2019.algorithmique" checked> Algorithmique<span class="visuel-cache"> (Première NSI)</span></label>
+</div>
+<div class="qz-f-groupe" data-niveau="terminale-nsi"><p class="qz-f-sous" aria-hidden="true">Terminale NSI</p>
+<label><input type="checkbox" name="theme" value="nsi-tle-2019.structures-de-donnees" checked> Structures de données<span class="visuel-cache"> (Terminale NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-tle-2019.bases-de-donnees" checked> Bases de données<span class="visuel-cache"> (Terminale NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-tle-2019.architecture-os-reseaux" checked> Architectures matérielles, systèmes d'exploitation et réseaux<span class="visuel-cache"> (Terminale NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-tle-2019.langages" checked> Langages et programmation<span class="visuel-cache"> (Terminale NSI)</span></label>
+<label><input type="checkbox" name="theme" value="nsi-tle-2019.algorithmique" checked> Algorithmique<span class="visuel-cache"> (Terminale NSI)</span></label>
+</div>
+</fieldset>
+</details>
+<button class="bt mini qz-tout" type="button" id="tout-montrer">Tout montrer</button>
+</form>
+</aside>
+<div class="qz-res" id="bibliotheque">
+<p id="compteur" class="qz-compteur" role="status">25 cours-quiz, rangés par niveau, puis par thème du programme.</p>
+<section class="qz-niveau" data-niveau="premiere-nsi" aria-labelledby="n-premiere-nsi">
+<h2 class="qz-titre-niveau" id="n-premiere-nsi">Première NSI</h2>
+<section class="qz-bloc" data-theme="nsi-1re-2019.types-de-base" aria-labelledby="h-nsi-1re-2019-types-de-base">
+<h3 class="qz-theme" id="h-nsi-1re-2019-types-de-base">Représentation des données : types et valeurs de base</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="binaire" data-type="introduction" data-theme="nsi-1re-2019.types-de-base" data-mots="binaire et hexadecimal binaire hexadecimal base 2 base 10 base 16 bit octet conversion"><span class="puce">Cours-quiz</span><h4 id="t-binaire">Binaire et hexadécimal</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>binaire, hexadécimal, base 2, base 10, base 16, bit, octet, conversion</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=binaire" aria-describedby="t-binaire">Animer en classe</a><a class="bt" href="revision.html?cours=binaire" aria-describedby="t-binaire">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=binaire" aria-describedby="t-binaire">les questions</a> · <a href="imprimer.html?cours=binaire&amp;corrige" aria-describedby="t-binaire">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-1re-2019.types-construits" aria-labelledby="h-nsi-1re-2019-types-construits">
+<h3 class="qz-theme" id="h-nsi-1re-2019-types-construits">Représentation des données : types construits</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="listes" data-type="introduction" data-theme="nsi-1re-2019.types-construits" data-mots="tableaux (listes) tableau liste indice append comprehension matrice len"><span class="puce">Cours-quiz</span><h4 id="t-listes">Tableaux (listes)</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>tableau, liste, indice, append, compréhension, matrice, len</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=listes" aria-describedby="t-listes">Animer en classe</a><a class="bt" href="revision.html?cours=listes" aria-describedby="t-listes">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=listes" aria-describedby="t-listes">les questions</a> · <a href="imprimer.html?cours=listes&amp;corrige" aria-describedby="t-listes">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="tuples" data-type="introduction" data-theme="nsi-1re-2019.types-construits" data-mots="p-uplets (tuples) p-uplet tuple p-uplet nomme immuable renvoyer plusieurs valeurs"><span class="puce">Cours-quiz</span><h4 id="t-tuples">P-uplets (tuples)</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>p-uplet, tuple, p-uplet nommé, immuable, renvoyer plusieurs valeurs</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=tuples" aria-describedby="t-tuples">Animer en classe</a><a class="bt" href="revision.html?cours=tuples" aria-describedby="t-tuples">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=tuples" aria-describedby="t-tuples">les questions</a> · <a href="imprimer.html?cours=tuples&amp;corrige" aria-describedby="t-tuples">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="dictionnaires" data-type="introduction" data-theme="nsi-1re-2019.types-construits" data-mots="dictionnaires dictionnaire cle valeur items keys values get"><span class="puce">Cours-quiz</span><h4 id="t-dictionnaires">Dictionnaires</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>dictionnaire, clé, valeur, items, keys, values, get</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=dictionnaires" aria-describedby="t-dictionnaires">Animer en classe</a><a class="bt" href="revision.html?cours=dictionnaires" aria-describedby="t-dictionnaires">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=dictionnaires" aria-describedby="t-dictionnaires">les questions</a> · <a href="imprimer.html?cours=dictionnaires&amp;corrige" aria-describedby="t-dictionnaires">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-1re-2019.langages" aria-labelledby="h-nsi-1re-2019-langages">
+<h3 class="qz-theme" id="h-nsi-1re-2019-langages">Langages et programmation</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="variables" data-type="introduction" data-theme="nsi-1re-2019.langages" data-mots="variables et operateurs variable affectation operateur type entier flottant booleen division entiere // modulo %"><span class="puce">Cours-quiz</span><h4 id="t-variables">Variables et opérateurs</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>variable, affectation, opérateur, type, entier, flottant, booléen, division entière //, modulo %</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=variables" aria-describedby="t-variables">Animer en classe</a><a class="bt" href="revision.html?cours=variables" aria-describedby="t-variables">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=variables" aria-describedby="t-variables">les questions</a> · <a href="imprimer.html?cours=variables&amp;corrige" aria-describedby="t-variables">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="conditions-boucles" data-type="introduction" data-theme="nsi-1re-2019.langages" data-mots="conditions et boucles condition if elif else boucle for boucle while range"><span class="puce">Cours-quiz</span><h4 id="t-conditions-boucles">Conditions et boucles</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>condition, if, elif, else, boucle for, boucle while, range</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=conditions-boucles" aria-describedby="t-conditions-boucles">Animer en classe</a><a class="bt" href="revision.html?cours=conditions-boucles" aria-describedby="t-conditions-boucles">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=conditions-boucles" aria-describedby="t-conditions-boucles">les questions</a> · <a href="imprimer.html?cours=conditions-boucles&amp;corrige" aria-describedby="t-conditions-boucles">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="fonctions" data-type="introduction" data-theme="nsi-1re-2019.langages" data-mots="fonctions fonction def parametre return appel de fonction valeur renvoyee specification"><span class="puce">Cours-quiz</span><h4 id="t-fonctions">Fonctions</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>fonction, def, paramètre, return, appel de fonction, valeur renvoyée, spécification</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=fonctions" aria-describedby="t-fonctions">Animer en classe</a><a class="bt" href="revision.html?cours=fonctions" aria-describedby="t-fonctions">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=fonctions" aria-describedby="t-fonctions">les questions</a> · <a href="imprimer.html?cours=fonctions&amp;corrige" aria-describedby="t-fonctions">le corrigé</a></p></li>
+<li class="qz-carte rev" data-cours="revision-conditions-boucles" data-type="revision" data-theme="nsi-1re-2019.langages" data-mots="revision : conditions, boucles, fonctions condition boucle for boucle while range fonction return"><span class="puce">Révision</span><h4 id="t-revision-conditions-boucles">Révision : conditions, boucles, fonctions</h4><p class="qz-meta">20 questions · 25&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>condition, boucle for, boucle while, range, fonction, return</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=revision-conditions-boucles" aria-describedby="t-revision-conditions-boucles">Animer en classe</a><a class="bt" href="revision.html?cours=revision-conditions-boucles" aria-describedby="t-revision-conditions-boucles">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=revision-conditions-boucles" aria-describedby="t-revision-conditions-boucles">les questions</a> · <a href="imprimer.html?cours=revision-conditions-boucles&amp;corrige" aria-describedby="t-revision-conditions-boucles">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="chaines" data-type="introduction" data-theme="nsi-1re-2019.langages" data-mots="chaines de caracteres chaine de caracteres str indice len parcours concatenation tranche"><span class="puce">Cours-quiz</span><h4 id="t-chaines">Chaînes de caractères</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>chaîne de caractères, str, indice, len, parcours, concaténation, tranche</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=chaines" aria-describedby="t-chaines">Animer en classe</a><a class="bt" href="revision.html?cours=chaines" aria-describedby="t-chaines">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=chaines" aria-describedby="t-chaines">les questions</a> · <a href="imprimer.html?cours=chaines&amp;corrige" aria-describedby="t-chaines">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-1re-2019.algorithmique" aria-labelledby="h-nsi-1re-2019-algorithmique">
+<h3 class="qz-theme" id="h-nsi-1re-2019-algorithmique">Algorithmique</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="parcours-tableau" data-type="introduction" data-theme="nsi-1re-2019.algorithmique" data-mots="parcours d&#x27;un tableau parcours sequentiel recherche d&#x27;une occurrence maximum minimum moyenne cout lineaire"><span class="puce">Cours-quiz</span><h4 id="t-parcours-tableau">Parcours d'un tableau</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>parcours séquentiel, recherche d'une occurrence, maximum, minimum, moyenne, coût linéaire</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=parcours-tableau" aria-describedby="t-parcours-tableau">Animer en classe</a><a class="bt" href="revision.html?cours=parcours-tableau" aria-describedby="t-parcours-tableau">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=parcours-tableau" aria-describedby="t-parcours-tableau">les questions</a> · <a href="imprimer.html?cours=parcours-tableau&amp;corrige" aria-describedby="t-parcours-tableau">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="tris" data-type="introduction" data-theme="nsi-1re-2019.algorithmique" data-mots="tris par selection et insertion tri par selection tri par insertion invariant de boucle cout quadratique echange"><span class="puce">Cours-quiz</span><h4 id="t-tris">Tris par sélection et insertion</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>tri par sélection, tri par insertion, invariant de boucle, coût quadratique, échange</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=tris" aria-describedby="t-tris">Animer en classe</a><a class="bt" href="revision.html?cours=tris" aria-describedby="t-tris">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=tris" aria-describedby="t-tris">les questions</a> · <a href="imprimer.html?cours=tris&amp;corrige" aria-describedby="t-tris">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="dichotomie" data-type="introduction" data-theme="nsi-1re-2019.algorithmique" data-mots="recherche dichotomique recherche dichotomique tableau trie milieu variant de boucle cout logarithmique"><span class="puce">Cours-quiz</span><h4 id="t-dichotomie">Recherche dichotomique</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>recherche dichotomique, tableau trié, milieu, variant de boucle, coût logarithmique</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=dichotomie" aria-describedby="t-dichotomie">Animer en classe</a><a class="bt" href="revision.html?cours=dichotomie" aria-describedby="t-dichotomie">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=dichotomie" aria-describedby="t-dichotomie">les questions</a> · <a href="imprimer.html?cours=dichotomie&amp;corrige" aria-describedby="t-dichotomie">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="gloutons" data-type="introduction" data-theme="nsi-1re-2019.algorithmique" data-mots="algorithmes gloutons algorithme glouton rendu de monnaie sac a dos solution optimale"><span class="puce">Cours-quiz</span><h4 id="t-gloutons">Algorithmes gloutons</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>algorithme glouton, rendu de monnaie, sac à dos, solution optimale</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=gloutons" aria-describedby="t-gloutons">Animer en classe</a><a class="bt" href="revision.html?cours=gloutons" aria-describedby="t-gloutons">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=gloutons" aria-describedby="t-gloutons">les questions</a> · <a href="imprimer.html?cours=gloutons&amp;corrige" aria-describedby="t-gloutons">le corrigé</a></p></li>
+</ul></section>
+</section>
+<section class="qz-niveau" data-niveau="terminale-nsi" aria-labelledby="n-terminale-nsi">
+<h2 class="qz-titre-niveau" id="n-terminale-nsi">Terminale NSI</h2>
+<section class="qz-bloc" data-theme="nsi-tle-2019.structures-de-donnees" aria-labelledby="h-nsi-tle-2019-structures-de-donnees">
+<h3 class="qz-theme" id="h-nsi-tle-2019-structures-de-donnees">Structures de données</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="poo" data-type="introduction" data-theme="nsi-tle-2019.structures-de-donnees" data-mots="programmation objet programmation objet poo classe objet attribut methode __init__ self instance"><span class="puce">Cours-quiz</span><h4 id="t-poo">Programmation objet</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>programmation objet, POO, classe, objet, attribut, méthode, __init__, self, instance</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=poo" aria-describedby="t-poo">Animer en classe</a><a class="bt" href="revision.html?cours=poo" aria-describedby="t-poo">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=poo" aria-describedby="t-poo">les questions</a> · <a href="imprimer.html?cours=poo&amp;corrige" aria-describedby="t-poo">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="piles-files" data-type="introduction" data-theme="nsi-tle-2019.structures-de-donnees" data-mots="piles et files pile file lifo fifo empiler depiler enfiler defiler sommet"><span class="puce">Cours-quiz</span><h4 id="t-piles-files">Piles et files</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>pile, file, LIFO, FIFO, empiler, dépiler, enfiler, défiler, sommet</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=piles-files" aria-describedby="t-piles-files">Animer en classe</a><a class="bt" href="revision.html?cours=piles-files" aria-describedby="t-piles-files">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=piles-files" aria-describedby="t-piles-files">les questions</a> · <a href="imprimer.html?cours=piles-files&amp;corrige" aria-describedby="t-piles-files">le corrigé</a></p></li>
+<li class="qz-carte rev" data-cours="revision-piles-files" data-type="revision" data-theme="nsi-tle-2019.structures-de-donnees" data-mots="revision : piles et files pile file lifo fifo implementation liste python pop(0) parentheses"><span class="puce">Révision</span><h4 id="t-revision-piles-files">Révision : piles et files</h4><p class="qz-meta">20 questions · 30&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>pile, file, LIFO, FIFO, implémentation, liste Python, pop(0), parenthèses</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=revision-piles-files" aria-describedby="t-revision-piles-files">Animer en classe</a><a class="bt" href="revision.html?cours=revision-piles-files" aria-describedby="t-revision-piles-files">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=revision-piles-files" aria-describedby="t-revision-piles-files">les questions</a> · <a href="imprimer.html?cours=revision-piles-files&amp;corrige" aria-describedby="t-revision-piles-files">le corrigé</a></p></li>
+<li class="qz-carte rev" data-cours="revision-poo-piles-files" data-type="revision" data-theme="nsi-tle-2019.structures-de-donnees" data-mots="revision : poo, piles, files et rappels programmation objet classe methode pile file liste dictionnaire boucle fonction"><span class="puce">Révision</span><h4 id="t-revision-poo-piles-files">Révision : POO, piles, files et rappels</h4><p class="qz-meta">20 questions · 20&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>programmation objet, classe, méthode, pile, file, liste, dictionnaire, boucle, fonction</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=revision-poo-piles-files" aria-describedby="t-revision-poo-piles-files">Animer en classe</a><a class="bt" href="revision.html?cours=revision-poo-piles-files" aria-describedby="t-revision-poo-piles-files">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=revision-poo-piles-files" aria-describedby="t-revision-poo-piles-files">les questions</a> · <a href="imprimer.html?cours=revision-poo-piles-files&amp;corrige" aria-describedby="t-revision-poo-piles-files">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="arbres-binaires" data-type="introduction" data-theme="nsi-tle-2019.structures-de-donnees" data-mots="arbres binaires arbre binaire noeud racine feuille taille hauteur parcours prefixe parcours infixe parcours suffixe parcours en largeur"><span class="puce">Cours-quiz</span><h4 id="t-arbres-binaires">Arbres binaires</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>arbre binaire, nœud, racine, feuille, taille, hauteur, parcours préfixe, parcours infixe, parcours suffixe, parcours en largeur</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=arbres-binaires" aria-describedby="t-arbres-binaires">Animer en classe</a><a class="bt" href="revision.html?cours=arbres-binaires" aria-describedby="t-arbres-binaires">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=arbres-binaires" aria-describedby="t-arbres-binaires">les questions</a> · <a href="imprimer.html?cours=arbres-binaires&amp;corrige" aria-describedby="t-arbres-binaires">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="graphes" data-type="introduction" data-theme="nsi-tle-2019.structures-de-donnees" data-mots="graphes graphe sommet arete arc graphe oriente matrice d&#x27;adjacence liste de successeurs parcours en largeur"><span class="puce">Cours-quiz</span><h4 id="t-graphes">Graphes</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>graphe, sommet, arête, arc, graphe orienté, matrice d'adjacence, liste de successeurs, parcours en largeur</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=graphes" aria-describedby="t-graphes">Animer en classe</a><a class="bt" href="revision.html?cours=graphes" aria-describedby="t-graphes">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=graphes" aria-describedby="t-graphes">les questions</a> · <a href="imprimer.html?cours=graphes&amp;corrige" aria-describedby="t-graphes">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-tle-2019.bases-de-donnees" aria-labelledby="h-nsi-tle-2019-bases-de-donnees">
+<h3 class="qz-theme" id="h-nsi-tle-2019-bases-de-donnees">Bases de données</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="sql" data-type="introduction" data-theme="nsi-tle-2019.bases-de-donnees" data-mots="bases de donnees et sql base de donnees sql modele relationnel cle primaire cle etrangere select where join insert update delete"><span class="puce">Cours-quiz</span><h4 id="t-sql">Bases de données et SQL</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>base de données, SQL, modèle relationnel, clé primaire, clé étrangère, SELECT, WHERE, JOIN, INSERT, UPDATE, DELETE</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=sql" aria-describedby="t-sql">Animer en classe</a><a class="bt" href="revision.html?cours=sql" aria-describedby="t-sql">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=sql" aria-describedby="t-sql">les questions</a> · <a href="imprimer.html?cours=sql&amp;corrige" aria-describedby="t-sql">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-tle-2019.architecture-os-reseaux" aria-labelledby="h-nsi-tle-2019-architecture-os-reseaux">
+<h3 class="qz-theme" id="h-nsi-tle-2019-architecture-os-reseaux">Architectures matérielles, systèmes d'exploitation et réseaux</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="processus" data-type="introduction" data-theme="nsi-tle-2019.architecture-os-reseaux" data-mots="processus et ordonnancement processus pid ordonnancement systeme d&#x27;exploitation elu bloque interblocage"><span class="puce">Cours-quiz</span><h4 id="t-processus">Processus et ordonnancement</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>processus, PID, ordonnancement, système d'exploitation, élu, bloqué, interblocage</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=processus" aria-describedby="t-processus">Animer en classe</a><a class="bt" href="revision.html?cours=processus" aria-describedby="t-processus">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=processus" aria-describedby="t-processus">les questions</a> · <a href="imprimer.html?cours=processus&amp;corrige" aria-describedby="t-processus">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="routage" data-type="introduction" data-theme="nsi-tle-2019.architecture-os-reseaux" data-mots="routage : rip et ospf routage routeur table de routage rip ospf nombre de sauts cout"><span class="puce">Cours-quiz</span><h4 id="t-routage">Routage : RIP et OSPF</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>routage, routeur, table de routage, RIP, OSPF, nombre de sauts, coût</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=routage" aria-describedby="t-routage">Animer en classe</a><a class="bt" href="revision.html?cours=routage" aria-describedby="t-routage">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=routage" aria-describedby="t-routage">les questions</a> · <a href="imprimer.html?cours=routage&amp;corrige" aria-describedby="t-routage">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-tle-2019.langages" aria-labelledby="h-nsi-tle-2019-langages">
+<h3 class="qz-theme" id="h-nsi-tle-2019-langages">Langages et programmation</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="recursivite" data-type="introduction" data-theme="nsi-tle-2019.langages" data-mots="recursivite recursivite fonction recursive cas de base appel recursif pile d&#x27;appels factorielle"><span class="puce">Cours-quiz</span><h4 id="t-recursivite">Récursivité</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>récursivité, fonction récursive, cas de base, appel récursif, pile d'appels, factorielle</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=recursivite" aria-describedby="t-recursivite">Animer en classe</a><a class="bt" href="revision.html?cours=recursivite" aria-describedby="t-recursivite">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=recursivite" aria-describedby="t-recursivite">les questions</a> · <a href="imprimer.html?cours=recursivite&amp;corrige" aria-describedby="t-recursivite">le corrigé</a></p></li>
+</ul></section>
+<section class="qz-bloc" data-theme="nsi-tle-2019.algorithmique" aria-labelledby="h-nsi-tle-2019-algorithmique">
+<h3 class="qz-theme" id="h-nsi-tle-2019-algorithmique">Algorithmique</h3>
+<ul class="qz-grille">
+<li class="qz-carte" data-cours="tri-fusion" data-type="introduction" data-theme="nsi-tle-2019.algorithmique" data-mots="tri fusion tri fusion diviser pour regner fusion n log n recursivite"><span class="puce">Cours-quiz</span><h4 id="t-tri-fusion">Tri fusion</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>tri fusion, diviser pour régner, fusion, n log n, récursivité</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=tri-fusion" aria-describedby="t-tri-fusion">Animer en classe</a><a class="bt" href="revision.html?cours=tri-fusion" aria-describedby="t-tri-fusion">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=tri-fusion" aria-describedby="t-tri-fusion">les questions</a> · <a href="imprimer.html?cours=tri-fusion&amp;corrige" aria-describedby="t-tri-fusion">le corrigé</a></p></li>
+<li class="qz-carte" data-cours="abr" data-type="introduction" data-theme="nsi-tle-2019.algorithmique" data-mots="arbres binaires de recherche arbre binaire de recherche abr cle rechercher une cle inserer une cle cout logarithmique"><span class="puce">Cours-quiz</span><h4 id="t-abr">Arbres binaires de recherche</h4><p class="qz-meta">12 questions · 15&#xA0;min</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>arbre binaire de recherche, ABR, clé, rechercher une clé, insérer une clé, coût logarithmique</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=abr" aria-describedby="t-abr">Animer en classe</a><a class="bt" href="revision.html?cours=abr" aria-describedby="t-abr">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=abr" aria-describedby="t-abr">les questions</a> · <a href="imprimer.html?cours=abr&amp;corrige" aria-describedby="t-abr">le corrigé</a></p></li>
+</ul></section>
+</section>
+<section class="qz-niveau qz-decouvrir" aria-labelledby="n-decouvrir">
+<h2 class="qz-titre-niveau petit" id="n-decouvrir">Pour découvrir les types de questions</h2>
+<ul class="qz-grille"><li class="qz-carte demo" data-cours="demo-types-de-questions" data-type="demonstration" data-theme="nsi-1re-2019.langages" data-mots="demonstration : les types de questions nuage de mots relier puzzle de code ligne fautive"><span class="puce">Démonstration</span><h4 id="t-demo-types-de-questions">Démonstration : les types de questions</h4><p class="qz-meta">un exemple de chaque type, non noté</p><p class="qz-notions"><span class="visuel-cache">Notions : </span>nuage de mots, relier, puzzle de code, ligne fautive</p><div class="qz-actions"><a class="bt p" href="animer.html?cours=demo-types-de-questions" aria-describedby="t-demo-types-de-questions">Animer en classe</a><a class="bt" href="revision.html?cours=demo-types-de-questions" aria-describedby="t-demo-types-de-questions">Réviser seul·e</a></div><p class="qz-papier">Sur papier : <a href="imprimer.html?cours=demo-types-de-questions" aria-describedby="t-demo-types-de-questions">les questions</a> · <a href="imprimer.html?cours=demo-types-de-questions&amp;corrige" aria-describedby="t-demo-types-de-questions">le corrigé</a></p></li></ul></section>
+<div class="qz-aucun carte pointille" id="aucun" hidden tabindex="-1"></div>
+</div>
+</div>
+<!-- bibliotheque:fin -->
+  <p class="qz-info">Rien n'est enregistré en ligne. En classe, le prénom ou le pseudo et les réponses passent seulement en direct dans la séance ; sur le téléphone, ils sont effacés à la fin de la séance (et sinon au premier chargement d'une page de QuizzNSI après 12 heures). Tu veux d'abord essayer seul·e ? Ouvre l'animation <a href="animer.html?cours=piles-files&amp;demo">en mode démo</a> : la séance passe alors entre les onglets de ton navigateur.</p>
 </main>
-<footer class="pied">QuizzNSI · Babash - NSI Tani Malandi · code MIT, contenus CC BY-SA 4.0 · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a></footer>
+<footer class="pied"><p>QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi
+  · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a>
+  · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a>
+  · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a>
+  · conçu avec l'aide de l'IA</p>
+  <p>Fait partie des <a href="https://babash.github.io/Babash-NSI-SNT/">Ressources NSI et SNT</a>.</p></footer>
 <script src="js/commun.js"></script>
-<script>
-(async function () {
-  const Q = window.QuizzNSI; Q.theme();
-  try {
-    const r = await fetch('cours/catalogue.json', { cache: 'no-cache' }); if (!r.ok) return;
-    const c = await r.json(); if (!c || !Array.isArray(c.cours) || !c.cours.length) return;
-    // rangés par niveau, dans l'ordre du catalogue (la progression de l'année) ; la démonstration à la fin
-    const ligne = x => {
-      const id = encodeURIComponent(x.id);
-      const gabarit = x.gabarit === 'introduction' ? 'introduction · ' : x.gabarit === 'revision' ? 'révision · ' : '';
-      const duree = (x.duree_minutes | 0) > 0 ? ' · ' + (x.duree_minutes | 0) + String.fromCharCode(0xA0) + 'min' : '';
-      const quoi = x.demonstration === true ? 'démonstration des types de questions' : gabarit + (x.questions | 0) + ' questions' + duree;
-      return '<li class="cadre"><strong>' + Q.echapper(x.titre) + '</strong> · ' + quoi + ' · '
-        + '<a href="revision.html?cours=' + id + '">réviser</a> · <a href="animer.html?cours=' + id + '">animer</a> · <a href="imprimer.html?cours=' + id + '">imprimer</a> · <a href="imprimer.html?cours=' + id + '&amp;corrige">corrigé</a> · <a href="revision.html?cours=' + id + '&amp;rejouer">rejouer</a></li>';
-    };
-    const groupes = [];
-    c.cours.filter(x => /^[a-z0-9-]{1,60}$/.test(x.id)).forEach(x => {
-      const nom = x.demonstration === true ? 'Démonstration' : String(x.niveau || '');
-      let g = groupes.find(y => y.nom === nom);
-      if (!g) { g = { nom, cours: [] }; groupes.push(g); }
-      g.cours.push(x);
-    });
-    groupes.sort((a, b) => (a.nom === 'Démonstration') - (b.nom === 'Démonstration'));
-    document.getElementById('cours').innerHTML = groupes.map(g => '<h3>' + Q.echapper(g.nom) + '</h3><ul class="cours-liste">' + g.cours.map(ligne).join('') + '</ul>').join('');
-  } catch (e) { /* la liste écrite dans la page reste */ }
-})();
-</script>
+<script src="js/accueil.js"></script>
 </body>
 </html>
