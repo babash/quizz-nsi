@@ -1124,8 +1124,8 @@
           "feedback": "`tete()` renvoie le prochain à sortir, pas le dernier arrivé. Le camion est à la queue, derrière la moto."
         },
         {
-          "texte": "`taxi taxi bus`",
-          "feedback": "`defiler()` retire le premier élément, en plus de le renvoyer : le second appel rend donc le bus."
+          "texte": "`taxi taxi taxi`",
+          "feedback": "`defiler()` retire le premier élément, en plus de le renvoyer : le second appel rend donc le bus, et la moto est en tête."
         }
       ],
       "explication": "`defiler()` retire et renvoie la tête ; `enfiler(e)` ajoute à la queue.",
@@ -1374,17 +1374,17 @@
           "feedback": "Rien n'oblige à changer de structure : on veut ajouter Mia à la file. Il suffit d'utiliser la méthode de la file."
         },
         {
-          "texte": "La classe `File` n'a pas de méthode `empiler` : il faut `f.enfiler(\"Mia\")`.",
-          "juste": true,
-          "feedback": "Oui. Une méthode est un attribut de l'objet : Python ne trouve pas `empiler` dans un objet `File`, et propose `enfiler`."
-        },
-        {
           "texte": "Une file ne peut contenir qu'un seul élément.",
           "feedback": "Une file peut contenir autant d'éléments qu'on veut. Le message parle d'un nom, `empiler`, introuvable dans l'objet."
         },
         {
+          "texte": "`File` n'a pas de méthode `empiler` : il faut `enfiler`.",
+          "juste": true,
+          "feedback": "Oui. Dans ses messages, Python appelle « attribute » tout ce qui suit le point, méthodes comprises : il ne trouve pas `empiler` dans un objet `File`, et propose `enfiler`."
+        },
+        {
           "texte": "Il faut écrire `File.empiler(f, \"Mia\")`.",
-          "feedback": "Appelée sur la classe, la méthode `empiler` n'existe pas davantage : Python donnerait la même `AttributeError`."
+          "feedback": "Appelée sur la classe, la méthode `empiler` n'existe pas davantage. Python répond `AttributeError: type object 'File' has no attribute 'empiler'. Did you mean: 'enfiler'?`"
         }
       ],
       "explication": "`AttributeError` : l'objet n'a pas cet attribut ou cette méthode. Lis le « Did you mean » (« voulais-tu dire »).",
@@ -1445,16 +1445,16 @@
       "options": [
         {
           "texte": "`ok(\"([)]\")`",
-          "feedback": "Il y a autant de signes ouvrants que fermants, mais ils se croisent : quand `]` arrive, le sommet est `(`, différent de `o[\"]\"]`, qui vaut `[`."
-        },
-        {
-          "texte": "`ok(\"(()\")`",
-          "feedback": "Une parenthèse reste ouverte : à la fin, la pile contient encore `(`, et `p.est_vide()` est faux."
+          "feedback": "Il y a autant de signes ouvrants que fermants, mais ils se croisent : quand `)` arrive, le sommet est `[`, différent de `o[\")\"]`, qui vaut `(`."
         },
         {
           "texte": "`ok(\"[()]\")`",
           "juste": true,
           "feedback": "Oui. `[` puis `(` sont empilés ; `)` dépile `(`, puis `]` dépile `[` : chaque fermant trouve son ouvrant, et la pile finit vide."
+        },
+        {
+          "texte": "`ok(\"(()\")`",
+          "feedback": "Une parenthèse reste ouverte : à la fin, la pile contient encore `(`, et `p.est_vide()` est faux."
         },
         {
           "texte": "`ok(\"())(\")`",
@@ -1478,10 +1478,21 @@
         },
         {
           "code": [
+            "p = Pile()",
+            "p.empiler(\"(\")",
+            "p.empiler(\"[\")",
+            "print(p.sommet(), {\")\": \"(\", \"]\": \"[\"}[\")\"])"
+          ],
+          "sortie": "[ (",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
             "print(ok(\"(()\"))"
           ],
           "sortie": "False",
-          "option": 1
+          "option": 2
         },
         {
           "code": [
