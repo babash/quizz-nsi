@@ -1,0 +1,1553 @@
+{
+  "format": "quizz-nsi/1",
+  "id": "revision-poo-piles-files",
+  "titre": "Révision : POO, piles, files et rappels",
+  "sous_titre": "Séance de révision : 3 blocs, 20 questions, pour réviser avant le contrôle",
+  "niveau": "Terminale NSI",
+  "programme": "Structures de données : vocabulaire de la programmation objet ; listes, piles, files (interface et implémentation) ; rappels de première (listes, dictionnaires, boucles, fonctions)",
+  "fiche": "https://babash.github.io/fiches-nsi/fiches/poo/",
+  "auteur": "Babash - NSI Tani Malandi",
+  "licence": "CC BY-SA 4.0",
+  "gabarit": "revision",
+  "duree_minutes": 20,
+  "sources": [
+    "Fiches de révision « La programmation orientée objet » et « Piles et files » (FichesNSI)",
+    "Cours-quiz d'introduction « Programmation objet » et « Piles et files », révision « Piles et files » (QuizzNSI)"
+  ],
+  "criteres": [
+    "Niveau 1 : j'emploie les mots classe, instance, attribut, méthode, et les primitives des piles et des files.",
+    "Niveau 2 : je prévois l'état d'objets, d'une pile ou d'une file après plusieurs appels de méthodes.",
+    "Niveau 3 : je complète une classe, j'explique un message d'erreur et j'exécute à la main un algorithme de style bac."
+  ],
+  "conventions": [
+    "Une pile s'écrit du haut (son ==sommet==) vers le bas ; une file, de la tête vers la queue.",
+    "Les primitives sont celles du cours : `Pile()`, `empiler(e)`, `depiler()`, `sommet()`, `est_vide()`, `taille()` ; `File()`, `enfiler(e)`, `defiler()`, `tete()`, `est_vide()`, `taille()`.",
+    "`depiler()` et `defiler()` retirent l'élément et le renvoient ; `sommet()` et `tete()` le renvoient sans le retirer.",
+    "`x += n` ajoute n à x ; `x -= n` lui retire n."
+  ],
+  "prelude_python": [
+    "class Pile:",
+    "    def __init__(self):",
+    "        self.contenu = []",
+    "    def est_vide(self):",
+    "        return len(self.contenu) == 0",
+    "    def empiler(self, e):",
+    "        self.contenu.append(e)",
+    "    def depiler(self):",
+    "        return self.contenu.pop()",
+    "    def sommet(self):",
+    "        return self.contenu[-1]",
+    "    def taille(self):",
+    "        return len(self.contenu)",
+    "",
+    "class File:",
+    "    def __init__(self):",
+    "        self.contenu = []",
+    "    def est_vide(self):",
+    "        return len(self.contenu) == 0",
+    "    def enfiler(self, e):",
+    "        self.contenu.append(e)",
+    "    def defiler(self):",
+    "        return self.contenu.pop(0)",
+    "    def tete(self):",
+    "        return self.contenu[0]",
+    "    def taille(self):",
+    "        return len(self.contenu)"
+  ],
+  "diapositives": [
+    {
+      "type": "titre",
+      "titre": "POO, piles, files et rappels",
+      "conventions": false,
+      "texte": [
+        "Séance de révision · 3 blocs, 20 questions · pour réviser avant le contrôle."
+      ]
+    },
+    {
+      "type": "partie",
+      "numero": "1",
+      "titre": "Rappels de première",
+      "sous_titre": "liste, dictionnaire, while, return, indices"
+    },
+    {
+      "type": "question",
+      "id": "q01",
+      "nom": "[Parcours] Additionner sous condition",
+      "objectif": "Suivre un parcours de liste avec un accumulateur et une condition.",
+      "enonce": [
+        "La liste `ventes` donne le nombre de mangues vendues chaque jour par un stand du marché.",
+        "Qu'affiche ce code ?"
+      ],
+      "code": [
+        "ventes = [3, 0, 5, 2, 4]",
+        "total = 0",
+        "for v in ventes:",
+        "    if v > 2:",
+        "        total = total + v",
+        "print(total)"
+      ],
+      "options": [
+        {
+          "texte": "`14`",
+          "feedback": "Tu as additionné toutes les ventes. Le test `if v > 2` écarte 0 et 2 : on n'ajoute que 3, 5 et 4."
+        },
+        {
+          "texte": "`12`",
+          "juste": true,
+          "feedback": "Oui : 3 + 5 + 4 = 12. Seules les valeurs qui passent le test sont ajoutées à `total`, l'accumulateur."
+        },
+        {
+          "texte": "`3`",
+          "feedback": "3, c'est le nombre de jours où l'on a vendu plus de 2 mangues : tu as compté au lieu d'additionner. Ici, on ajoute `v`, pas 1."
+        },
+        {
+          "texte": "`4`",
+          "feedback": "4 est la dernière valeur retenue. Tu as lu `total = v` ; mais `total = total + v` garde ce qu'il y avait déjà et ajoute `v`."
+        }
+      ],
+      "explication": "Un accumulateur part de 0 et, à chaque tour retenu, on lui ajoute la valeur : `total = total + v`.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "12"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q02",
+      "nom": "[Dictionnaire] Additionner les valeurs",
+      "objectif": "Parcourir un dictionnaire et lire la valeur associée à chaque clé.",
+      "enonce": [
+        "Le dictionnaire `stock` associe à chaque fruit le nombre de fruits en stock. Après la boucle, `total` doit valoir 17.",
+        "Par quoi remplacer `...` ?"
+      ],
+      "code": [
+        "stock = {\"mangue\": 12,",
+        "         \"coco\": 0,",
+        "         \"papaye\": 5}",
+        "total = 0",
+        "for f in stock:",
+        "    total = total + ..."
+      ],
+      "options": [
+        {
+          "texte": "`f`",
+          "feedback": "`for f in stock` parcourt les clés : `f` vaut \"mangue\", puis \"coco\"… Python répond `TypeError: unsupported operand type(s) for +: 'int' and 'str'` (« on ne peut pas additionner un entier et une chaîne »)."
+        },
+        {
+          "texte": "`stock.values()`",
+          "feedback": "`stock.values()` regroupe toutes les valeurs, ce n'est pas un nombre. Python répond `TypeError: unsupported operand type(s) for +: 'int' and 'dict_values'`."
+        },
+        {
+          "texte": "`stock[\"f\"]`",
+          "feedback": "Avec des guillemets, tu cherches la clé écrite \"f\", qui n'existe pas : `KeyError: 'f'` (« clé absente »). Sans guillemets, `f` est la variable de la boucle."
+        },
+        {
+          "texte": "`stock[f]`",
+          "juste": true,
+          "feedback": "Oui. `f` est une clé, et `stock[f]` la valeur qui lui est associée : 12 + 0 + 5 = 17."
+        }
+      ],
+      "explication": "`for cle in d:` parcourt les clés ; la valeur associée s'écrit `d[cle]`.",
+      "verifications": [
+        {
+          "code": [
+            "stock = {\"mangue\": 12, \"coco\": 0, \"papaye\": 5}",
+            "total = 0",
+            "for f in stock:",
+            "    total = total + stock[f]",
+            "print(total)"
+          ],
+          "sortie": "17",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "stock = {\"mangue\": 12, \"coco\": 0, \"papaye\": 5}",
+            "total = 0",
+            "for f in stock:",
+            "    total = total + f"
+          ],
+          "erreur": "TypeError",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
+            "stock = {\"mangue\": 12, \"coco\": 0, \"papaye\": 5}",
+            "total = 0",
+            "for f in stock:",
+            "    total = total + stock.values()"
+          ],
+          "erreur": "TypeError",
+          "reprendre_code": false,
+          "option": 1
+        },
+        {
+          "code": [
+            "stock = {\"mangue\": 12, \"coco\": 0, \"papaye\": 5}",
+            "total = 0",
+            "for f in stock:",
+            "    total = total + stock[\"f\"]"
+          ],
+          "erreur": "KeyError",
+          "reprendre_code": false,
+          "option": 2
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q03",
+      "nom": "[Boucle while] Quand la boucle s'arrête-t-elle ?",
+      "objectif": "Suivre une boucle `while` jusqu'à sa condition d'arrêt.",
+      "enonce": [
+        "Inaya met 6 euros de côté chaque semaine pour s'offrir un casque à 20 euros.",
+        "Qu'affiche ce code ?"
+      ],
+      "code": [
+        "epargne = 0",
+        "semaines = 0",
+        "while epargne < 20:",
+        "    epargne = epargne + 6",
+        "    semaines = semaines + 1",
+        "print(semaines, epargne)"
+      ],
+      "options": [
+        {
+          "texte": "`4 24`",
+          "juste": true,
+          "feedback": "Oui. Après 3 semaines, `epargne` vaut 18 : 18 < 20, on fait un tour de plus. Après 4 semaines, 24 : le test est faux, la boucle s'arrête."
+        },
+        {
+          "texte": "`4 20`",
+          "feedback": "`epargne` augmente de 6 à chaque tour : 6, 12, 18, 24. Elle ne passe jamais par 20. La boucle s'arrête au premier tour où le test devient faux."
+        },
+        {
+          "texte": "`3 18`",
+          "feedback": "Après 3 tours, 18 < 20 est encore vrai : on refait un tour. On ne s'arrête que quand la condition est fausse."
+        },
+        {
+          "texte": "`5 30`",
+          "feedback": "Tu as fait un tour de trop. Avec 24, `24 < 20` est faux : la boucle ne fait pas de cinquième tour."
+        }
+      ],
+      "explication": "Une boucle `while` refait un tour tant que sa condition est vraie ; on teste avant chaque tour.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "4 24"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q04",
+      "nom": "[Fonctions] `print` ou `return` ?",
+      "objectif": "Distinguer une fonction qui affiche et une fonction qui renvoie.",
+      "enonce": [
+        "On exécute le code suivant.",
+        "Qu'affiche-t-il ?"
+      ],
+      "code": [
+        "def double(x):",
+        "    print(2 * x)",
+        "",
+        "r = double(4)",
+        "print(r)"
+      ],
+      "options": [
+        {
+          "texte": "`8`, puis `8`",
+          "feedback": "La fonction affiche 8, mais elle ne renvoie rien : sans `return`, elle renvoie `None`. `r` vaut donc `None`."
+        },
+        {
+          "texte": "`8` seulement",
+          "feedback": "Il y a bien deux affichages : le `print` dans la fonction, puis `print(r)`. Le second affiche `None`."
+        },
+        {
+          "texte": "`8`, puis `None`",
+          "juste": true,
+          "feedback": "Oui. `print` affiche, mais ne renvoie rien : une fonction sans `return` renvoie `None`. Pour garder le résultat, il faut `return 2 * x`."
+        },
+        {
+          "texte": "`None` seulement",
+          "feedback": "L'appel `double(4)` exécute le corps de la fonction, donc son `print` affiche 8 d'abord. Ensuite `print(r)` affiche `None`."
+        }
+      ],
+      "explication": "`print` montre une valeur à l'écran ; `return` la renvoie au programme. Sans `return`, une fonction renvoie `None`.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "8\nNone"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q05",
+      "nom": "[Erreur] Un indice de trop",
+      "objectif": "Expliquer une `IndexError` dans un parcours par indices.",
+      "enonce": [
+        "La fonction `maximum` doit renvoyer la plus grande valeur d'une liste non vide.",
+        "Le programme s'arrête sur l'erreur affichée sous le code (« indice hors de la liste »). Quelle est la cause ?"
+      ],
+      "code": [
+        "def maximum(t):",
+        "    m = t[0]",
+        "    n = len(t)",
+        "    for i in range(n + 1):",
+        "        if t[i] > m:",
+        "            m = t[i]",
+        "    return m",
+        "",
+        "print(maximum([4, 9, 2]))"
+      ],
+      "console": [
+        "IndexError: list index out of range"
+      ],
+      "options": [
+        {
+          "texte": "`range(n + 1)` va jusqu'à 3, et `t[3]` n'existe pas.",
+          "juste": true,
+          "feedback": "Bien vu. Les indices de `[4, 9, 2]` vont de 0 à 2 : `range(n)` suffit. Avec `n + 1`, le dernier tour lit `t[3]`."
+        },
+        {
+          "texte": "`m = t[0]` est faux : il faut partir de `m = 0`.",
+          "feedback": "Partir de `t[0]` est correct (et plus sûr que 0 si toutes les valeurs sont négatives). L'erreur vient d'un indice trop grand dans la boucle."
+        },
+        {
+          "texte": "Il faut écrire `t[i] >= m` au lieu de `t[i] > m`.",
+          "feedback": "Changer le test ne change pas les indices parcourus : `t[3]` serait toujours lu. L'erreur est dans le `range`."
+        },
+        {
+          "texte": "`return m` doit être dans la boucle.",
+          "feedback": "Dans la boucle, `return` arrêterait la fonction au premier tour : elle renverrait 4. Ici, l'erreur arrive avant, à cause de `t[3]`."
+        }
+      ],
+      "explication": "Une liste de longueur n a les indices 0 à n - 1 : on la parcourt avec `range(len(t))`.",
+      "verifications": [
+        {
+          "code": [],
+          "erreur": "IndexError"
+        },
+        {
+          "code": [
+            "def maximum(t):",
+            "    m = t[0]",
+            "    for i in range(len(t)):",
+            "        if t[i] > m:",
+            "            m = t[i]",
+            "    return m",
+            "print(maximum([4, 9, 2]))"
+          ],
+          "sortie": "9",
+          "reprendre_code": false
+        }
+      ]
+    },
+    {
+      "type": "notion",
+      "surtitre": "Bloc 1 terminé",
+      "titre": "Fais le point sur ta feuille de route",
+      "texte": [
+        "Compte tes bonnes réponses du bloc « Rappels de première » : un nombre sur 5.",
+        "Presque tout juste : acquis. La moitié : à consolider. Moins : ==à revoir en priorité=="
+      ]
+    },
+    {
+      "type": "partie",
+      "numero": "2",
+      "titre": "Programmation objet",
+      "sous_titre": "classe, constructeur, self, attributs, méthodes"
+    },
+    {
+      "type": "question",
+      "id": "q06",
+      "nom": "[Vocabulaire] Classe, objet, attribut, méthode",
+      "objectif": "Nommer chaque élément d'un programme écrit en programmation objet.",
+      "enonce": [
+        "Un programme suit la batterie de plusieurs téléphones.",
+        "Quelle phrase décrit correctement ce code ?"
+      ],
+      "code": [
+        "class Tel:",
+        "    def __init__(self, x):",
+        "        self.nom = x",
+        "        self.batterie = 100",
+        "",
+        "    def utiliser(self, n):",
+        "        self.batterie -= n",
+        "",
+        "t1 = Tel(\"Mia\")",
+        "t1.utiliser(30)"
+      ],
+      "options": [
+        {
+          "texte": "`Tel` est un objet, `t1` est sa classe, `utiliser` est un attribut.",
+          "feedback": "C'est l'inverse : `Tel` est la classe (le plan, avec une majuscule), `t1` un objet fabriqué avec ce plan. `utiliser` est une fonction de la classe : une méthode."
+        },
+        {
+          "texte": "`Tel` est une classe, `t1` une instance, `batterie` un attribut, `utiliser` une méthode.",
+          "juste": true,
+          "feedback": "Oui. La classe est le plan ; `Tel(\"Mia\")` fabrique une instance ; `self.batterie` est un attribut ; `def utiliser(self, n)` définit une méthode."
+        },
+        {
+          "texte": "`Tel` est une classe, `t1` une instance, `batterie` une méthode, `utiliser` un attribut.",
+          "feedback": "Un attribut est une valeur rangée dans l'objet (`self.batterie = 100`) ; une méthode est une fonction de la classe (`def utiliser`). Tu les as échangés."
+        },
+        {
+          "texte": "`Tel` est une fonction, `t1` sa valeur renvoyée, `nom` une variable globale.",
+          "feedback": "`class Tel:` définit une classe, pas une fonction. Et `self.nom` est rangé dans chaque objet : c'est un attribut, pas une variable globale."
+        }
+      ],
+      "explication": "Classe : le plan. Objet (instance) : fabriqué avec le plan. Attribut : une valeur de l'objet. Méthode : une fonction de la classe.",
+      "verifications": [
+        {
+          "code": [
+            "print(type(t1).__name__, t1.nom, t1.batterie)"
+          ],
+          "sortie": "Tel Mia 70"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q07",
+      "nom": "[Objets] Deux téléphones, deux batteries",
+      "objectif": "Suivre l'état de deux objets après plusieurs appels de méthode.",
+      "enonce": [
+        "On reprend la classe `Tel`.",
+        "Qu'affiche ce code ?"
+      ],
+      "code": [
+        "class Tel:",
+        "    def __init__(self, x):",
+        "        self.nom = x",
+        "        self.batterie = 100",
+        "",
+        "    def utiliser(self, n):",
+        "        self.batterie -= n",
+        "",
+        "t1 = Tel(\"Mia\")",
+        "t2 = Tel(\"Zaïd\")",
+        "t1.utiliser(30)",
+        "t2.utiliser(10)",
+        "t1.utiliser(5)",
+        "print(t1.batterie,",
+        "      t2.batterie)"
+      ],
+      "options": [
+        {
+          "texte": "`55 55`",
+          "feedback": "Chaque objet a sa propre batterie : `t1.utiliser(30)` ne touche pas `t2`. Tu as retiré les trois consommations d'une seule batterie."
+        },
+        {
+          "texte": "`95 90`",
+          "feedback": "Tu n'as gardé que le dernier appel sur `t1`. Mais `self.batterie -= n` retire n à la valeur actuelle : 100 - 30 - 5."
+        },
+        {
+          "texte": "`70 90`",
+          "feedback": "Il manque le dernier appel, `t1.utiliser(5)` : il retire encore 5 à la batterie de `t1`."
+        },
+        {
+          "texte": "`65 90`",
+          "juste": true,
+          "feedback": "Oui. `t1` : 100 - 30 - 5 = 65 ; `t2` : 100 - 10 = 90. Chaque instance garde ses propres attributs."
+        }
+      ],
+      "explication": "Chaque objet a ses propres attributs : une méthode appelée sur `t1` ne modifie que `t1`.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "65 90"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q08",
+      "nom": "[Constructeur] Ranger une valeur dans l'objet",
+      "objectif": "Compléter un constructeur avec `self.attribut = valeur`.",
+      "enonce": [
+        "Le programme doit afficher `2 Dembéni`.",
+        "Par quoi remplacer `...` à la ligne 4 ?"
+      ],
+      "code": [
+        "class Colis:",
+        "    def __init__(self, p,",
+        "                 v):",
+        "        ...",
+        "        self.ville = v",
+        "",
+        "c = Colis(2, \"Dembéni\")",
+        "print(c.poids, c.ville)"
+      ],
+      "options": [
+        {
+          "texte": "`poids = p`",
+          "feedback": "Sans `self.`, `poids` est une variable locale, perdue à la fin de `__init__`. Python répond `AttributeError: 'Colis' object has no attribute 'poids'` (« l'objet n'a pas d'attribut poids »)."
+        },
+        {
+          "texte": "`self.p = poids`",
+          "feedback": "C'est à l'envers : la valeur reçue s'appelle `p`, et `poids` n'existe pas encore. Python répond `NameError: name 'poids' is not defined`."
+        },
+        {
+          "texte": "`self.poids = p`",
+          "juste": true,
+          "feedback": "Oui : à gauche l'attribut de l'objet, à droite la valeur reçue en paramètre. Comme `self.ville = v` juste en dessous."
+        },
+        {
+          "texte": "`p = self.poids`",
+          "feedback": "On lit `self.poids` avant de l'avoir créé. Python répond `AttributeError: 'Colis' object has no attribute 'poids'`. On écrit l'attribut à gauche du signe `=`."
+        }
+      ],
+      "explication": "Dans le constructeur : `self.attribut = parametre`.",
+      "verifications": [
+        {
+          "code": [
+            "class Colis:",
+            "    def __init__(self, p,",
+            "                 v):",
+            "        self.poids = p",
+            "        self.ville = v",
+            "c = Colis(2, \"Dembéni\")",
+            "print(c.poids, c.ville)"
+          ],
+          "sortie": "2 Dembéni",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "class Colis:",
+            "    def __init__(self, p,",
+            "                 v):",
+            "        poids = p",
+            "        self.ville = v",
+            "c = Colis(2, \"Dembéni\")",
+            "print(c.poids, c.ville)"
+          ],
+          "erreur": "AttributeError",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
+            "class Colis:",
+            "    def __init__(self, p,",
+            "                 v):",
+            "        self.p = poids",
+            "        self.ville = v",
+            "c = Colis(2, \"Dembéni\")"
+          ],
+          "erreur": "NameError",
+          "reprendre_code": false,
+          "option": 1
+        },
+        {
+          "code": [
+            "class Colis:",
+            "    def __init__(self, p,",
+            "                 v):",
+            "        p = self.poids",
+            "        self.ville = v",
+            "c = Colis(2, \"Dembéni\")"
+          ],
+          "erreur": "AttributeError",
+          "reprendre_code": false,
+          "option": 3
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q09",
+      "nom": "[Erreur] Un argument manquant",
+      "objectif": "Lire un message `TypeError` et retrouver l'argument oublié à l'appel.",
+      "enonce": [
+        "Le programme s'arrête sur l'erreur affichée sous le code (« il manque un argument : n »).",
+        "Comment corriger la dernière ligne ?"
+      ],
+      "code": [
+        "class Tel:",
+        "    def __init__(self, x):",
+        "        self.nom = x",
+        "        self.batterie = 100",
+        "",
+        "    def utiliser(self, n):",
+        "        self.batterie -= n",
+        "",
+        "t1 = Tel(\"Mia\")",
+        "t1.utiliser()"
+      ],
+      "console": [
+        "TypeError: Tel.utiliser() missing 1 required positional argument: 'n'"
+      ],
+      "options": [
+        {
+          "texte": "`Tel.utiliser(30)`",
+          "feedback": "Appelée sur la classe, la méthode n'a pas d'objet pour `self` : 30 prendrait la place de `self`, et il manquerait encore `n`. On appelle une méthode sur l'objet."
+        },
+        {
+          "texte": "`t1.utiliser(t1, 30)`",
+          "feedback": "On ne donne jamais `self` : Python le passe tout seul (c'est `t1`, devant le point). Ici, il recevrait 3 arguments au lieu de 2 : `TypeError: Tel.utiliser() takes 2 positional arguments but 3 were given`."
+        },
+        {
+          "texte": "`t1.utiliser = 30`",
+          "feedback": "Cette ligne remplace la méthode par le nombre 30 : aucune erreur, mais la batterie ne change pas. Pour appeler une méthode, il faut des parenthèses."
+        },
+        {
+          "texte": "`t1.utiliser(30)`",
+          "juste": true,
+          "feedback": "Oui. `self` reçoit `t1` tout seul ; il reste à donner `n`, la consommation. Le message dit exactement ce qui manque : `'n'`."
+        }
+      ],
+      "explication": "À l'appel, on donne tous les paramètres sauf `self` : `objet.methode(arguments)`.",
+      "verifications": [
+        {
+          "code": [],
+          "erreur": "TypeError"
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(30)",
+            "print(t1.batterie)"
+          ],
+          "sortie": "70",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(t1, 30)"
+          ],
+          "erreur": "TypeError",
+          "reprendre_code": false,
+          "option": 1
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "t1 = Tel(\"Mia\")",
+            "Tel.utiliser(30)"
+          ],
+          "erreur": "TypeError",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser = 30",
+            "print(t1.batterie)"
+          ],
+          "sortie": "100",
+          "reprendre_code": false,
+          "option": 2
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q10",
+      "nom": "[Erreur] Le paramètre `self` oublié",
+      "objectif": "Relier un `TypeError` à un `self` oublié dans la définition d'une méthode.",
+      "enonce": [
+        "Le programme s'arrête sur l'erreur affichée sous le code (« la méthode n'attend aucun argument, mais en a reçu un »).",
+        "Quelle est la cause ?"
+      ],
+      "code": [
+        "class Tel:",
+        "    def __init__(self, x):",
+        "        self.nom = x",
+        "        self.batterie = 100",
+        "",
+        "    def utiliser(self, n):",
+        "        self.batterie -= n",
+        "",
+        "    def charger():",
+        "        self.batterie = 100",
+        "",
+        "t1 = Tel(\"Mia\")",
+        "t1.charger()"
+      ],
+      "console": [
+        "TypeError: Tel.charger() takes 0 positional arguments but 1 was given"
+      ],
+      "options": [
+        {
+          "texte": "Il manque `self` à la ligne 9 : `def charger(self):`.",
+          "juste": true,
+          "feedback": "Oui. `t1.charger()` passe `t1` en premier argument, sans qu'on l'écrive. La méthode doit donc avoir `self` comme premier paramètre."
+        },
+        {
+          "texte": "Il faut appeler `charger(t1)` au lieu de `t1.charger()`.",
+          "feedback": "`charger` est une méthode de la classe, pas une fonction du programme : `charger(t1)` donnerait `NameError`. L'appel `t1.charger()` est le bon."
+        },
+        {
+          "texte": "`self.batterie = 100` est interdit hors du constructeur.",
+          "feedback": "Une méthode peut modifier un attribut avec `self.` : c'est ce que fait déjà `utiliser`. Le message parle du nombre d'arguments, pas de l'attribut."
+        },
+        {
+          "texte": "Il faut écrire `t1.charger(100)`.",
+          "feedback": "Ajouter un argument aggrave le problème : la méthode n'en attend aucun, elle en recevrait deux. C'est la définition, ligne 9, qu'il faut corriger."
+        }
+      ],
+      "explication": "Chaque méthode a `self` comme premier paramètre, même quand elle n'en a pas d'autre.",
+      "verifications": [
+        {
+          "code": [],
+          "erreur": "TypeError"
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "    def charger(self):",
+            "        self.batterie = 100",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(40)",
+            "t1.charger()",
+            "print(t1.batterie)"
+          ],
+          "sortie": "100",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "t1 = Tel(\"Mia\")",
+            "charger(t1)"
+          ],
+          "erreur": "NameError",
+          "reprendre_code": false,
+          "option": 1
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q11",
+      "nom": "[Méthodes] Vendre s'il en reste assez",
+      "objectif": "Prévoir ce que renvoie une méthode et comment elle modifie l'objet.",
+      "enonce": [
+        "Un stand du marché commence la journée avec 10 mangues.",
+        "Qu'affichent les trois dernières lignes ?"
+      ],
+      "code": [
+        "class Stand:",
+        "    def __init__(self, m):",
+        "        self.stock = m",
+        "",
+        "    def vendre(self, n):",
+        "        if n > self.stock:",
+        "            return False",
+        "        self.stock -= n",
+        "        return True",
+        "",
+        "s = Stand(10)",
+        "print(s.vendre(4))",
+        "print(s.vendre(8))",
+        "print(s.stock)"
+      ],
+      "options": [
+        {
+          "texte": "`True`, puis `True`, puis `-2`",
+          "feedback": "La deuxième vente demande 8 mangues alors qu'il en reste 6 : le test `8 > 6` est vrai, la méthode renvoie `False`."
+        },
+        {
+          "texte": "`True`, puis `False`, puis `-2`",
+          "feedback": "Un `return` arrête la méthode tout de suite : la ligne `self.stock -= n` n'est pas exécutée quand la vente est refusée."
+        },
+        {
+          "texte": "`True`, puis `False`, puis `6`",
+          "juste": true,
+          "feedback": "Oui. 4 mangues vendues : il en reste 6. La vente de 8 est refusée par le `return False`, qui arrête la méthode avant le retrait."
+        },
+        {
+          "texte": "`True`, puis `False`, puis `10`",
+          "feedback": "La première vente a bien eu lieu : `self.stock -= n` modifie l'attribut de l'objet `s`, qui passe de 10 à 6."
+        }
+      ],
+      "explication": "Une méthode peut renvoyer un résultat et modifier l'objet ; un `return` l'arrête aussitôt.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "True\nFalse\n6"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q12",
+      "nom": "[Objets] Une liste de colis",
+      "objectif": "Parcourir une liste d'objets et lire leurs attributs.",
+      "enonce": [
+        "Un livreur ou une livreuse charge trois colis. On veut le poids total, en kilogrammes, des colis pour Sada.",
+        "Qu'affiche ce code ?"
+      ],
+      "code": [
+        "class Colis:",
+        "    def __init__(self, p,",
+        "                 v):",
+        "        self.poids = p",
+        "        self.ville = v",
+        "",
+        "lst = [Colis(2, \"Sada\"),",
+        "       Colis(5, \"Koungou\"),",
+        "       Colis(1, \"Sada\")]",
+        "total = 0",
+        "for c in lst:",
+        "    if c.ville == \"Sada\":",
+        "        total += c.poids",
+        "print(total)"
+      ],
+      "options": [
+        {
+          "texte": "`8`",
+          "feedback": "8 est le poids de tous les colis. Le test `c.ville == \"Sada\"` écarte le colis pour Koungou."
+        },
+        {
+          "texte": "`3`",
+          "juste": true,
+          "feedback": "Oui : 2 + 1 = 3. À chaque tour, `c` est un objet `Colis` : on lit sa ville et son poids avec la notation pointée."
+        },
+        {
+          "texte": "`1`",
+          "feedback": "1 est le poids du dernier colis pour Sada. `total += c.poids` ajoute le poids à ce qu'il y avait déjà ; il ne le remplace pas."
+        },
+        {
+          "texte": "Une erreur : une liste ne peut pas contenir d'objets.",
+          "feedback": "Une liste peut contenir n'importe quelles valeurs, des objets compris. C'est très courant dans les exercices."
+        }
+      ],
+      "explication": "On parcourt une liste d'objets comme une autre liste ; `c.attribut` lit l'attribut de chaque objet.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "3"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q13",
+      "nom": "[Méthodes] Modifier un attribut",
+      "objectif": "Écrire une méthode qui modifie un attribut de l'objet.",
+      "enonce": [
+        "La méthode `charger` doit remettre la batterie à 100 : le programme doit afficher `100`.",
+        "Par quoi remplacer `...` à la ligne 10 ?"
+      ],
+      "code": [
+        "class Tel:",
+        "    def __init__(self, x):",
+        "        self.nom = x",
+        "        self.batterie = 100",
+        "",
+        "    def utiliser(self, n):",
+        "        self.batterie -= n",
+        "",
+        "    def charger(self):",
+        "        ...",
+        "",
+        "t1 = Tel(\"Mia\")",
+        "t1.utiliser(60)",
+        "t1.charger()",
+        "print(t1.batterie)"
+      ],
+      "options": [
+        {
+          "texte": "`batterie = 100`",
+          "feedback": "Sans `self.`, c'est une variable locale de la méthode : elle disparaît à la fin de l'appel, et le programme affiche 40."
+        },
+        {
+          "texte": "`return 100`",
+          "feedback": "La méthode renvoie 100, mais l'appel `t1.charger()` ne range ce nombre nulle part : l'attribut ne change pas, le programme affiche 40."
+        },
+        {
+          "texte": "`self.batterie = 100`",
+          "juste": true,
+          "feedback": "Oui. `self` est l'objet sur lequel on appelle la méthode, ici `t1` : on modifie son attribut."
+        },
+        {
+          "texte": "`Tel.batterie = 100`",
+          "feedback": "Cela crée une valeur rangée dans la classe, mais `t1` a son propre attribut `batterie`, qui vaut toujours 40 : le programme affiche 40."
+        }
+      ],
+      "explication": "Pour modifier l'objet dans une méthode, on écrit `self.attribut = valeur`.",
+      "verifications": [
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "    def charger(self):",
+            "        self.batterie = 100",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(60)",
+            "t1.charger()",
+            "print(t1.batterie)"
+          ],
+          "sortie": "100",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "    def charger(self):",
+            "        batterie = 100",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(60)",
+            "t1.charger()",
+            "print(t1.batterie)"
+          ],
+          "sortie": "40",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "    def charger(self):",
+            "        return 100",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(60)",
+            "t1.charger()",
+            "print(t1.batterie)"
+          ],
+          "sortie": "40",
+          "reprendre_code": false,
+          "option": 1
+        },
+        {
+          "code": [
+            "class Tel:",
+            "    def __init__(self, x):",
+            "        self.nom = x",
+            "        self.batterie = 100",
+            "",
+            "    def utiliser(self, n):",
+            "        self.batterie -= n",
+            "    def charger(self):",
+            "        Tel.batterie = 100",
+            "t1 = Tel(\"Mia\")",
+            "t1.utiliser(60)",
+            "t1.charger()",
+            "print(t1.batterie)"
+          ],
+          "sortie": "40",
+          "reprendre_code": false,
+          "option": 3
+        }
+      ]
+    },
+    {
+      "type": "notion",
+      "surtitre": "Bloc 2 terminé",
+      "titre": "Fais le point sur ta feuille de route",
+      "texte": [
+        "Compte tes bonnes réponses du bloc « Programmation objet » : un nombre sur 8.",
+        "Presque tout juste : acquis. La moitié : à consolider. Moins : ==à revoir en priorité=="
+      ]
+    },
+    {
+      "type": "partie",
+      "numero": "3",
+      "titre": "Piles et files",
+      "sous_titre": "LIFO, FIFO, l'interface, une classe Pile"
+    },
+    {
+      "type": "question",
+      "id": "q14",
+      "nom": "[Choisir] Pile ou file ?",
+      "objectif": "Reconnaître une pile (LIFO) et une file (FIFO) dans des situations.",
+      "enonce": [
+        "Situation 1 : une messagerie fait écouter les messages vocaux du plus ancien au plus récent.",
+        "Situation 2 : le bouton « retour » d'un navigateur ramène à la dernière page visitée, puis à celle d'avant.",
+        "Quelles structures modélisent ces deux situations ?"
+      ],
+      "options": [
+        {
+          "texte": "Situation 1 : une file ; situation 2 : une pile.",
+          "juste": true,
+          "feedback": "Oui. Le plus ancien message sort le premier : premier entré, premier sorti (FIFO). La dernière page visitée ressort la première : LIFO."
+        },
+        {
+          "texte": "Situation 1 : une pile ; situation 2 : une file.",
+          "feedback": "C'est l'inverse. Une pile rend d'abord le dernier arrivé : les messages vocaux commenceraient par le plus récent."
+        },
+        {
+          "texte": "Deux files.",
+          "feedback": "Une file ramènerait d'abord à la toute première page visitée. Le bouton « retour » ramène à la plus récente : c'est une pile."
+        },
+        {
+          "texte": "Deux piles.",
+          "feedback": "Une pile ferait écouter d'abord le message le plus récent. Ici, le plus ancien passe en premier : c'est une file."
+        }
+      ],
+      "explication": "Pile : le dernier entré sort le premier (LIFO). File : le premier entré sort le premier (FIFO).",
+      "note_verification": "Question de vocabulaire, sans code : situations relues à la main avec la fiche « Piles et files »."
+    },
+    {
+      "type": "question",
+      "id": "q15",
+      "nom": "[Pile] Dérouler des opérations",
+      "objectif": "Suivre l'état d'une pile après une suite d'opérations.",
+      "enonce": [
+        "On utilise la classe `Pile` du cours.",
+        "Qu'affiche ce code ?"
+      ],
+      "code": [
+        "p = Pile()",
+        "p.empiler(3)",
+        "p.empiler(8)",
+        "p.empiler(5)",
+        "x = p.depiler()",
+        "p.empiler(x + 1)",
+        "print(p.sommet(),",
+        "      p.taille())"
+      ],
+      "options": [
+        {
+          "texte": "`4 3`",
+          "feedback": "Tu as retiré 3, le premier empilé, comme dans une file. `depiler()` retire le sommet : le dernier empilé, 5."
+        },
+        {
+          "texte": "`6 4`",
+          "feedback": "`depiler()` ne fait pas que lire le sommet : il le retire. La pile repasse à 2 éléments avant qu'on empile 6."
+        },
+        {
+          "texte": "`3 3`",
+          "feedback": "3 est en bas de la pile : c'est le fond. `sommet()` renvoie l'élément du haut, le dernier empilé."
+        },
+        {
+          "texte": "`6 3`",
+          "juste": true,
+          "feedback": "Oui. On dépile 5, on empile 5 + 1 = 6 : la pile contient, du sommet vers le bas, 6, 8, 3."
+        }
+      ],
+      "explication": "`depiler()` retire et renvoie le sommet ; `sommet()` le renvoie sans le retirer.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "6 3"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q16",
+      "nom": "[File] Les véhicules qui attendent la barge",
+      "objectif": "Suivre l'état d'une file après une suite d'opérations.",
+      "enonce": [
+        "Les véhicules montent dans la barge dans leur ordre d'arrivée.",
+        "Qu'affiche ce code ?"
+      ],
+      "code": [
+        "f = File()",
+        "for v in [\"taxi\", \"bus\",",
+        "          \"moto\"]:",
+        "    f.enfiler(v)",
+        "a = f.defiler()",
+        "f.enfiler(\"camion\")",
+        "b = f.defiler()",
+        "print(a, b, f.tete())"
+      ],
+      "options": [
+        {
+          "texte": "`moto camion bus`",
+          "feedback": "Tu as utilisé la file comme une pile, en retirant le dernier arrivé. Une file rend le premier arrivé : le taxi."
+        },
+        {
+          "texte": "`taxi bus moto`",
+          "juste": true,
+          "feedback": "Oui. Le taxi sort, le camion se place à la queue, le bus sort : la moto est en tête."
+        },
+        {
+          "texte": "`taxi bus camion`",
+          "feedback": "`tete()` renvoie le prochain à sortir, pas le dernier arrivé. Le camion est à la queue, derrière la moto."
+        },
+        {
+          "texte": "`taxi taxi taxi`",
+          "feedback": "`defiler()` retire le premier élément, en plus de le renvoyer : le second appel rend donc le bus, et la moto est en tête."
+        }
+      ],
+      "explication": "`defiler()` retire et renvoie la tête ; `enfiler(e)` ajoute à la queue.",
+      "verifications": [
+        {
+          "code": [],
+          "sortie": "taxi bus moto"
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q17",
+      "nom": "[File vide] Défiler une fois de trop",
+      "objectif": "Expliquer l'erreur d'une file vide et choisir la bonne boucle.",
+      "enonce": [
+        "Ce code doit additionner tous les éléments de la file. Il s'arrête sur l'erreur affichée sous le code (« retirer d'une liste vide »).",
+        "Par quoi remplacer la ligne 5 ?"
+      ],
+      "code": [
+        "f = File()",
+        "f.enfiler(4)",
+        "f.enfiler(7)",
+        "s = 0",
+        "for i in range(3):",
+        "    s += f.defiler()",
+        "print(s)"
+      ],
+      "console": [
+        "IndexError: pop from empty list"
+      ],
+      "options": [
+        {
+          "texte": "`while not f.est_vide():`",
+          "juste": true,
+          "feedback": "Oui. On défile tant qu'il reste un élément, quel que soit leur nombre : `s` vaut 11, sans erreur."
+        },
+        {
+          "texte": "`while f.est_vide():`",
+          "feedback": "Cette boucle tourne tant que la file est vide : ici, elle n'est pas vide, la boucle ne tourne pas, et `s` vaut 0."
+        },
+        {
+          "texte": "`for i in range(f.taille() + 1):`",
+          "feedback": "La file contient 2 éléments : on ferait encore 3 tours, et le troisième défilement donnerait la même erreur."
+        },
+        {
+          "texte": "`while f.tete() != 0:`",
+          "feedback": "Quand la file est vide, `f.tete()` lit un élément qui n'existe pas : `IndexError: list index out of range`. Il faut tester si la file est vide."
+        }
+      ],
+      "explication": "Pour vider une file sans erreur : `while not f.est_vide():`.",
+      "verifications": [
+        {
+          "code": [],
+          "erreur": "IndexError"
+        },
+        {
+          "code": [
+            "f = File()",
+            "f.enfiler(4)",
+            "f.enfiler(7)",
+            "s = 0",
+            "while not f.est_vide():",
+            "    s += f.defiler()",
+            "print(s)"
+          ],
+          "sortie": "11",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "f = File()",
+            "f.enfiler(4)",
+            "f.enfiler(7)",
+            "s = 0",
+            "while f.est_vide():",
+            "    s += f.defiler()",
+            "print(s)"
+          ],
+          "sortie": "0",
+          "reprendre_code": false,
+          "option": 1
+        },
+        {
+          "code": [
+            "f = File()",
+            "f.enfiler(4)",
+            "f.enfiler(7)",
+            "s = 0",
+            "for i in range(f.taille() + 1):",
+            "    s += f.defiler()"
+          ],
+          "erreur": "IndexError",
+          "reprendre_code": false,
+          "option": 2
+        },
+        {
+          "code": [
+            "f = File()",
+            "f.enfiler(4)",
+            "f.enfiler(7)",
+            "s = 0",
+            "while f.tete() != 0:",
+            "    s += f.defiler()"
+          ],
+          "erreur": "IndexError",
+          "reprendre_code": false,
+          "option": 3
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q18",
+      "nom": "[Implémentation] Écrire `depiler`",
+      "objectif": "Implémenter une primitive de pile dans une classe.",
+      "enonce": [
+        "Une pile est implémentée par une classe : l'attribut `t` est une liste dont le dernier élément est le sommet.",
+        "La méthode `depiler` doit retirer le sommet et le renvoyer. Par quoi remplacer `...` à la ligne 9 ?"
+      ],
+      "code": [
+        "class Pile:",
+        "    def __init__(self):",
+        "        self.t = []",
+        "",
+        "    def empiler(self, e):",
+        "        self.t.append(e)",
+        "",
+        "    def depiler(self):",
+        "        ..."
+      ],
+      "options": [
+        {
+          "texte": "`return self.t.pop(0)`",
+          "feedback": "`pop(0)` retire le premier élément de la liste : le fond de la pile. C'est le `defiler` d'une file."
+        },
+        {
+          "texte": "`self.t.pop()`",
+          "feedback": "Le sommet est bien retiré, mais sans `return` la méthode renvoie `None` : on perd l'élément dépilé."
+        },
+        {
+          "texte": "`return self.t[-1]`",
+          "feedback": "Cette ligne renvoie le sommet sans le retirer : c'est la méthode `sommet`, pas `depiler`."
+        },
+        {
+          "texte": "`return self.t.pop()`",
+          "juste": true,
+          "feedback": "Oui. `pop()` retire le dernier élément de la liste, le sommet, et `return` le renvoie."
+        }
+      ],
+      "explication": "Dans une classe `Pile` en liste : `empiler` fait `append`, `depiler` fait `return ... .pop()`.",
+      "verifications": [
+        {
+          "code": [
+            "class Pile:",
+            "    def __init__(self):",
+            "        self.t = []",
+            "    def empiler(self, e):",
+            "        self.t.append(e)",
+            "    def depiler(self):",
+            "        return self.t.pop()",
+            "p = Pile()",
+            "p.empiler(1)",
+            "p.empiler(2)",
+            "print(p.depiler(), p.t)"
+          ],
+          "sortie": "2 [1]",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "class Pile:",
+            "    def __init__(self):",
+            "        self.t = []",
+            "    def empiler(self, e):",
+            "        self.t.append(e)",
+            "    def depiler(self):",
+            "        return self.t.pop(0)",
+            "p = Pile()",
+            "p.empiler(1)",
+            "p.empiler(2)",
+            "print(p.depiler(), p.t)"
+          ],
+          "sortie": "1 [2]",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
+            "class Pile:",
+            "    def __init__(self):",
+            "        self.t = []",
+            "    def empiler(self, e):",
+            "        self.t.append(e)",
+            "    def depiler(self):",
+            "        self.t.pop()",
+            "p = Pile()",
+            "p.empiler(1)",
+            "p.empiler(2)",
+            "print(p.depiler(), p.t)"
+          ],
+          "sortie": "None [1]",
+          "reprendre_code": false,
+          "option": 1
+        },
+        {
+          "code": [
+            "class Pile:",
+            "    def __init__(self):",
+            "        self.t = []",
+            "    def empiler(self, e):",
+            "        self.t.append(e)",
+            "    def depiler(self):",
+            "        return self.t[-1]",
+            "p = Pile()",
+            "p.empiler(1)",
+            "p.empiler(2)",
+            "print(p.depiler(), p.t)"
+          ],
+          "sortie": "2 [1, 2]",
+          "reprendre_code": false,
+          "option": 2
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q19",
+      "nom": "[Erreur] Une méthode qui n'existe pas",
+      "objectif": "Lire un message `AttributeError` et utiliser l'interface d'une file.",
+      "enonce": [
+        "Le programme s'arrête sur l'erreur affichée sous le code (« l'objet File n'a pas d'attribut empiler ; voulais-tu dire enfiler ? »).",
+        "Que signifie ce message ?"
+      ],
+      "code": [
+        "f = File()",
+        "f.enfiler(\"Anli\")",
+        "f.empiler(\"Mia\")"
+      ],
+      "console": [
+        "AttributeError: 'File' object has no attribute 'empiler'. Did you mean: 'enfiler'?"
+      ],
+      "options": [
+        {
+          "texte": "Il faut d'abord transformer `f` en pile.",
+          "feedback": "Rien n'oblige à changer de structure : on veut ajouter Mia à la file. Il suffit d'utiliser la méthode de la file."
+        },
+        {
+          "texte": "Une file ne peut contenir qu'un seul élément.",
+          "feedback": "Une file peut contenir autant d'éléments qu'on veut. Le message parle d'un nom, `empiler`, introuvable dans l'objet."
+        },
+        {
+          "texte": "`File` n'a pas de méthode `empiler` : il faut `enfiler`.",
+          "juste": true,
+          "feedback": "Oui. Dans ses messages, Python appelle « attribute » tout ce qui suit le point, méthodes comprises : il ne trouve pas `empiler` dans un objet `File`, et propose `enfiler`."
+        },
+        {
+          "texte": "Il faut écrire `File.empiler(f, \"Mia\")`.",
+          "feedback": "Appelée sur la classe, la méthode `empiler` n'existe pas davantage. Python répond `AttributeError: type object 'File' has no attribute 'empiler'. Did you mean: 'enfiler'?`"
+        }
+      ],
+      "explication": "`AttributeError` : l'objet n'a pas cet attribut ou cette méthode. Lis le « Did you mean » (« voulais-tu dire »).",
+      "verifications": [
+        {
+          "code": [],
+          "erreur": "AttributeError"
+        },
+        {
+          "code": [
+            "f = File()",
+            "f.enfiler(\"Anli\")",
+            "f.enfiler(\"Mia\")",
+            "print(f.contenu)"
+          ],
+          "sortie": "['Anli', 'Mia']",
+          "reprendre_code": false
+        },
+        {
+          "code": [
+            "f = File()",
+            "File.empiler(f, \"Mia\")"
+          ],
+          "erreur": "AttributeError",
+          "reprendre_code": false,
+          "option": 3
+        }
+      ]
+    },
+    {
+      "type": "question",
+      "id": "q20",
+      "nom": "[Analyse de code] Parenthèses et crochets",
+      "objectif": "Exécuter à la main un algorithme de parenthésage qui utilise une pile.",
+      "enonce": [
+        "La fonction `ok` vérifie qu'un texte de parenthèses et de crochets est bien construit. Le dictionnaire `o` associe à chaque signe fermant le signe ouvrant qui lui correspond.",
+        "Lequel de ces appels renvoie `True` ?"
+      ],
+      "code": [
+        "def ok(t):",
+        "    p = Pile()",
+        "    o = {\")\": \"(\",",
+        "         \"]\": \"[\"}",
+        "    bon = True",
+        "    for c in t:",
+        "        if c in \"([\":",
+        "            p.empiler(c)",
+        "        elif p.est_vide():",
+        "            bon = False",
+        "        else:",
+        "            x = p.depiler()",
+        "            if x != o[c]:",
+        "                bon = False",
+        "    if not p.est_vide():",
+        "        bon = False",
+        "    return bon"
+      ],
+      "options": [
+        {
+          "texte": "`ok(\"([)]\")`",
+          "feedback": "Il y a autant de signes ouvrants que fermants, mais ils se croisent : quand `)` arrive, le sommet est `[`, différent de `o[\")\"]`, qui vaut `(`."
+        },
+        {
+          "texte": "`ok(\"[()]\")`",
+          "juste": true,
+          "feedback": "Oui. `[` puis `(` sont empilés ; `)` dépile `(`, puis `]` dépile `[` : chaque fermant trouve son ouvrant, et la pile finit vide."
+        },
+        {
+          "texte": "`ok(\"(()\")`",
+          "feedback": "Une parenthèse reste ouverte : à la fin, la pile contient encore `(`, et `p.est_vide()` est faux."
+        },
+        {
+          "texte": "`ok(\"())(\")`",
+          "feedback": "La deuxième `)` arrive alors que la pile est vide : aucun ouvrant ne lui correspond, `bon` devient `False`."
+        }
+      ],
+      "explication": "Parenthésage : on empile chaque ouvrant ; chaque fermant doit retrouver son ouvrant au sommet ; la pile doit finir vide.",
+      "verifications": [
+        {
+          "code": [
+            "print(ok(\"[()]\"))"
+          ],
+          "sortie": "True"
+        },
+        {
+          "code": [
+            "print(ok(\"([)]\"))"
+          ],
+          "sortie": "False",
+          "option": 0
+        },
+        {
+          "code": [
+            "p = Pile()",
+            "p.empiler(\"(\")",
+            "p.empiler(\"[\")",
+            "print(p.sommet(), {\")\": \"(\", \"]\": \"[\"}[\")\"])"
+          ],
+          "sortie": "[ (",
+          "reprendre_code": false,
+          "option": 0
+        },
+        {
+          "code": [
+            "print(ok(\"(()\"))"
+          ],
+          "sortie": "False",
+          "option": 2
+        },
+        {
+          "code": [
+            "print(ok(\"())(\"))"
+          ],
+          "sortie": "False",
+          "option": 3
+        }
+      ]
+    },
+    {
+      "type": "notion",
+      "surtitre": "Bloc 3 terminé",
+      "titre": "Fais le point sur ta feuille de route",
+      "texte": [
+        "Compte tes bonnes réponses du bloc « Piles et files » : un nombre sur 7.",
+        "Presque tout juste : acquis. La moitié : à consolider. Moins : ==à revoir en priorité=="
+      ]
+    },
+    {
+      "type": "bilan",
+      "titre": "À retenir",
+      "tableau": {
+        "colonnes": [
+          "",
+          "À retenir",
+          "Le piège"
+        ],
+        "lignes": [
+          [
+            "Rappels",
+            "accumulateur `total = total + v` ; `d[cle]` ; `return`",
+            "`print` n'est pas `return` ; `range(len(t) + 1)`"
+          ],
+          [
+            "Objets",
+            "`self.attribut = valeur` ; `objet.methode(arguments)`",
+            "`self` oublié ; un argument manquant : `TypeError`"
+          ],
+          [
+            "Piles et files",
+            "`depiler()` et `defiler()` retirent et renvoient",
+            "défiler une file vide : `IndexError`"
+          ],
+          [
+            "Classe `Pile`",
+            "`append` pour empiler, `return ... .pop()` pour dépiler",
+            "`pop(0)` : c'est une file"
+          ]
+        ]
+      },
+      "ticket": [
+        "Quel bloc t'a posé le plus de difficultés ? C'est par lui que tu commences tes révisions.",
+        "Écris de mémoire une classe `File` avec `enfiler`, `defiler` et `est_vide`."
+      ]
+    }
+  ]
+}
