@@ -1,127 +1,142 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-appli="quizz-nsi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QuizzNSI · animer la séance</title>
 <meta name="description" content="Page à projeter : le cours en diapositives, le code de séance et le QR code, les réponses des élèves en direct.">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0C14" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<!-- Le style vient du site Ressources NSI et SNT (une seule source : palette, polices, socle des applications).
+     S'il ne répond pas, js/socle.js charge css/repli.css à la place : la page reste lisible et utilisable. -->
+<script src="js/socle.js"></script>
+<link rel="stylesheet" href="https://babash.github.io/Babash-NSI-SNT/assets/signal-commun.css" onerror="QuizzNSIRepli()">
+<link rel="stylesheet" href="https://babash.github.io/Babash-NSI-SNT/assets/applis.css" onerror="QuizzNSIRepli()">
 <link rel="stylesheet" href="css/polices.css">
 <link rel="stylesheet" href="css/quizz.css">
 <link rel="stylesheet" href="css/seance.css">
-<script>try{var t=localStorage.getItem('quizz-nsi:theme');t=t&&JSON.parse(t);if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="css/habillage.css">
 </head>
 <body class="projete">
 <a class="evitement" href="#contenu">Aller au contenu</a>
-<header class="barre">
-  <a class="marque" href="index.html">Quizz<b>NSI</b></a>
-  <span class="titre-page" id="titreCours">Animer la séance</span>
-  <div class="actions">
-    <span class="pastille-seance" id="pastilleSeance" hidden><span>Séance</span> <b id="codeBarre">····</b> · <span id="nbBarre">0 élève</span></span>
-    <button class="bouton petit" type="button" id="btnRejoindre" aria-expanded="false" aria-controls="carteRejoindre" hidden>Code et QR code</button>
-    <button class="bouton petit" type="button" id="btnQrGrand" aria-haspopup="dialog" aria-controls="qrBoite" aria-keyshortcuts="Q">QR code en grand</button>
-    <button class="bouton petit" type="button" id="btnPodium" hidden>Podium</button>
-    <button class="bouton petit" type="button" id="btnPleinEcran">Plein écran</button>
-    <button class="bouton petit" type="button" data-bascule-theme>Affichage obscur</button>
+<header class="ap ap-barre qz-barre">
+  <a class="ap-logo" href="index.html">Quizz<b>NSI</b></a>
+  <span class="ap-lieu" id="titreCours">Animer la séance</span>
+  <span class="ap-espace"></span>
+  <div class="qz-outils">
+    <span class="ap-puce qz-pastille" id="pastilleSeance" hidden>Séance <b id="codeBarre">····</b> · <span id="nbBarre">0 élève</span></span>
+    <button class="ap-bt ap-bt-mini" type="button" id="btnRejoindre" aria-expanded="false" aria-controls="carteRejoindre" hidden>Code et QR code</button>
+    <button class="ap-bt ap-bt-mini" type="button" id="btnQrGrand" aria-haspopup="dialog" aria-controls="qrBoite" aria-keyshortcuts="Q">QR code en grand</button>
+    <button class="ap-bt ap-bt-mini" type="button" id="btnPodium" hidden>Podium</button>
+    <button class="ap-bt ap-bt-mini" type="button" id="btnPleinEcran">Plein écran</button>
+    <button class="ap-bt ap-bt-mini" type="button" data-bascule-theme>Affichage obscur</button>
   </div>
 </header>
+<div class="ap-touche" aria-hidden="true"></div>
 <main id="contenu" tabindex="-1">
   <p class="visuel-cache" id="annonce" aria-live="polite"></p>
-  <p id="autreHote" class="alerte" role="alert" hidden></p>
+  <p id="autreHote" class="ap ap-message ap-message-encore qz-alerte" role="alert" hidden></p>
 
-  <section id="accueil" class="accueil-seance" hidden>
-    <div class="rejoindre-grand cadre">
-      <div id="qr" class="qr" role="img" aria-label="QR code du lien de la séance"></div>
-      <div>
-        <p class="etape">Sur un téléphone ou un ordinateur, ouvrez</p>
-        <p class="lien" id="lien"></p>
-        <p class="etape">puis entrez le code</p>
-        <p class="code-seance" id="code">····</p>
-        <p><button class="bouton petit" type="button" id="copier">Copier le lien</button> <button class="bouton petit" type="button" id="nouvelle">Nouveau code</button></p>
+  <section id="accueil" class="ap qz-lobby" aria-labelledby="titreLobby" hidden>
+    <div class="ap-lobby">
+      <div class="ap-seance ap-carte qz-rejoindre">
+        <p class="ap-signal">Rejoindre la séance</p>
+        <div id="qr" class="ap-qr" role="img" aria-label="QR code du lien de la séance"></div>
+        <p class="ap-petit qz-etape">Sur un téléphone ou un ordinateur, ouvrez</p>
+        <p class="qz-lien" id="lien"></p>
+        <p class="ap-petit qz-etape">puis entrez le code</p>
+        <p class="ap-code-seance" id="code">····</p>
+        <p class="ap-commandes qz-centre"><button class="ap-bt ap-bt-mini" type="button" id="copier">Copier le lien</button> <button class="ap-bt ap-bt-mini" type="button" id="nouvelle">Nouveau code</button></p>
         <p id="etatConnexion" class="etat" role="status"></p>
       </div>
-    </div>
-    <div class="cadre reglages">
-      <h2>Élèves dans la séance : <span id="nbEleves">0</span></h2>
-      <p class="aide">Un prénom ou un pseudo, au choix de chaque élève, jamais un nom de famille. Un pseudo déplacé se retire d'un clic : l'élève en choisit un autre.</p>
-      <ul class="eleves" id="eleves" aria-live="polite"></ul>
-      <div class="ligne-reglage">
-        <label for="duree">Temps par question</label>
-        <select id="duree"><option value="0">Sans minuterie</option><option value="20">20 s</option><option value="30">30 s</option><option value="45" selected>45 s</option><option value="60">1 min</option><option value="90">1 min 30</option></select>
+      <div class="qz-salle">
+        <h1 class="ap-titre" id="titreLobby">Dans la séance : <span id="nbEleves">0</span></h1>
+        <p class="ap-petit">Un prénom ou un pseudo, au choix de chaque élève, jamais un nom de famille. Un pseudo déplacé se retire d'un clic : l'élève en choisit un autre.</p>
+        <!-- La place du plateau des avatars (charte/applis.md du site, .ap-plateau) : il viendra avec le compte commun.
+             En attendant, la liste des pseudos, chacun avec son bouton « Retirer ». -->
+        <ul class="eleves qz-eleves" id="eleves" aria-live="polite"></ul>
+        <div class="ap-carte qz-reglages">
+          <h2 class="ap-sous">Réglages de la séance</h2>
+          <div class="ligne-reglage">
+            <label for="duree">Temps par question</label>
+            <select id="duree" class="ap-champ"><option value="0">Sans minuterie</option><option value="20">20 s</option><option value="30">30 s</option><option value="45" selected>45 s</option><option value="60">1 min</option><option value="90">1 min 30</option></select>
+          </div>
+          <div class="ligne-reglage">
+            <label for="podium">Classement</label>
+            <select id="podium" class="ap-champ"><option value="fin" selected>Podium à la fin seulement</option><option value="chaque">Podium après chaque question</option><option value="jamais">Pas de classement</option></select>
+          </div>
+          <div class="ligne-reglage">
+            <label for="series">Afficher les séries</label>
+            <select id="series" class="ap-champ" aria-describedby="aideSeries"><option value="oui" selected>Oui : les flammes</option><option value="non">Non</option></select>
+          </div>
+          <p class="ap-petit" id="aideSeries">La flamme s'affiche à partir de 2 bonnes réponses d'affilée. Une série compte les bonnes réponses d'affilée dans cette séance seulement ; une erreur ou une question sans réponse en lance une nouvelle. Rien n'est gardé après la séance.</p>
+          <p class="ap-petit">Barème : répondre +10 ; bonne réponse +100 ; rapidité jusqu'à +20 (avec une minuterie, sur le temps écoulé hors pause) ; rebond +30 (bonne réponse juste après une erreur).</p>
+          <p class="ap-petit">Pendant une question : <b>+ 15 s</b> (touche + ou T) et <b>Pause</b> (touche S) ; le temps des questions suivantes se change à tout moment, en bas de l'écran.</p>
+        </div>
+        <p class="ap-commandes qz-lancer"><button class="ap-bt ap-bt-principal ap-bt-grand" type="button" id="commencer">Commencer le cours</button> <button class="ap-bt ap-bt-grand" type="button" id="reprendre" hidden>Reprendre</button></p>
+        <p class="ap-petit">Sans élève connecté·e, le cours marche aussi, comme un simple diaporama.</p>
       </div>
-      <div class="ligne-reglage">
-        <label for="podium">Classement</label>
-        <select id="podium"><option value="fin" selected>Podium à la fin seulement</option><option value="chaque">Podium après chaque question</option><option value="jamais">Pas de classement</option></select>
-      </div>
-      <div class="ligne-reglage">
-        <label for="series">Afficher les séries</label>
-        <select id="series" aria-describedby="aideSeries"><option value="oui" selected>Oui : les flammes</option><option value="non">Non</option></select>
-      </div>
-      <p class="aide" id="aideSeries">La flamme s'affiche à partir de 2 bonnes réponses d'affilée. Une série compte les bonnes réponses d'affilée dans cette séance seulement ; une erreur ou une question sans réponse en lance une nouvelle. Rien n'est gardé après la séance.</p>
-      <p class="aide">Barème : répondre +10 ; bonne réponse +100 ; rapidité jusqu'à +20 (avec une minuterie, sur le temps écoulé hors pause) ; rebond +30 (bonne réponse juste après une erreur).</p>
-      <p class="aide">Pendant une question : <b>+ 15 s</b> (touche + ou T) et <b>Pause</b> (touche S) ; le temps des questions suivantes se change à tout moment, en bas de l'écran.</p>
-      <p><button class="bouton fort" type="button" id="commencer">Commencer le cours</button> <button class="bouton" type="button" id="reprendre" hidden>Reprendre</button></p>
-      <p class="aide">Sans élève connecté·e, le cours marche aussi, comme un simple diaporama.</p>
     </div>
   </section>
 
   <div id="scene" tabindex="-1" hidden></div>
 
-  <aside id="carteRejoindre" class="carte-rejoindre cadre" hidden>
-    <div id="qrPetit" class="qr" role="img" aria-label="QR code du lien de la séance"></div>
-    <div><p class="code-seance petit" id="codePetit">····</p><p class="lien" id="lienPetit"></p>
-    <h3>Élèves : <span id="nbEleves2">0</span></h3><ul class="eleves" id="eleves2"></ul></div>
+  <aside id="carteRejoindre" class="ap ap-carte carte-rejoindre" hidden>
+    <div id="qrPetit" class="ap-qr" role="img" aria-label="QR code du lien de la séance"></div>
+    <div><p class="ap-code-seance qz-code-petit" id="codePetit">····</p><p class="qz-lien" id="lienPetit"></p>
+    <h2 class="ap-sous">Élèves : <span id="nbEleves2">0</span></h2><ul class="eleves qz-eleves" id="eleves2"></ul></div>
   </aside>
 
-  <dialog id="qrBoite" class="qr-boite" aria-labelledby="qrTitre">
-    <h2 id="qrTitre" class="qr-titre">Rejoindre la séance</h2>
+  <dialog id="qrBoite" class="ap qr-boite" aria-labelledby="qrTitre">
+    <h2 id="qrTitre" class="ap-titre qr-titre">Rejoindre la séance</h2>
     <div class="qr-grand-corps">
-      <div id="qrGrand" class="qr" role="img" aria-label="QR code du lien de la séance"></div>
+      <div id="qrGrand" class="ap-qr" role="img" aria-label="QR code du lien de la séance"></div>
       <div class="qr-grand-texte">
-        <p class="etape" id="qrEtape1">Scannez le QR code, ou ouvrez</p>
-        <p class="lien" id="lienGrand"></p>
-        <p class="etape" id="qrEtape2">puis entrez le code</p>
-        <p class="code-seance geant" id="codeGrand">····</p>
-        <p class="aide" id="qrNb"></p>
+        <p class="qz-etape" id="qrEtape1">Scannez le QR code, ou ouvrez</p>
+        <p class="qz-lien" id="lienGrand"></p>
+        <p class="qz-etape" id="qrEtape2">puis entrez le code</p>
+        <p class="ap-code-seance geant" id="codeGrand">····</p>
+        <p class="ap-petit" id="qrNb"></p>
       </div>
     </div>
-    <form method="dialog"><button class="bouton fort" type="submit" id="qrFermer">Fermer (Q ou Échap)</button></form>
+    <form method="dialog"><button class="ap-bt ap-bt-principal" type="submit" id="qrFermer">Fermer (Q ou Échap)</button></form>
   </dialog>
 
-  <dialog id="motsBoite" class="podium-boite" aria-labelledby="motsTitre">
-    <h2 id="motsTitre">Relire et supprimer les mots</h2>
-    <p class="alerte">Si ton écran est projeté, la classe voit aussi cette liste : coupe d'abord la projection (touche du vidéoprojecteur, ou écran étendu). Un mot supprimé disparaît du tableau et des téléphones, et ne peut plus être proposé ni voté.</p>
+  <dialog id="motsBoite" class="ap qz-boite" aria-labelledby="motsTitre">
+    <h2 id="motsTitre" class="ap-sous">Relire et supprimer les mots</h2>
+    <p class="ap-message ap-message-encore">Si ton écran est projeté, la classe voit aussi cette liste : coupe d'abord la projection (touche du vidéoprojecteur, ou écran étendu). Un mot supprimé disparaît du tableau et des téléphones, et ne peut plus être proposé ni voté.</p>
     <ul class="mots-liste" id="motsListe"></ul>
-    <form method="dialog"><button class="bouton fort" type="submit">Fermer</button></form>
+    <form method="dialog"><button class="ap-bt ap-bt-principal" type="submit">Fermer</button></form>
   </dialog>
 
-  <dialog id="podiumBoite" class="podium-boite" aria-labelledby="podiumTitre">
-    <h2 id="podiumTitre">Podium</h2>
+  <dialog id="podiumBoite" class="ap qz-boite qz-podium-boite" aria-labelledby="podiumTitre">
+    <h2 id="podiumTitre" class="ap-titre">Podium</h2>
     <div id="podiumCorps"></div>
     <div id="rejouerBloc" class="rejouer-bloc" hidden>
-      <div id="qrRejouer" class="qr" role="img" aria-label="QR code pour rejouer le quiz seul·e"></div>
-      <div><h3>Rejouer le quiz seul·e</h3>
+      <div id="qrRejouer" class="ap-qr" role="img" aria-label="QR code pour rejouer le quiz seul·e"></div>
+      <div><h3 class="ap-sous">Rejouer le quiz seul·e</h3>
         <p>Chaque élève peut rejouer le quiz sur son téléphone, sans l'enseignant·e : les questions dans un nouvel ordre, les réponses mélangées. Rien n'est envoyé.</p>
-        <p class="lien" id="lienRejouer"></p>
-        <p><button class="bouton" type="button" id="btnRejouerGrand">QR code « rejouer » en grand (Q)</button></p></div>
+        <p class="qz-lien" id="lienRejouer"></p>
+        <p><button class="ap-bt" type="button" id="btnRejouerGrand">QR code « rejouer » en grand (Q)</button></p></div>
     </div>
-    <form method="dialog"><button class="bouton fort" type="submit">Fermer</button></form>
+    <form method="dialog"><button class="ap-bt ap-bt-principal" type="submit">Fermer</button></form>
   </dialog>
 </main>
-<nav class="nav-diapos commandes" aria-label="Commandes de la séance" id="commandes" hidden>
-  <button class="bouton" type="button" id="prec">← Précédente</button>
-  <span class="compteur" id="compteur"></span>
-  <div class="progression" aria-hidden="true"><span id="barre"></span></div>
+<nav class="ap qz-commandes" aria-label="Commandes de la séance" id="commandes" hidden>
+  <button class="ap-bt" type="button" id="prec">← Précédente</button>
+  <span class="qz-compteur" id="compteur"></span>
+  <div class="ap-temps qz-progression" aria-hidden="true"><span id="barre"></span></div>
   <span class="statut-q" id="statutQ" role="status"></span>
   <div class="minuterie" role="group" aria-label="Minuterie de la question">
-    <button class="bouton petit" type="button" id="plus15" aria-keyshortcuts="+ T" disabled>+ 15 s (T)</button>
-    <button class="bouton petit" type="button" id="pause" aria-keyshortcuts="S" aria-pressed="false" disabled>‖ Pause (S)</button>
+    <button class="ap-bt ap-bt-mini" type="button" id="plus15" aria-keyshortcuts="+ T" disabled>+ 15 s (T)</button>
+    <button class="ap-bt ap-bt-mini" type="button" id="pause" aria-keyshortcuts="S" aria-pressed="false" disabled>‖ Pause (S)</button>
     <label for="dureeSuite" class="duree-suite">Ensuite<span class="visuel-cache"> : le temps des questions suivantes</span>
-      <select id="dureeSuite" title="Le temps des questions suivantes (la question ouverte garde le sien)"><option value="0">sans minuterie</option><option value="20">20 s</option><option value="30">30 s</option><option value="45" selected>45 s</option><option value="60">1 min</option><option value="90">1 min 30</option></select></label>
+      <select id="dureeSuite" class="ap-champ" title="Le temps des questions suivantes (la question ouverte garde le sien)"><option value="0">sans minuterie</option><option value="20">20 s</option><option value="30">30 s</option><option value="45" selected>45 s</option><option value="60">1 min</option><option value="90">1 min 30</option></select></label>
   </div>
-  <button class="bouton fort" type="button" id="action">Suivante →</button>
+  <button class="ap-bt ap-bt-principal" type="button" id="action">Suivante →</button>
 </nav>
-<footer class="pied">QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a> · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a> · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · conçu avec l'aide de l'IA · au clavier : flèches, Entrée, P (podium), J (code), Q (QR code en grand), T ou + (15 s de plus), S (pause ou reprise)</footer>
+<footer class="ap qz-pied">QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a> · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a> · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · conçu avec l'aide de l'IA · au clavier : flèches, Entrée, P (podium), J (code), Q (QR code en grand), T ou + (15 s de plus), S (pause ou reprise)</footer>
 <script src="config.js"></script>
 <script src="vendor/temps-reel.js"></script>
 <script src="vendor/qrcode.js"></script>

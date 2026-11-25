@@ -326,13 +326,25 @@
   };
 
   /* ── Thème clair ou obscur ───────────────── */
+  // La clé « theme » du site Ressources NSI et SNT (même stockage : même adresse babash.github.io) : « light », « dark »,
+  // ou absente pour suivre l'appareil. js/socle.js l'applique avant l'affichage ; le bouton bascule et garde le choix.
+  const FOND = { light: '#FFFFFF', dark: '#0E0C14' }; // la barre du navigateur : le fond du site
   Q.theme = function () {
-    const r = document.documentElement, t = Q.stock.lire('theme', null);
+    const r = document.documentElement;
+    let t = null; try { t = localStorage.getItem('theme'); } catch (e) { t = null; }
     if (t === 'light' || t === 'dark') r.dataset.theme = t;
+    const sombre = () => r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    const barre = () => document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', r.dataset.theme ? FOND[r.dataset.theme] : /dark/.test(m.getAttribute('media') || '') ? FOND.dark : FOND.light));
+    barre();
     document.querySelectorAll('[data-bascule-theme]').forEach(b => {
-      const maj = () => { const sombre = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; b.setAttribute('aria-pressed', String(sombre)); b.textContent = sombre ? 'Affichage clair' : 'Affichage obscur'; };
-      maj();
-      b.addEventListener('click', () => { const sombre = b.getAttribute('aria-pressed') === 'true'; r.dataset.theme = sombre ? 'light' : 'dark'; Q.stock.ecrire('theme', r.dataset.theme); maj(); });
+      // le libellé dit ce que fait le bouton (pas d'état « enfoncé » : ce n'est pas un filtre)
+      b.textContent = sombre() ? 'Affichage clair' : 'Affichage obscur';
+      b.addEventListener('click', () => {
+        r.dataset.theme = sombre() ? 'light' : 'dark';
+        try { localStorage.setItem('theme', r.dataset.theme); } catch (e) { /* stockage bloqué : le choix vaut pour cette page */ }
+        document.querySelectorAll('[data-bascule-theme]').forEach(x => { x.textContent = sombre() ? 'Affichage clair' : 'Affichage obscur'; });
+        barre();
+      });
     });
   };
 

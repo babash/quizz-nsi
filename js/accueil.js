@@ -17,7 +17,7 @@
   const $ = id => document.getElementById(id);
   const aside = $('filtres'), form = $('form-filtres'), champ = $('recherche'), plus = $('plus-filtres');
   const facettes = $('facettes'), nbFiltres = $('nb-filtres'), puces = $('puces');
-  const compteur = $('compteur'), aucun = $('aucun'), biblio = $('bibliotheque');
+  const compteur = $('compteur'), aucun = $('aucun'), biblio = $('bibliotheque'), principal = $('contenu');
   let voc;
   try { voc = JSON.parse($('vocabulaire').textContent); } catch (e) { return; }
   if (!aside || !form || !champ || !compteur || !biblio || !facettes) return;
@@ -151,12 +151,12 @@
       const b = el('button', { type: 'button', class: 'puce-filtre', 'aria-label': 'Retirer le filtre ' + F.titre + ' : ' + texte }, [
         el('span', { class: 'puce-quoi' }, F.titre + ' : '), texte, el('span', { 'aria-hidden': 'true' }, ' ×')
       ]);
-      b.addEventListener('click', () => { basculer(F, v, false); champ.focus(); });
+      b.addEventListener('click', () => { basculer(F, v, false); principal.focus(); }); // comme sur le site : le focus revient au début du contenu
       out.push(b);
     }));
     if (out.length > 1) {
       const tout = el('button', { type: 'button', class: 'lien-bouton' }, 'Retirer tous les filtres');
-      tout.addEventListener('click', () => { etat.filtres = {}; appliquer(true); champ.focus(); });
+      tout.addEventListener('click', () => { etat.filtres = {}; appliquer(true); principal.focus(); });
       out.push(tout);
     }
     out.forEach(b => puces.append(b));
@@ -200,18 +200,18 @@
     const actions = el('div', { class: 'qz-actions' });
     const sans = actifs ? cartes.filter(c => correspond(c, mots)).length : 0;
     if (sans) {
-      const b = el('button', { type: 'button', class: 'bt mini p' }, 'Retirer les filtres (' + sans + ' cours-quiz sans eux)');
-      b.addEventListener('click', () => { etat.filtres = {}; appliquer(true); champ.focus(); });
+      const b = el('button', { type: 'button', class: 'ap-bt ap-bt-mini ap-bt-principal' }, 'Retirer les filtres (' + sans + ' cours-quiz sans eux)');
+      b.addEventListener('click', () => { etat.filtres = {}; appliquer(true); principal.focus(); });
       actions.append(b);
     } else if (mots.length) {
       aucun.append(el('p', null, 'Essaie un mot plus court ou une notion : pile, boucle, dictionnaire, SQL, tri… Les accents ne comptent pas.'));
-      const b = el('button', { type: 'button', class: 'bt mini p' }, 'Effacer la recherche');
+      const b = el('button', { type: 'button', class: 'ap-bt ap-bt-mini ap-bt-principal' }, 'Effacer la recherche');
       b.addEventListener('click', () => { champ.value = ''; appliquer(true); champ.focus(); });
       actions.append(b);
     }
     if (actifs && mots.length) {
-      const b = el('button', { type: 'button', class: 'bt mini' }, 'Tout montrer');
-      b.addEventListener('click', () => { etat.filtres = {}; champ.value = ''; appliquer(true); champ.focus(); });
+      const b = el('button', { type: 'button', class: 'ap-bt ap-bt-mini' }, 'Tout montrer');
+      b.addEventListener('click', () => { etat.filtres = {}; champ.value = ''; appliquer(true); principal.focus(); });
       actions.append(b);
     }
     aucun.append(actions);

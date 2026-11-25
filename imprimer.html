@@ -1,32 +1,41 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-appli="quizz-nsi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QuizzNSI · version à imprimer</title>
 <meta name="description" content="Les questions du cours-quiz sur une feuille A4 en noir et blanc, et leur corrigé à part.">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0C14" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<!-- Le style vient du site Ressources NSI et SNT (une seule source : palette, polices, socle des applications).
+     S'il ne répond pas, js/socle.js charge css/repli.css à la place : la page reste lisible et utilisable. -->
+<script src="js/socle.js"></script>
+<link rel="stylesheet" href="https://babash.github.io/Babash-NSI-SNT/assets/signal-commun.css" onerror="QuizzNSIRepli()">
+<link rel="stylesheet" href="https://babash.github.io/Babash-NSI-SNT/assets/applis.css" onerror="QuizzNSIRepli()">
 <link rel="stylesheet" href="css/polices.css">
 <link rel="stylesheet" href="css/quizz.css">
 <link rel="stylesheet" href="css/imprimer.css">
-<script>try{var t=localStorage.getItem('quizz-nsi:theme');t=t&&JSON.parse(t);if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="css/habillage.css">
 </head>
-<body>
+<body class="qz-imprimer">
 <a class="evitement" href="#contenu">Aller au contenu</a>
-<header class="barre ecran-seul">
-  <a class="marque" href="index.html">Quizz<b>NSI</b></a>
-  <span class="titre-page" id="titreCours">Version à imprimer</span>
-  <div class="actions">
-    <a class="bouton petit" id="basculer" href="#">Corrigé</a>
-    <button class="bouton petit fort" type="button" id="imprimer">Imprimer</button>
-    <button class="bouton petit" type="button" data-bascule-theme>Affichage obscur</button>
+<header class="ap ap-barre qz-barre ecran-seul">
+  <a class="ap-logo" href="index.html">Quizz<b>NSI</b></a>
+  <span class="ap-lieu" id="titreCours">Version à imprimer</span>
+  <span class="ap-espace"></span>
+  <div class="qz-outils">
+    <a class="ap-bt ap-bt-mini" id="basculer" href="#">Corrigé</a>
+    <button class="ap-bt ap-bt-mini ap-bt-principal" type="button" id="imprimer">Imprimer</button>
+    <button class="ap-bt ap-bt-mini" type="button" data-bascule-theme>Affichage obscur</button>
   </div>
 </header>
+<div class="ap-touche ecran-seul" aria-hidden="true"></div>
 <main id="contenu" tabindex="-1">
-  <p class="ecran-seul info consigne-impression">A4, noir et blanc, sans les en-têtes du navigateur. Le sujet et le corrigé s'impriment séparément.</p>
+  <p class="ap ap-message ecran-seul consigne-impression">A4, noir et blanc, sans les en-têtes du navigateur. Le sujet et le corrigé s'impriment séparément.</p>
   <article id="feuille" class="feuille"></article>
 </main>
-<footer class="pied ecran-seul">QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a> · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a> · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · conçu avec l'aide de l'IA</footer>
+<footer class="ap qz-pied ecran-seul">QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a> · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a> · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · conçu avec l'aide de l'IA</footer>
 <script src="js/commun.js"></script>
 <script src="js/activites.js"></script>
 <script src="js/diapos.js"></script>

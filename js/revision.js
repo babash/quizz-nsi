@@ -185,13 +185,13 @@
     const fait = q => q.type === 'question' ? q.id in etat.premiers : !!(etat.act[q.id] && etat.act[q.id].premier !== null);
     const juste = q => q.type === 'question' ? etat.premiers[q.id] === q.bonne : etat.act[q.id].premier === true;
     const faites = qs.filter(fait), justes = faites.filter(juste), arevoir = faites.filter(q => !juste(q));
-    let h = '<div class="cadre" style="margin-top:14px"><h3>Ton bilan</h3>' + (qs.length ? '<p><strong>' + justes.length + ' sur ' + qs.length + '</strong> du premier coup'
+    let h = '<div class="ap ap-carte qz-bilan-perso"><h3 class="ap-sous">Ton bilan</h3>' + (qs.length ? '<p><strong>' + justes.length + ' sur ' + qs.length + '</strong> du premier coup'
       + (faites.length < qs.length ? ' (' + (qs.length - faites.length) + ' question' + (qs.length - faites.length > 1 ? 's' : '') + ' sans réponse)' : '') + '.</p>' : '');
-    if (arevoir.length) h += '<p>À revoir :</p><ul class="cours-liste">' + arevoir.map(q => '<li><button class="bouton petit" type="button" data-aller="' + q.id + '">' + 'Question ' + q.numero + (q.type === 'question' ? '' : ' (' + Q.echapper(Q.activites.NOMS[q.type]).toLowerCase() + ')') + ' · ' + Q.texte(q.nom) + '</button></li>').join('') + '</ul>';
+    if (arevoir.length) h += '<p>À revoir :</p><ul class="qz-arevoir">' + arevoir.map(q => '<li><button class="ap-bt ap-bt-mini" type="button" data-aller="' + q.id + '">' + 'Question ' + q.numero + (q.type === 'question' ? '' : ' (' + Q.echapper(Q.activites.NOMS[q.type]).toLowerCase() + ')') + ' · ' + Q.texte(q.nom) + '</button></li>').join('') + '</ul>';
     else if (faites.length) h += '<p>Tout juste du premier coup : bravo ! Tu peux aider un·e camarade.</p>';
     h += REJOUER
-      ? '<p><button class="bouton fort" type="button" id="recommencer">Rejouer encore (nouvel ordre)</button> <a class="bouton" href="revision.html?cours=' + encodeURIComponent(cours.id) + '">Revoir le cours</a></p></div>'
-      : '<p><button class="bouton" type="button" id="recommencer">Recommencer à zéro</button> <a class="bouton" href="imprimer.html?cours=' + encodeURIComponent(cours.id) + '">Version à imprimer</a> <a class="bouton" href="revision.html?cours=' + encodeURIComponent(cours.id) + '&amp;rejouer">Rejouer le quiz (mélangé)</a></p></div>';
+      ? '<p class="ap-commandes"><button class="ap-bt ap-bt-principal" type="button" id="recommencer">Rejouer encore (nouvel ordre)</button> <a class="ap-bt" href="revision.html?cours=' + encodeURIComponent(cours.id) + '">Revoir le cours</a></p></div>'
+      : '<p class="ap-commandes"><button class="ap-bt" type="button" id="recommencer">Recommencer à zéro</button> <a class="ap-bt" href="imprimer.html?cours=' + encodeURIComponent(cours.id) + '">Version à imprimer</a> <a class="ap-bt" href="revision.html?cours=' + encodeURIComponent(cours.id) + '&amp;rejouer">Rejouer le quiz (mélangé)</a></p></div>';
     return h;
   }
   function brancherBilan() {
@@ -221,7 +221,7 @@
   async function demarrer() {
     Q.theme();
     try { cours = await Q.chargerCours(Q.idCours()); }
-    catch (e) { Q.erreurPage($('scene'), e.message); document.querySelector('.nav-diapos').hidden = true; return; }
+    catch (e) { Q.erreurPage($('scene'), e.message); $('commandes').hidden = true; return; }
     const mode = REJOUER ? 'rejouer le quiz' : 'réviser seul·e';
     document.title = 'QuizzNSI · ' + cours.titre + ' · ' + mode;
     $('titreCours').textContent = cours.titre + ' · ' + mode;

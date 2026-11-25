@@ -8,8 +8,8 @@
   --f0: #DC2626; --f1: #2563EB; --f2: #B45309; --f3: #15803D;
   --code-bg: #F5F7FB; --c-mot: #5B21B6; --c-ch: #02553F; --c-nb: #7A3304; --c-com: #414A57; --c-fn: #084E62; --c-nat: #86143F; --c-def: #1E40AF; --c-self: #7C2D12; --c-err: #921035; --guide: #C5CEDD;
   --display: "Chakra Petch", "Bahnschrift", "Arial Narrow", system-ui, sans-serif;
-  --text: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --text: "QuizzNSI Texte", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "QuizzNSI Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {

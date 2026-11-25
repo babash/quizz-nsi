@@ -1,0 +1,192 @@
+/* QuizzNSI : l'habillage sur le socle du site (T143). Code MIT, Babash - NSI Tani Malandi.
+
+   Décision de l'enseignant (25/11) : « piste B », le socle du nouveau design du site plus une touche légère propre à
+   l'application (QuizzNSI : le plateau de jeu de la Flottille, .ap-touche sous la barre). Une seule source de style :
+   la palette, les polices et le socle viennent du site (assets/signal-commun.css, assets/applis.css), chargés par chaque
+   page ; ce fichier ne garde que la mise en place propre à QuizzNSI, avec la palette du site (--td-*), sans couleur
+   nouvelle. css/repli.css ne sert que si le site ne répond pas (js/socle.js).
+
+   L'écran de question ne change pas (« plus lisible, notamment le code ») : les diapositives, les questions et leur
+   correction restent dessinées par css/quizz.css et css/seance.css, hors de toute boîte .ap ; le socle ne les touche
+   donc pas (ses règles de question sont sous .ap). Elles gardent aussi leur fond : body.qz-scene. On n'y ajoute que le
+   chrono de la maquette validée (T133b).
+
+   Les boîtes du socle portent la classe .ap : la barre, le lobby, le podium, les fenêtres, les commandes, l'entrée et
+   la fin sur le téléphone, le pied de page. Les avatars viendront avec le compte commun : leurs places sont notées
+   dans les pages (rien n'est branché). */
+
+/* ── 1. La page ───────────────────────────────── */
+body { background: var(--td-fond); color: var(--td-encre); }
+body.qz-scene { background: var(--bg); color: var(--ink); }          /* le cours et les questions : le fond d'avant */
+body.qz-imprimer { background: var(--td-panneau-2); }                 /* la feuille blanche se détache du fond */
+[hidden] { display: none !important; }
+.visuel-cache { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+main:focus { outline: none; }
+.evitement { position: absolute; left: 8px; top: -60px; z-index: 50; background: var(--td-principal-fond); color: var(--td-principal-encre); padding: 8px 14px; font-weight: 700; border-radius: 2px; }
+.evitement:focus { top: 8px; }
+/* dans le socle, les titres et les liens sans classe suivent le site (css/quizz.css les dessine pour le cours) */
+.ap h1:not([class]), .ap h2:not([class]), .ap h3:not([class]) { font-family: var(--td-texte); line-height: 1.25; }
+.ap a:not([class]), .ap .ap-lien { color: var(--td-encre); text-decoration: underline; text-underline-offset: 3px; }
+.ap p { margin: 0 0 .5em; }
+.ap .ap-petit { color: var(--td-encre-douce); }
+.qz-centre { text-align: center; }
+
+/* ── 2. La barre du haut et le décor de la Flottille ── */
+.qz-barre { position: relative; z-index: 6; flex-wrap: wrap; row-gap: 6px; }
+.qz-outils { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
+.qz-pastille { font-size: 1.2rem; padding: 3px 8px; }
+.qz-pastille b { font-weight: 400; letter-spacing: .14em; }
+.qz-case { gap: 8px; }
+.qz-case input { width: 18px; height: 18px; margin: 0; accent-color: var(--td-trait-fort); }
+/* le téléphone : la barre (et son chrono) reste en haut de l'écran ; le bandeau dessous défile */
+.qz-barre-tel { position: sticky; top: 0; flex-wrap: nowrap; }
+.ap-chrono-tel { white-space: nowrap; min-width: 0; }
+.ap-chrono-tel.en-pause { border: 2px dashed var(--td-trait-fort); padding: 3px 8px; }
+.qz-bandeau { flex-wrap: wrap; padding: 4px 12px; }
+.qz-moi { font-weight: 700; overflow-wrap: anywhere; min-width: 0; }
+.qz-points { font-weight: 400; color: var(--td-encre-douce); white-space: nowrap; }
+
+/* ── 3. Le pied de page ───────────────────────── */
+.qz-pied { padding: 12px 16px; font-size: .9rem; color: var(--td-encre-douce); text-align: center; border-top: 1.4px solid var(--td-trait-fort); background: var(--td-panneau-2); }
+.qz-pied p { margin: .2rem 0; }
+.qz-pied a { color: var(--td-encre); text-decoration: underline; text-underline-offset: 3px; }
+.projete .qz-pied { font-size: 13px; padding: 8px 16px; }
+
+/* ── 4. Le lobby de la page projetée ─────────── */
+.qz-lobby { max-width: 1400px; margin: 0 auto; background: transparent; }
+.qz-lobby .ap-lobby { grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr); padding-top: 20px; padding-bottom: 24px; }
+.qz-rejoindre { padding: 16px; }
+.qz-rejoindre .ap-signal { margin: 0; }
+.ap-seance #qr { width: min(100%, 34vh, 300px); }
+.ap .qz-lien { font-family: var(--td-mono); font-size: clamp(15px, 1.2vw, 22px); word-break: break-all; margin: 0 0 .4em; }
+.ap .qz-etape { margin: 0; }
+.qz-rejoindre .ap-code-seance { margin: 0 0 .15em; }
+.ap .etat { font-weight: 700; margin: 0; }
+.ap .etat.ok { color: var(--td-juste); }
+.ap .etat.ko { color: var(--td-erreur); }
+.qz-salle > * + * { margin-top: 12px; }
+.qz-salle .ap-titre { margin-bottom: 4px; }
+.qz-eleves { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 6px; max-height: 40vh; overflow: auto; }
+.ap .eleves li { display: inline-flex; align-items: center; gap: 6px; border: 1.4px solid var(--td-trait-fort); border-radius: 2px; background: var(--td-panneau); padding: 3px 4px 3px 10px; font-weight: 700; overflow-wrap: anywhere; }
+.ap .eleves li.absent { font-weight: 400; color: var(--td-encre-douce); border-style: dashed; }  /* déconnecté·e : le mot, et le cadre pointillé */
+.ap .eleves li.vide { padding: 4px 10px; font-weight: 400; color: var(--td-encre-douce); border-style: dashed; }
+.ap .retirer { min-height: 32px; padding: 2px 8px; font-size: .85rem; }
+.qz-reglages .ap-sous { margin-bottom: 4px; }
+.ap .ligne-reglage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
+.ap .ligne-reglage label { font-weight: 700; min-width: 12ch; }
+.ap select.ap-champ { width: auto; max-width: 100%; font-family: var(--td-texte); }
+.qz-lancer { margin-top: 16px; }
+
+/* la petite carte « Code et QR code » (touche J), pendant le cours */
+.ap.carte-rejoindre { box-shadow: 4px 4px 0 var(--ap-touche); align-items: flex-start; }
+#qrPetit { width: 170px; flex: none; }
+.ap .qz-code-petit { font-size: 34px; margin: 0; }
+.carte-rejoindre .ap-sous { margin: .4em 0 .2em; }
+
+/* ── 5. Le QR code en très grand (touche Q) ─── */
+.ap.qr-boite { background: var(--td-fond); color: var(--td-encre); }
+.ap.qr-boite::backdrop { background: var(--td-fond); }
+.qr-boite .ap-qr { width: min(46vh, 88vw); padding: 2.5%; }
+.qr-boite .qz-lien { font-size: clamp(14px, 2.6vh, 30px); }
+.qr-boite .qz-etape { font-size: clamp(16px, 2.4vh, 28px); color: var(--td-encre-douce); }
+.qr-boite #qrNb { font-size: clamp(14px, 2.2vh, 24px); }
+.ap-code-seance.geant { font-size: clamp(40px, min(10vh, 19vw), 220px); white-space: nowrap; margin: .05em 0 .1em; }
+@media (min-aspect-ratio: 4/3) {
+  .qr-grand-corps { flex-wrap: nowrap; }
+  .qr-boite .ap-qr { width: min(74vh, 52vw); }
+  .qr-grand-texte { text-align: left; }
+  .ap-code-seance.geant { font-size: clamp(40px, min(17vh, 9vw), 220px); padding-left: 0; }
+}
+
+/* ── 6. Les fenêtres : podium, mots du nuage ── */
+.qz-boite { border: 1.4px solid var(--td-trait-fort); border-radius: 2px; padding: 20px 24px; width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; box-shadow: 6px 6px 0 var(--ap-touche); }
+.qz-boite::backdrop { background: rgba(14, 12, 20, .72); }
+.qz-boite > form { margin-top: 14px; }
+.qz-boite h3 { margin: 14px 0 6px; }
+/* le podium du socle, sans avatar : une marche par place (la 1re au milieu), le rang en grand, le pseudo, les points */
+.qz-podium-boite .ap-podium { list-style: none; margin: 4px 0 8px; min-height: 0; padding-top: 8px; }
+.qz-podium-boite .ap-place-1 .ap-marche { height: auto; min-height: 180px; }
+.qz-podium-boite .ap-place-2 .ap-marche { height: auto; min-height: 145px; }
+.qz-podium-boite .ap-place-3 .ap-marche { height: auto; min-height: 115px; }
+.ap-marche { padding: 8px 6px 10px; }
+.ap-marche .qui { margin: 4px 0 0; max-width: 100%; text-align: center; line-height: 1.2; }
+.ap-marche .ap-pseudo { display: block; }
+.ap-marche .pts { display: block; font-size: .95rem; color: var(--td-encre-douce); }
+.ap-podium .flamme { font-size: .8em; margin-left: .2em; }
+.ap .rep-barre { background: var(--td-panneau-2); border-color: var(--td-trait); border-radius: 0; }
+.ap .reussite .rep-barre > span { background: var(--td-trait-fort); }
+.ap .reussite li { font-size: .95rem; }
+.ap .rebonds { color: var(--td-juste); font-weight: 700; }
+.ap .rejouer-bloc { border-top-color: var(--td-trait); }
+#qrRejouer { width: 170px; flex: none; }
+.ap .rejouer-bloc .qz-lien { font-size: 15px; }
+.ap .mots-liste li { border-color: var(--td-trait); border-radius: 2px; }
+
+/* ── 7. Les commandes du cours (page projetée et révision) ── */
+.qz-commandes { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; border-top: 1.4px solid var(--td-trait-fort); background: var(--td-panneau); }
+@media (min-width: 900px) and (min-height: 500px) { .qz-commandes { position: sticky; bottom: 0; z-index: 5; } }
+.qz-compteur { font: 700 .95rem/1.2 var(--td-texte); color: var(--td-encre-douce); }
+.qz-progression { flex: 1; min-width: 120px; height: 10px; }
+.qz-progression span { width: 0; }
+.ap .statut-q { flex: 1 1 16ch; min-width: 0; font: 700 17px/1.3 var(--td-texte); text-align: right; }
+.qz-commandes #action { margin-left: auto; }
+.ap .duree-suite { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 15px; color: var(--td-encre-douce); }
+.ap .duree-suite .ap-champ { min-height: 36px; padding: 4px 8px; }
+.ap .qz-note { flex: 1 1 100%; margin: 0; font-size: .85rem; color: var(--td-encre-douce); }
+.qz-commandes-revision { max-width: none; }
+@media (prefers-reduced-motion: no-preference) { .qz-progression span { transition: width .3s; } }
+
+/* ── 8. Le chrono de la maquette, sur la question projetée ──
+   En haut à droite de la question minutée ; l'en-tête (numéro, titre, objectif) lui laisse sa place, le reste de
+   l'écran de question ne bouge pas. En pause : l'anneau de fond en pointillé et le mot « pause ». */
+.projete .d-question { position: relative; }
+.qz-chrono { position: absolute; top: 18px; right: 16px; color: var(--ink); }
+.qz-avec-chrono > .q-tete { margin-right: 112px; }
+.qz-chrono .ap-arc { transition: stroke-dashoffset .5s linear; }
+.qz-chrono-pause { display: none; position: absolute; left: 0; right: 0; bottom: -1.5em; text-align: center; font: 400 1.15rem/1 var(--td-signal); text-transform: uppercase; letter-spacing: .08em; }
+.qz-chrono.en-pause .qz-chrono-pause { display: block; }
+.qz-chrono.en-pause .ap-fond-arc { stroke: var(--td-trait-fort); stroke-width: 3; stroke-dasharray: 4 5; }
+@media (max-width: 760px) {
+  .qz-chrono { top: 12px; right: 12px; width: 72px; height: 72px; }
+  .qz-chrono b { font-size: 1.7rem; }
+  .qz-avec-chrono > .q-tete { margin-right: 84px; }
+}
+@media (prefers-reduced-motion: reduce) { .qz-chrono .ap-arc { transition: none; } }
+
+/* ── 9. Le téléphone : entrer, attendre, finir ── */
+.ap.qz-entree { padding-left: 0; padding-right: 0; }
+.qz-entree .ap-titre { font-size: clamp(1.9rem, 9vw, 2.4rem); }
+.qz-entree > div > .ap-petit { margin: 6px 0 0; }
+.ap .erreur-champ { color: var(--td-erreur); font-weight: 700; margin: 6px 0 0; }
+.ap .erreur-champ:empty { display: none; }
+.ap .ap-entree-ou { margin: 0; }
+.qz-attente { text-align: center; padding: 28px 0 20px; background: transparent; }
+.qz-attente .ap-titre { font-size: clamp(1.6rem, 7.5vw, 2.2rem); margin-bottom: 10px; }
+.qz-fin { padding: 8px 0 16px; background: transparent; }
+.qz-fin > * + * { margin-top: 12px; }
+.qz-fin .ap-titre { font-size: clamp(2rem, 9vw, 2.6rem); }
+.qz-bilan { text-align: center; }
+.qz-bilan .ap-signal { margin: 0 0 4px; }
+.ap .gains { font: 700 1.1rem/1.2 var(--td-texte); margin: 0 0 8px; }
+.ap .gains .ap-gros-chiffre { display: inline; margin-right: .15em; }
+.ap .suite { justify-content: center; }
+.ap .fin-liens { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 6px; }
+#autreHote { margin: 12px 16px; }
+
+/* ── 10. Le bilan du mode autonome (dans la dernière diapositive) ── */
+.qz-bilan-perso { margin-top: 14px; }
+.qz-arevoir { list-style: none; padding: 0; margin: 6px 0 12px; display: grid; gap: 6px; }
+.qz-arevoir .ap-bt { justify-content: flex-start; text-align: left; width: 100%; }
+
+/* ── 11. Petits écrans ── */
+@media (max-width: 760px) {
+  .qz-lobby .ap-lobby { grid-template-columns: minmax(0, 1fr); }
+  .ap.carte-rejoindre { flex-direction: column; align-items: center; top: 120px; }
+  .qz-boite { padding: 16px; }
+}
+
+/* ── 12. Impression ── */
+@media print {
+  .qz-barre, .qz-bandeau, .qz-commandes, .qz-pied, .ap-touche { display: none !important; }
+  body, body.qz-imprimer, body.qz-scene { background: #fff !important; }
+}

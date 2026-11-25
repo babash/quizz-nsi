@@ -288,7 +288,7 @@ essai('stockage : une entrée « eleve » périmée ou mal formée est effacée'
   m.set('quizz-nsi:hist:0123456789abcdef', JSON.stringify({ id: '0123456789abcdef', jusqua: t - 1, ordre: [] })); Q.menage(t); assert.equal(m.has('quizz-nsi:hist:0123456789abcdef'), false);
   m.set('quizz-nsi:hist:0123456789abcdef', JSON.stringify({ id: 'autre', jusqua: t + 1000 })); Q.menage(t); assert.equal(m.has('quizz-nsi:hist:0123456789abcdef'), false);
   m.set('quizz-nsi:hist:0123456789abcdef', JSON.stringify({ id: '0123456789abcdef', jusqua: t + 1000 })); Q.menage(t); assert.equal(m.has('quizz-nsi:hist:0123456789abcdef'), true);
-  m.set('quizz-nsi:theme', '"dark"'); Q.menage(t); assert.equal(m.has('quizz-nsi:theme'), true); // les réglages ne sont pas concernés
+  m.set('theme', 'dark'); Q.menage(t); assert.equal(m.has('theme'), true); // les réglages ne sont pas concernés
   delete globalThis.localStorage;
 });
 essai('stockage : la progression du mode révision est gardée un jour au plus', () => {

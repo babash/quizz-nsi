@@ -141,7 +141,7 @@
     const items = () => l.map(j => el('li', { class: presents.has(j.id) ? '' : 'absent' },
       el('span', {}, j.pseudo, st.commence && !anciens.has(j.id) ? flammeDe(st.joueurs[j.id]) : null,
         presents.has(j.id) ? null : el('small', {}, anciens.has(j.id) ? ' (ancien appareil, déconnecté·e)' : ' (déconnecté·e)')),
-      anciens.has(j.id) ? null : el('button', { type: 'button', class: 'retirer', 'data-retirer': j.id, 'aria-label': 'Retirer le pseudo ' + j.pseudo }, 'Retirer')));
+      anciens.has(j.id) ? null : el('button', { type: 'button', class: 'ap-bt ap-bt-mini retirer', 'data-retirer': j.id, 'aria-label': 'Retirer le pseudo ' + j.pseudo }, 'Retirer')));
     $('eleves').replaceChildren(...(l.length ? items() : [el('li', { class: 'vide' }, 'Personne pour l\'instant.')]));
     $('eleves2').replaceChildren(...items());
     majStatut();
@@ -342,7 +342,7 @@
     const e = st.q[d.id], t = Date.now();
     if (e.ferme) { e.ferme = false; e.parTemps = false; e.raison = ''; }
     MN.ajouter(e, t);
-    sauver(); envoyer(messageQuestion(d)); majStatut(); majMinuterie(); majAction();
+    sauver(); envoyer(messageQuestion(d)); majStatut(); majMinuterie(); majAction(); majChrono();
     Q.annoncer('15 secondes de plus : il reste ' + Math.ceil(MN.reste(e, t) / 1000) + ' s.');
   }
   function basculerPause() {
@@ -351,7 +351,7 @@
     if (e.ferme || !(e.duree > 0)) return;
     const ok = MN.enPause(e) ? MN.reprendre(e, t) : MN.pause(e, t);
     if (!ok) return;
-    sauver(); envoyer(messageQuestion(d)); majStatut(); majMinuterie();
+    sauver(); envoyer(messageQuestion(d)); majStatut(); majMinuterie(); majChrono();
     Q.annoncer(MN.enPause(e) ? 'Minuterie en pause. Les élèves peuvent lire et répondre.' : 'Minuterie relancée.');
   }
   function majMinuterie() {
@@ -364,6 +364,31 @@
     if ($('dureeSuite').value !== String(st.duree)) $('dureeSuite').value = String(st.duree);
   }
 
+  /* ── Le chrono de la page projetée (maquette validée, T133b : « le chrono est très bien ») ──
+     Un anneau qui se vide et le nombre de secondes, en haut à droite de la question, seulement quand elle est minutée.
+     En pause : l'anneau de fond en pointillé et le mot « pause » sous le nombre (lisible sans les couleurs). Rien d'autre
+     ne change dans l'écran de question : l'en-tête laisse juste la place de l'anneau. Décor seulement (aria-hidden) :
+     le temps et la pause sont annoncés par la ligne d'état, en bas. */
+  const NS = 'http://www.w3.org/2000/svg', TOUR = 2 * Math.PI * 44;
+  function majChrono() {
+    const sec = $('scene').querySelector('section.d-question'), d = st && st.commence ? diapo() : null;
+    const e = sec && inter(d) && d.type !== 'nuage' ? st.q[d.id] : null;
+    let z = $('chronoProjete');
+    if (!e || !(e.duree > 0) || e.revelee) { if (z) z.remove(); if (sec) sec.classList.remove('qz-avec-chrono'); return; }
+    if (!z || z.parentNode !== sec) {
+      if (z) z.remove();
+      const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('focusable', 'false');
+      for (const c of ['ap-fond-arc', 'ap-arc']) { const k = document.createElementNS(NS, 'circle'); k.setAttribute('cx', '50'); k.setAttribute('cy', '50'); k.setAttribute('r', '44'); k.setAttribute('class', c); svg.appendChild(k); }
+      z = el('div', { class: 'ap-minuteur qz-chrono', id: 'chronoProjete', 'aria-hidden': 'true' }, svg, el('b', {}), el('span', { class: 'qz-chrono-pause' }, 'pause'));
+      sec.prepend(z); sec.classList.add('qz-avec-chrono');
+    }
+    const accorde = MN.accordee(e) * 1000, reste = Math.max(0, Math.min(accorde, MN.reste(e, Date.now()))), pause = MN.enPause(e);
+    const arc = z.querySelector('.ap-arc');
+    arc.setAttribute('stroke-dasharray', TOUR.toFixed(2)); arc.setAttribute('stroke-dashoffset', (TOUR * (1 - (accorde ? reste / accorde : 0))).toFixed(2));
+    z.querySelector('b').textContent = String(Math.ceil(reste / 1000));
+    z.classList.toggle('en-pause', pause);
+  }
+
   /* ── L'affichage ────────────────────────── */
   function afficher() {
     const d = diapo();
@@ -374,7 +399,7 @@
     $('prec').disabled = st.index === 0;
     if (inter(d)) { ouvrir(d); if (st.q[d.id].revelee) montrerCorrection(d); else if (d.type === 'nuage') majNuage(d); }
     envoyer(messagePhase());
-    majStatut(); majAction(); majMinuterie();
+    majStatut(); majAction(); majMinuterie(); majChrono();
     $('scene').focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
@@ -508,7 +533,7 @@
   function remplirMots(d) {
     const nu = st.q[d.id].nuage, tous = nu.mots.slice().sort((a, b) => a.k - b.k);
     $('motsListe').replaceChildren(...(tous.length ? tous.map(w => {
-      const b = el('button', { type: 'button', class: 'bouton petit', 'aria-label': 'Supprimer le mot ' + w.m }, 'Supprimer');
+      const b = el('button', { type: 'button', class: 'ap-bt ap-bt-mini', 'aria-label': 'Supprimer le mot ' + w.m }, 'Supprimer');
       b.addEventListener('click', () => supprimerMot(d, w.k));
       return el('li', {}, el('span', {}, w.m), el('small', {}, ' × ' + Q.activites.voix(w)), b);
     }) : [el('li', {}, 'Aucun mot pour l\'instant.')]));
@@ -520,7 +545,7 @@
     // d'abord les apparitions progressives de la diapositive, une à une
     if (d.type !== 'question' && fragmentsRestants() > 0) { st.f++; sauver(); Q.montrerFragments($('scene'), st.f); envoyer(messagePhase()); majAction(); return; }
     if (st.index === cours.diapositives.length - 1) { terminer(); return; }
-    if (inter(d) && st.q[d.id] && !st.q[d.id].revelee) { corriger(d); montrerCorrection(d); majMinuterie(); Q.annoncer(d.type === 'nuage' ? 'Nuage affiché.' : 'Correction affichée.'); return; }
+    if (inter(d) && st.q[d.id] && !st.q[d.id].revelee) { corriger(d); montrerCorrection(d); majMinuterie(); majChrono(); Q.annoncer(d.type === 'nuage' ? 'Nuage affiché.' : 'Correction affichée.'); return; }
     aller(st.index + 1);
   }
   function aller(i) {
@@ -536,12 +561,20 @@
     if (!l.length) return [el('p', {}, 'Aucun·e élève connecté·e : pas de classement.')];
     const n = [];
     if (st.podium !== 'jamais' || final === 'force') {
-      n.push(el('ol', { class: 'podium' }, l.filter(j => j.place <= 3).slice(0, 6).map(j => el('li', { class: 'place' + j.place },
-        el('span', { class: 'rang' }, j.place + (j.place === 1 ? 're' : 'e')), el('span', { class: 'qui' }, j.pseudo, ' ', flammeDe(st.joueurs[j.id])), el('span', { class: 'pts' }, j.total + ' points')))));
+      /* Le podium du socle (charte/applis.md : .ap-podium, une marche par place, la 1re au milieu), sans avatar : la place
+         de chacun·e au-dessus de sa marche viendra avec le compte commun. Ex æquo : plusieurs pseudos sur la même marche. */
+      const haut = l.filter(j => j.place <= 3).slice(0, 6);
+      n.push(el('ol', { class: 'ap-podium podium' }, [1, 2, 3].map(p => {
+        const ici = haut.filter(j => j.place === p);
+        if (!ici.length) return null;
+        return el('li', { class: 'ap-place ap-place-' + p }, el('div', { class: 'ap-marche' },
+          el('span', { class: 'ap-rang' }, String(p), el('span', { class: 'visuel-cache' }, p === 1 ? 're place' : 'e place')),
+          ...ici.map(j => el('p', { class: 'qui' }, el('span', { class: 'ap-pseudo' }, j.pseudo, ' ', flammeDe(st.joueurs[j.id])), el('span', { class: 'pts' }, j.total + ' points')))));
+      })));
     }
     // la progression de la classe : la réussite question par question
     if (justes.length) {
-      n.push(el('h3', {}, 'La classe, question par question'), el('ol', { class: 'reussite' }, justes.map(q => {
+      n.push(el('h3', { class: 'ap-sous' }, 'La classe, question par question'), el('ol', { class: 'reussite' }, justes.map(q => {
         const rep = repartition(q), t = rep.reduce((a, b) => a + b, 0), pc = t ? Math.round(rep[q.bonne] / t * 100) : 0;
         const b = el('span', {}); b.style.width = pc + '%';
         return el('li', {}, el('span', { class: 'q' }, 'Q' + q.numero), el('span', { class: 'rep-barre' }, b), el('span', {}, pc + ' %'));
@@ -624,6 +657,7 @@
     const du = +$('duree').value, po = $('podium').value;
     st.duree = DUREES.includes(du) ? du : 45; st.podium = PODIUMS.includes(po) ? po : 'fin'; st.series = $('series').value !== 'non';
     st.commence = true; sauver();
+    document.body.classList.add('qz-scene'); // le cours et les questions gardent le style d'avant, fond compris
     $('accueil').hidden = true; $('scene').hidden = false; $('commandes').hidden = false;
     $('pastilleSeance').hidden = false; $('btnRejoindre').hidden = false; $('btnPodium').hidden = false;
     afficher();
@@ -688,7 +722,7 @@
       const d = diapo();
       const e = inter(d) && d.type !== 'nuage' ? st.q[d.id] : null;
       if (e && !e.ferme && e.duree > 0 && !MN.enPause(e) && MN.reste(e, Date.now()) <= 0) fermer(d, 'Temps écoulé.', true);
-      majStatut(); majMinuterie();
+      majStatut(); majMinuterie(); majChrono();
     }, 500);
   }
   demarrer();

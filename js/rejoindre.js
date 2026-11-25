@@ -30,7 +30,8 @@
     if (seance) { seance.fermer(); seance = null; }
     clearInterval(renvoi); clearInterval(chrono); chrono = null; clearTimeout(attenteHote);
     $('jeu').hidden = true; $('entree').hidden = false; $('quitter').hidden = true;
-    $('moi').textContent = ''; $('points').textContent = '';
+    $('moi').textContent = ''; $('points').textContent = ''; $('lieu').textContent = 'Rejoindre la séance';
+    document.body.classList.remove('qz-scene'); majChrono();
     $('erreurPseudo').textContent = message || '';
     phase = null; question = null; total = 0;
     if (message) $('champPseudo').focus();
@@ -80,16 +81,16 @@
   function sansChiffrement() {
     if (seance) { seance.fermer(); seance = null; }
     $('connexion').className = 'etat ko'; $('connexion').textContent = '';
-    ecran(el('div', { class: 'alerte', role: 'alert' },
+    ecran(el('div', { class: 'ap ap-message ap-message-encore', role: 'alert' },
       el('p', {}, el('strong', {}, 'Ce navigateur ne peut pas participer à la séance en direct'), ' : il ne sait pas chiffrer les réponses (il faut une page en https et un navigateur à jour).'),
       el('p', {}, 'Tu peux suivre le même cours seul·e, avec les mêmes questions corrigées : ', el('a', { href: 'revision.html' }, 'réviser seul·e'), '.')));
   }
 
   async function entrer() {
     $('entree').hidden = true; $('jeu').hidden = false; $('quitter').hidden = false;
-    $('moi').textContent = moi.pseudo;
+    $('moi').textContent = moi.pseudo; $('lieu').textContent = 'Séance ' + moi.code;
     majPoints();
-    ecran(el('div', { class: 'attente' }, el('p', { class: 'grand' }, 'Connexion…'), el('p', {}, 'Séance ' + moi.code)));
+    ecran(el('div', { class: 'ap qz-attente' }, el('p', { class: 'ap-titre' }, 'Connexion…'), el('p', {}, 'Séance ' + moi.code)));
     hoteVu = false; clesHote = [];
     total = historique().total; majPoints();
     if (!chiffreur || !moi.cle || chiffreur.cle.x !== moi.cle.x) {
@@ -112,12 +113,12 @@
       seance.envoyer({ t: 'bonjour', id: moi.id });
       clearTimeout(attenteHote);
       attenteHote = setTimeout(() => {
-        if (!hoteVu) ecran(el('div', { class: 'attente' }, el('p', { class: 'grand' }, 'En attente de l\'enseignant·e'),
+        if (!hoteVu) ecran(el('div', { class: 'ap qz-attente' }, el('p', { class: 'ap-titre' }, 'En attente de l\'enseignant·e'),
           el('p', {}, 'Vérifie le code de la séance : ', el('strong', {}, moi.code), '. S\'il est faux, quitte et entre le bon code.')));
       }, 9000);
     } else if (e === 'erreur' || e === 'ferme') {
       z.className = 'etat ko'; z.textContent = '';
-      const b = el('button', { type: 'button', class: 'bouton petit' }, 'Réessayer');
+      const b = el('button', { type: 'button', class: 'ap-bt ap-bt-mini' }, 'Réessayer');
       b.addEventListener('click', () => { if (seance) seance.fermer(); entrer(); });
       z.append('Pas de connexion à la séance : vérifie le réseau (wifi ou données mobiles), puis réessaie. ', b,
         ' Tu peux aussi suivre le cours seul·e : ', el('a', { href: 'revision.html' }, 'réviser seul·e'), '.');
@@ -175,8 +176,12 @@
 
   function ecran(noeud) {
     if (nuage && phase !== 'nuage') nuage = null; // on quitte le nuage : ses envois en cours s'arrêtent
-    const z = $('ecran'); z.textContent = ''; delete z.dataset.n; z.appendChild(noeud); }
-  const attente = texte => el('div', { class: 'attente' }, el('p', { class: 'grand' }, moi.pseudo + ', tu es dans la séance.'), el('p', {}, texte));
+    const z = $('ecran'); z.textContent = ''; delete z.dataset.n; z.appendChild(noeud);
+    // le cours, les questions et leur correction gardent le style d'avant (fond compris) ; l'attente et la fin prennent le socle
+    document.body.classList.toggle('qz-scene', !noeud.classList.contains('ap'));
+    majChrono();
+  }
+  const attente = texte => el('div', { class: 'ap qz-attente' }, el('p', { class: 'ap-titre' }, moi.pseudo + ', tu es dans la séance.'), el('p', {}, texte));
   function majPoints() { $('points').textContent = total + ' pts'; }
   const trouverQuestion = (cours, qid) => cours.interactifs.find(q => q.id === qid) || null;
   const qcu = q => q.type === 'question';
@@ -212,11 +217,11 @@
     const s = el('section', { class: 'd-question' + (qcu(q) ? '' : ' d-activite d-' + q.type) });
     if (qcu(q)) {
       s.appendChild(Q.fragmentCours(Q.rendreEnonce(q, cours.total)));
-      s.append(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' }));
+      s.append(el('p', { class: 'chrono' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' })); // le temps est dans la barre ; ce paragraphe vide garde l'espacement d'avant
       s.appendChild(Q.fragmentCours(Q.rendreOptions(q, { boutons: true })));
     } else {
       s.appendChild(Q.fragmentCours(Q.rendreEnonceActivite(q, cours.total)));
-      s.append(el('p', { class: 'chrono', id: 'chrono', 'aria-live': 'off' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' }));
+      s.append(el('p', { class: 'chrono' }), el('p', { class: 'pause-info', id: 'pauseInfo', role: 'status' })); // le temps est dans la barre ; ce paragraphe vide garde l'espacement d'avant
       question.ui = Q.activiteUI(q, { reponse: avant, libelle: avant != null ? 'Changer ma réponse' : 'Valider', onValider: choisir });
       s.appendChild(question.ui.noeud);
     }
@@ -241,11 +246,15 @@
     if (m.duree > 0 && !question.ferme && !chrono) chrono = setInterval(majChrono, 500);
   }
   const ecouleIci = () => !question ? 0 : (question.base || 0) + (question.depuis ? Date.now() - question.depuis : 0);
+  /* Le chrono est dans la barre du haut (maquette validée, T133b), qui reste en haut de l'écran pendant qu'on fait défiler
+     la question ; il n'est affiché que pendant une question minutée. */
   function majChrono() {
-    const z = $('chrono'); if (!z || !question || !(question.duree > 0)) return;
+    const z = $('chrono'); if (!z) return;
+    if (!question || phase !== 'question' || !(question.duree > 0)) { z.hidden = true; z.textContent = ''; z.classList.remove('en-pause'); return; }
     const s = Math.max(0, Math.ceil((question.duree * 1000 - ecouleIci()) / 1000));
-    // la pause se lit sans la couleur : le symbole, le mot et une phrase
-    z.textContent = (question.pause ? '‖ En pause · ' : '⏱ ') + s + ' s';
+    // la pause se lit sans la couleur : le symbole, le mot, un cadre pointillé et une phrase
+    z.hidden = false;
+    z.textContent = (question.pause ? '‖ En pause · ' : '') + s + ' s';
     z.classList.toggle('en-pause', !!question.pause);
     const p = $('pauseInfo');
     if (p) p.textContent = question.pause && !question.ferme ? (question.choix == null ? 'Le temps est arrêté : tu peux lire et répondre, sans gain ni perte de rapidité.' : 'Le temps est arrêté : tu peux encore changer d\'avis.') : '';
@@ -583,25 +592,27 @@
 
   function afficherFin(cours, m) {
     phase = 'fin'; question = null; clearInterval(renvoi); clearInterval(chrono); chrono = null;
-    const h = historique(), s = el('section', { class: 'attente' }, el('p', { class: 'grand' }, 'Fin de la séance'));
+    const h = historique(), s = el('section', { class: 'ap qz-fin', 'aria-labelledby': 'titreFin' },
+      el('h1', { class: 'ap-titre', id: 'titreFin' }, 'Fin de la séance'), el('p', { class: 'ap-petit' }, cours.titre));
     if (h.ordre.length) {
       total = h.total; majPoints();
       const b = bilanDe(h);
-      s.append(el('p', { class: 'gains' }, total + ' points'),
+      const carte = el('div', { class: 'ap-carte qz-bilan' }, el('p', { class: 'ap-signal' }, 'Ta séance'), el('p', { class: 'gains' }, el('span', { class: 'ap-gros-chiffre' }, String(total)), ' points'),
         el('p', {}, el('strong', {}, b.justes + ' sur ' + cours.interactifs.filter(q => q.type !== 'nuage').length), ' bonnes réponses' + (seriesVisibles ? ' · meilleure série : ' + b.meilleure : '') + ' · rebonds : ' + b.rebonds));
-      const sv = suite(b.suite); if (sv) s.appendChild(sv);
+      const sv = suite(b.suite); if (sv) carte.appendChild(sv);
       // la place n'est connue que sur le podium affiché à toute la classe ; aucune autre place n'est envoyée
       const pl = m.podium ? m.podium.find(p => p.pseudo === moi.pseudo) : null;
-      if (pl) s.appendChild(el('p', { class: 'rebonds' }, 'Bravo, tu es sur le podium : ' + pl.place + (pl.place === 1 ? 're' : 'e') + ' place.'));
+      if (pl) carte.appendChild(el('p', { class: 'rebonds' }, 'Bravo, tu es sur le podium : ' + pl.place + (pl.place === 1 ? 're' : 'e') + ' place.'));
       const arevoir = h.ordre.filter(q => !h.res[q].juste).map(q => (cours.questions.find(x => x.id === q) || {}).numero).filter(Number.isInteger);
       const autres = h.ordre.filter(q => !h.res[q].juste).map(q => cours.interactifs.find(x => x.id === q)).filter(q => q && !qcu(q));
-      if (autres.length) s.appendChild(el('p', {}, 'À revoir aussi : ' + autres.map(q => Q.activites.brut(q.nom)).join(' ; ') + '.'));
-      s.appendChild(arevoir.length ? el('p', {}, 'À revoir : question' + (arevoir.length > 1 ? 's' : '') + ' ' + arevoir.join(', ') + '.') : el('p', {}, 'Tout juste : tu peux aider un·e camarade.'));
+      if (autres.length) carte.appendChild(el('p', {}, 'À revoir aussi : ' + autres.map(q => Q.activites.brut(q.nom)).join(' ; ') + '.'));
+      carte.appendChild(arevoir.length ? el('p', {}, 'À revoir : question' + (arevoir.length > 1 ? 's' : '') + ' ' + arevoir.join(', ') + '.') : el('p', {}, 'Tout juste : tu peux aider un·e camarade.'));
+      s.appendChild(carte);
     } else s.appendChild(el('p', {}, 'Merci d\'avoir suivi le cours.'));
     // rejouer le quiz seul·e, sans l'enseignant·e : questions et réponses mélangées, rien n'est envoyé
-    s.appendChild(el('p', { class: 'fin-liens' }, el('a', { class: 'bouton fort', href: 'revision.html?cours=' + encodeURIComponent(cours.id) + '&rejouer' }, 'Rejouer le quiz seul·e'),
-      ' ', el('a', { class: 'bouton', href: 'revision.html?cours=' + encodeURIComponent(cours.id) }, 'Revoir le cours')));
-    s.appendChild(el('p', { class: 'aide' }, 'Rejouer : les questions dans un nouvel ordre, les réponses mélangées, corrigées tout de suite. Rien n\'est envoyé.'));
+    s.appendChild(el('p', { class: 'fin-liens' }, el('a', { class: 'ap-bt ap-bt-principal ap-bt-large', href: 'revision.html?cours=' + encodeURIComponent(cours.id) + '&rejouer' }, 'Rejouer le quiz seul·e'),
+      el('a', { class: 'ap-bt ap-bt-large', href: 'revision.html?cours=' + encodeURIComponent(cours.id) }, 'Revoir le cours')));
+    s.appendChild(el('p', { class: 'ap-petit' }, 'Rejouer : les questions dans un nouvel ordre, les réponses mélangées, corrigées tout de suite. Rien n\'est envoyé.'));
     ecran(s);
     // la séance est finie : le code, le pseudo, l'identifiant et l'historique gardés sur l'appareil sont effacés
     Q.stock.oublier('eleve'); Q.stock.oublier('hist:' + moi.id);

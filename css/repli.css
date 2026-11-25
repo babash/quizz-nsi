@@ -1,0 +1,88 @@
+/* QuizzNSI : le repli, si le site ne répond pas (MIT, Babash - NSI Tani Malandi).
+   Chargé par js/socle.js seulement quand assets/signal-commun.css ou assets/applis.css du site n'a pas pu se charger
+   (site injoignable, page ouverte hors ligne, fichier déplacé). Ce n'est pas une copie du socle : la palette de base
+   (mêmes valeurs que le site, contrastes vérifiés là-bas), les polices de l'appareil et la mise en place minimale des
+   boîtes du socle, pour que chaque page reste lisible et utilisable. L'écran de question n'en dépend pas
+   (css/quizz.css). Aucun décor : pas de néon, pas de plateau. */
+:root {
+  --td-fond: #FFFFFF; --td-panneau: #FFFFFF; --td-panneau-2: #F5F4F7; --td-encre: #121016; --td-encre-douce: #45414D;
+  --td-trait: #8C8796; --td-trait-fort: #121016; --td-accent: #00566E; --td-principal-fond: #121016; --td-principal-encre: #FFFFFF;
+  --td-focus: #C2006A; --td-juste: #14532D; --td-erreur: #A1001C; --td-info-fond: #F1F7F9; --td-encore: #713F00; --td-encore-fond: #FFF6E5;
+  --td-neon-1: #00D8F5; --td-neon-2: #FF2E97;
+  --td-texte: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --td-titres: Impact, "Arial Narrow", system-ui, sans-serif;
+  --td-signal: ui-monospace, Menlo, Consolas, monospace;
+  --td-mono: ui-monospace, Menlo, Consolas, monospace;
+  --ap-touche: var(--td-trait); --ap-touche-2: var(--td-trait);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --td-fond: #0E0C14; --td-panneau: #14111C; --td-panneau-2: #1C1826; --td-encre: #ECE8F5; --td-encre-douce: #C9C3D6;
+    --td-trait: #7A7390; --td-trait-fort: #ECE8F5; --td-accent: #5EE6FF; --td-principal-fond: #ECE8F5; --td-principal-encre: #0E0C14;
+    --td-focus: #FF7AC0; --td-juste: #86EFAC; --td-erreur: #FF9DAE; --td-info-fond: #131D2A; --td-encore: #FCD34D; --td-encore-fond: #2A1F06;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --td-fond: #0E0C14; --td-panneau: #14111C; --td-panneau-2: #1C1826; --td-encre: #ECE8F5; --td-encre-douce: #C9C3D6;
+  --td-trait: #7A7390; --td-trait-fort: #ECE8F5; --td-accent: #5EE6FF; --td-principal-fond: #ECE8F5; --td-principal-encre: #0E0C14;
+  --td-focus: #FF7AC0; --td-juste: #86EFAC; --td-erreur: #FF9DAE; --td-info-fond: #131D2A; --td-encore: #FCD34D; --td-encore-fond: #2A1F06;
+  color-scheme: dark;
+}
+.ap, .ap * { box-sizing: border-box; }
+.ap { margin: 0; background: var(--td-fond); color: var(--td-encre); font: 400 1.0625rem/1.5 var(--td-texte); }
+.ap :focus-visible { outline: 3px solid var(--td-focus); outline-offset: 2px; }
+.ap-touche { display: none; }
+.ap-barre { display: flex; align-items: center; gap: 10px; padding: 6px 16px; min-height: 48px; border-bottom: 1.4px solid var(--td-trait-fort); background: var(--td-fond); }
+.ap-logo { font-weight: 700; font-size: 1.15rem; color: var(--td-encre); text-decoration: none; white-space: nowrap; }
+.ap-logo b { color: var(--td-accent); }
+.ap-lieu { font-size: .9rem; color: var(--td-encre-douce); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-espace { flex: 1; }
+.ap-bandeau { display: flex; align-items: center; gap: 8px; padding: 4px 12px; border-bottom: 1px solid var(--td-trait); background: var(--td-panneau-2); }
+.ap-bt { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 16px; border: 1.4px solid var(--td-trait-fort); border-radius: 2px;
+  background: var(--td-fond); color: var(--td-encre); font: 700 1rem/1.2 var(--td-texte); text-decoration: none; cursor: pointer; }
+.ap-bt-principal { background: var(--td-principal-fond); color: var(--td-principal-encre); }
+.ap-bt-large { width: 100%; }
+.ap-bt-grand { min-height: 56px; font-size: 1.15rem; }
+.ap-bt-mini { min-height: 36px; padding: 4px 10px; font-size: .9rem; }
+.ap-bt[aria-pressed="true"] { text-decoration: underline; text-decoration-thickness: 2px; }
+.ap-bt:disabled { border-style: dashed; color: var(--td-encre-douce); cursor: not-allowed; }
+.ap-carte, .ap-carte-quiz { border: 1.4px solid var(--td-trait-fort); background: var(--td-panneau); padding: 12px 14px; }
+.ap-carte-pointille, .ap-revision { border-style: dashed; }
+.ap-label { display: block; font-weight: 700; margin-bottom: 4px; }
+.ap-champ { display: block; width: 100%; min-height: 44px; padding: 8px 10px; border: 1.4px solid var(--td-trait-fort); background: var(--td-fond); color: var(--td-encre); font: inherit; }
+.ap-champ-code { text-transform: uppercase; letter-spacing: .08em; }
+.ap-puce { display: inline-block; padding: 0 6px; border: 1px solid var(--td-trait-fort); font-size: .85rem; text-transform: uppercase; }
+.ap-message { border-left: 4px solid var(--td-trait-fort); background: var(--td-info-fond); padding: 8px 12px; }
+.ap-titre { font: 400 clamp(1.6rem, 5vw, 2.2rem)/1.1 var(--td-titres); }
+.ap-sous { font: 700 1.05rem/1.3 var(--td-texte); }
+.ap-petit { font-size: .9rem; color: var(--td-encre-douce); }
+.ap-signal { font: 700 .95rem/1.2 var(--td-signal); text-transform: uppercase; }
+.ap-qr { display: inline-block; line-height: 0; padding: 8px; background: #FFFFFF; border: 1.4px solid var(--td-trait-fort); }
+.ap-qr svg { display: block; width: 100%; height: auto; }
+.ap-entree { max-width: 26rem; margin: 0 auto; padding: 20px 16px 28px; display: flex; flex-direction: column; gap: 14px; }
+.ap-lobby { display: grid; grid-template-columns: minmax(16rem, 22rem) 1fr; gap: 20px 28px; padding: 16px; }
+.ap-seance { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.ap-code-seance { font: 700 clamp(2.4rem, 7vw, 4.4rem)/1 var(--td-signal); letter-spacing: .2em; }
+.ap-commandes { display: flex; flex-wrap: wrap; gap: 8px; }
+.ap-temps { height: 12px; border: 1.4px solid var(--td-trait-fort); background: var(--td-panneau-2); }
+.ap-temps span { display: block; height: 100%; background: var(--td-trait-fort); }
+.ap-minuteur { position: relative; width: 96px; height: 96px; }
+.ap-minuteur svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ap-minuteur circle { fill: none; stroke-width: 8; }
+.ap-minuteur .ap-fond-arc { stroke: var(--td-panneau-2); }
+.ap-minuteur .ap-arc { stroke: var(--td-trait-fort); }
+.ap-minuteur b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 2rem/1 var(--td-titres); }
+.ap-moi-q { display: inline-flex; align-items: center; gap: 8px; }
+.ap-chrono-tel { font: 700 1.05rem/1 var(--td-texte); }
+.ap-podium { display: flex; justify-content: center; align-items: flex-end; gap: 10px; padding: 0; }
+.ap-place { display: flex; flex-direction: column; align-items: center; width: min(31%, 220px); }
+.ap-place-1 { order: 2; } .ap-place-2 { order: 1; } .ap-place-3 { order: 3; }
+.ap-marche { width: 100%; border: 1.4px solid var(--td-trait-fort); border-bottom: 0; background: var(--td-panneau-2); text-align: center; }
+.ap-rang { font: 700 2.4rem/1 var(--td-titres); }
+.ap-pseudo { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-gros-chiffre { font: 700 2.6rem/1 var(--td-titres); }
+.ap-grille-quiz, .ap-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 760px) { .ap-lobby { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 380px) { .ap-lieu { display: none; } }

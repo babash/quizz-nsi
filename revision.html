@@ -1,37 +1,46 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-appli="quizz-nsi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QuizzNSI · réviser seul·e</title>
 <meta name="description" content="Le cours en diapositives et ses questions, corrigées dans le navigateur, sans compte ni envoi de données.">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0C14" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<!-- Le style vient du site Ressources NSI et SNT (une seule source : palette, polices, socle des applications).
+     S'il ne répond pas, js/socle.js charge css/repli.css à la place : la page reste lisible et utilisable. -->
+<script src="js/socle.js"></script>
+<link rel="stylesheet" href="https://babash.github.io/Babash-NSI-SNT/assets/signal-commun.css" onerror="QuizzNSIRepli()">
+<link rel="stylesheet" href="https://babash.github.io/Babash-NSI-SNT/assets/applis.css" onerror="QuizzNSIRepli()">
 <link rel="stylesheet" href="css/polices.css">
 <link rel="stylesheet" href="css/quizz.css">
-<script>try{var t=localStorage.getItem('quizz-nsi:theme');t=t&&JSON.parse(t);if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="css/habillage.css">
 </head>
-<body>
+<body class="qz-scene">
 <a class="evitement" href="#contenu">Aller au contenu</a>
-<header class="barre">
-  <a class="marque" href="index.html">Quizz<b>NSI</b></a>
-  <span class="titre-page" id="titreCours">Réviser seul·e</span>
-  <div class="actions">
-    <label class="bouton petit"><input type="checkbox" id="questionsSeules"> Questions seules</label>
-    <button class="bouton petit" type="button" data-bascule-theme>Affichage obscur</button>
+<header class="ap ap-barre qz-barre">
+  <a class="ap-logo" href="index.html">Quizz<b>NSI</b></a>
+  <span class="ap-lieu" id="titreCours">Réviser seul·e</span>
+  <span class="ap-espace"></span>
+  <div class="qz-outils">
+    <label class="ap-bt ap-bt-mini qz-case"><input type="checkbox" id="questionsSeules"> Questions seules</label>
+    <button class="ap-bt ap-bt-mini" type="button" data-bascule-theme>Affichage obscur</button>
   </div>
 </header>
+<div class="ap-touche" aria-hidden="true"></div>
 <main id="contenu" tabindex="-1">
   <p class="visuel-cache" id="annonce" aria-live="polite"></p>
   <div id="scene" tabindex="-1"></div>
-  <nav class="nav-diapos" aria-label="Diapositives">
-    <button class="bouton" type="button" id="prec">← Précédente</button>
-    <span class="compteur" id="compteur"></span>
-    <div class="progression" aria-hidden="true"><span id="barre"></span></div>
-    <button class="bouton fort" type="button" id="suiv">Suivante →</button>
-  </nav>
-  <p class="nav-diapos" id="noteRevision" style="font-size:14px;color:var(--ink-soft)">Au clavier : flèches gauche et droite pour changer de diapositive ; touches A, B, C, D pour répondre. Rien n'est envoyé : ta progression reste sur cet appareil, un jour après ton dernier passage.</p>
 </main>
-<footer class="pied">QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a> · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a> · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · conçu avec l'aide de l'IA</footer>
+<nav class="ap qz-commandes qz-commandes-revision" aria-label="Diapositives" id="commandes">
+  <button class="ap-bt" type="button" id="prec">← Précédente</button>
+  <span class="qz-compteur" id="compteur"></span>
+  <div class="ap-temps qz-progression" aria-hidden="true"><span id="barre"></span></div>
+  <button class="ap-bt ap-bt-principal" type="button" id="suiv">Suivante →</button>
+  <p class="qz-note" id="noteRevision">Au clavier : flèches gauche et droite pour changer de diapositive ; touches A, B, C, D pour répondre. Rien n'est envoyé : ta progression reste sur cet appareil, un jour après ton dernier passage.</p>
+</nav>
+<footer class="ap qz-pied">QuizzNSI · Babash&#xA0;-&#xA0;NSI Tani Malandi · contenus <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" rel="license noopener">CC BY-SA 4.0</a> · code <a href="https://opensource.org/license/mit" rel="license noopener">MIT</a> · <a href="https://github.com/babash/quizz-nsi" rel="noopener">Code source sur GitHub</a> · conçu avec l'aide de l'IA</footer>
 <script src="js/commun.js"></script>
 <script src="js/activites.js"></script>
 <script src="js/diapos.js"></script>

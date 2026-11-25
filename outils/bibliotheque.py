@@ -154,18 +154,19 @@ def carte(c, types, notions, niveaux):
     ty = types.get(c.get("gabarit"), {})
     puce = "Démonstration" if demo else ty.get("puce", "")
     meta = "un exemple de chaque type de question" if demo else f"{c['questions']} questions · {c['duree_minutes']}&#xA0;min"
-    classe = "qz-carte" + (" rev" if c.get("gabarit") == "revision" else "") + (" demo" if demo else "")
+    # le socle du site (assets/applis.css) : « Cours-quiz » en cadre plein, « Révision » en cadre pointillé (et le mot)
+    classe = "qz-carte ap-carte-quiz" + (" rev ap-revision" if c.get("gabarit") == "revision" else "") + (" demo" if demo else "")
     libelles = ", ".join(notions[x]["libelle"] for x in c["notions"])
     return (
         f'<li class="{classe}" data-cours="{i}" data-niveau="{a(niveaux[c["niveau"]]["id"])}" data-type="{a(c.get("gabarit", "demonstration"))}"'
         f' data-notions="{a(" ".join(c["notions"]))}" data-mots="{a(mots_de_recherche(c, notions))}">'
-        f'<span class="puce">{t(puce)}</span>'
+        f'<span class="ap-puce">{t(puce)}</span>'
         f'<h3 id="t-{i}">{t(c["titre"])}</h3>'
         f'<p class="qz-meta">{meta}</p>'
         f'<p class="qz-notions"><span class="visuel-cache">Notions travaillées : </span>{t(libelles)}</p>'
-        f'<div class="qz-actions">'
-        f'<a class="bt p" href="animer.html?cours={i}" aria-describedby="t-{i}">Animer en classe</a>'
-        f'<a class="bt" href="revision.html?cours={i}" aria-describedby="t-{i}">Réviser seul·e</a></div>'
+        f'<div class="qz-actions ap-actions">'
+        f'<a class="ap-bt ap-bt-principal" href="animer.html?cours={i}" aria-describedby="t-{i}">Animer en classe</a>'
+        f'<a class="ap-bt" href="revision.html?cours={i}" aria-describedby="t-{i}">Réviser seul·e</a></div>'
         f'<p class="qz-papier">Sur papier : <a href="imprimer.html?cours={i}" aria-describedby="t-{i}">les questions</a>'
         f' · <a href="imprimer.html?cours={i}&amp;corrige" aria-describedby="t-{i}">le corrigé</a></p>'
         f"</li>"
@@ -216,8 +217,8 @@ def bloc(cat):
         '<div class="qz-corps">',
         '<aside class="qz-filtres" id="filtres" aria-label="Chercher et filtrer" hidden>',
         '<form id="form-filtres" role="search" aria-label="Chercher un cours-quiz">',
-        '<label class="lab" for="recherche">Chercher</label>',
-        '<input id="recherche" name="q" type="search" class="champ" placeholder="pile, boucle, SQL…" autocomplete="off" spellcheck="false" aria-describedby="aide-recherche">',
+        '<label class="ap-label" for="recherche">Chercher</label>',
+        '<input id="recherche" name="q" type="search" class="ap-champ" placeholder="pile, boucle, SQL…" autocomplete="off" spellcheck="false" aria-describedby="aide-recherche">',
         '<p class="qz-aide" id="aide-recherche">Dans les titres, les mots-clés et les notions ; les accents ne comptent pas.</p>',
         "</form>",
         '<details class="qz-plus" id="plus-filtres"><summary>Filtres <span class="nb" id="nb-filtres"></span></summary>',
@@ -226,7 +227,7 @@ def bloc(cat):
         "</aside>",
         '<div class="qz-res" id="bibliotheque">',
         rendre(cat),
-        '<div class="qz-aucun carte pointille" id="aucun" hidden tabindex="-1"></div>',
+        '<div class="qz-aucun ap-carte ap-carte-pointille" id="aucun" hidden tabindex="-1"></div>',
         "</div>",
         "</div>",
         '<script type="application/json" id="vocabulaire">' + vocabulaire(cat) + "</script>",
