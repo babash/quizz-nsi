@@ -338,7 +338,9 @@ class TestVerifier(unittest.TestCase):
 class TestCatalogue(unittest.TestCase):
     """Le contrôle du catalogue de l'accueil (verifier_cours.py --tous) et de sa bibliothèque (outils/bibliotheque.py)."""
     def entree(self, i, n=12, **autres):
-        e = {"id": i, "titre": i, "niveau": "Terminale NSI", "theme": "nsi-tle-2019.structures-de-donnees",
+        chemin = os.path.join(RACINE, "cours", i + ".json")
+        titre = json.load(open(chemin, encoding="utf-8"))["titre"] if os.path.isfile(chemin) else i
+        e = {"id": i, "titre": titre, "niveau": "Terminale NSI", "theme": "nsi-tle-2019.structures-de-donnees",
              "gabarit": "introduction", "questions": n, "duree_minutes": 15, "notions": ["donnees.pile", "donnees.file"],
              "mots_cles": ["pile", "file"]}
         e.update(autres)
@@ -384,6 +386,11 @@ class TestCatalogue(unittest.TestCase):
         code, sortie = self.essai(["piles-files"], n=20)
         self.assertEqual(code, 1)
         self.assertIn("« questions » vaut 20, le cours dit 12", sortie)
+
+    def test_titre_different_du_cours(self):
+        code, sortie = self.essai([], entrees=[self.entree("piles-files", titre="Piles, files et autres")])
+        self.assertEqual(code, 1)
+        self.assertIn("« titre » vaut 'Piles, files et autres', le cours dit 'Piles et files'", sortie)
 
     def test_doublon(self):
         self.assertEqual(self.essai(["piles-files", "piles-files"])[0], 1)
