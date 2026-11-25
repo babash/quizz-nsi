@@ -1,5 +1,6 @@
-/* QuizzNSI : feuille de style (MIT, Babash - NSI Tani Malandi).
-   Style du site Ressources NSI et SNT (« réseau la nuit »), clair ou obscur. Tout est local. */
+/* QuizzNSI : l'écran de question, les diapositives et leur correction (MIT, Babash - NSI Tani Malandi).
+   Le style d'avant l'habillage (« réseau la nuit »), clair ou obscur, gardé tel quel par décision de l'enseignant (25/11) :
+   « plus lisible, notamment le code ». Le reste des pages prend le socle du site (css/habillage.css). */
 
 :root {
   --bg: #EDF1F7; --panel: #FFFFFF; --panel-2: #F5F7FB; --ink: #0D1530; --ink-soft: #4A5772; --line: #CDD6E6;
@@ -46,14 +47,6 @@ code { font-family: var(--mono); font-size: .92em; background: var(--code-bg); b
 .evitement { position: absolute; left: 8px; top: -60px; z-index: 50; background: var(--bouton); color: var(--bouton-ink); padding: 8px 14px; border-radius: 8px; font-weight: 700; }
 .evitement:focus { top: 8px; }
 main:focus { outline: none; }
-
-/* ── Barre du haut et pied de page ─────────── */
-.barre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
-.marque { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink); text-decoration: none; letter-spacing: .02em; }
-.marque b { color: var(--accent); }
-.barre .titre-page { color: var(--ink-soft); font-size: 15px; }
-.barre .actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.pied { padding: 14px 16px; font-size: 14px; color: var(--ink-soft); text-align: center; border-top: 1px solid var(--line); background: var(--panel); }
 
 /* ── Boutons ──────────────────────────────── */
 .bouton { font: inherit; font-weight: 700; cursor: pointer; border: 2px solid var(--bouton); background: var(--panel); color: var(--ink); border-radius: 10px; padding: 9px 16px; min-height: 44px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
@@ -177,20 +170,6 @@ button.option:disabled { cursor: default; }
 .feedbacks p { margin: 0; }
 .trace { margin: .6em 0; overflow-x: auto; } .trace caption { text-align: left; font-weight: 700; padding: 4px 0; }
 
-/* ── Navigation des diapositives ──────────── */
-.nav-diapos { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; max-width: 1200px; margin: 0 auto; width: 100%; flex-wrap: wrap; }
-.progression { flex: 1; min-width: 120px; height: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
-.progression span { display: block; height: 100%; background: var(--accent); width: 0; }
-.compteur { font-family: var(--display); color: var(--ink-soft); font-size: 15px; }
-
-/* ── Accueil ──────────────────────────────── */
-.accueil { max-width: 1000px; margin: 0 auto; padding: 20px 16px; }
-.accueil h1 { font-size: 2em; }
-.chemins { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 16px 0; }
-.chemin { display: flex; flex-direction: column; gap: 8px; }
-.chemin h2 { font-size: 1.15em; margin: 0; }
-.chemin p { color: var(--ink-soft); flex: 1; }
-.cours-liste { display: grid; gap: 10px; padding: 0; list-style: none; }
 
 /* ── Le style « pourquoi fait-on cela » : parties, questions à la classe, humour, apparitions ── */
 .cle { color: var(--accent); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
@@ -211,7 +190,6 @@ button.option:disabled { cursor: default; }
 .consigne { border: 2px dashed var(--accent); border-radius: 12px; padding: 8px 14px; margin: .6em 0; }
 .consigne .c-titre { font-family: var(--display); font-weight: 700; color: var(--accent); margin: 0 0 .2em; text-transform: uppercase; letter-spacing: .06em; font-size: .85em; }
 .code-cache pre.code { margin-top: .2em; }
-.nav-diapos .reste { font-size: 14px; color: var(--ink-soft); }
 
 @media (max-width: 760px) {
   .n-corps, .q-corps { grid-template-columns: minmax(0, 1fr); }
@@ -222,7 +200,6 @@ button.option:disabled { cursor: default; }
   .d-partie h2 { font-size: 2em; }
   .d-partie { min-height: 40vh; }
 }
-@media (prefers-reduced-motion: no-preference) { .progression span { transition: width .3s; } }
 
 /* ── Les autres types de questions : nuage de mots, relier, puzzle de code, ligne fautive ── */
 .r-num { display: inline-flex; align-items: center; justify-content: center; min-width: 1.7em; height: 1.7em; padding: 0 .3em; border-radius: 6px; border: 2px solid var(--accent); color: var(--accent); font-family: var(--display); font-weight: 700; flex: none; }
