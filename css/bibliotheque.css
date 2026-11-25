@@ -21,6 +21,7 @@ main { max-width: 90rem; margin: 0 auto; }
   .qz-corps { grid-template-columns: 17rem minmax(0, 1fr); gap: 28px; padding: 18px 24px 28px; }
   .qz-filtres { position: sticky; top: 12px; align-self: start; max-height: calc(100vh - 24px); overflow-y: auto; padding: 2px 4px 2px 2px; }
 }
+.qz-filtres .ap-champ { font-family: var(--td-texte); }
 .qz-aide { margin: 4px 0 0; font-size: .85rem; color: var(--td-encre-douce); }
 .qz-plus { margin-top: 12px; }
 .qz-plus > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; gap: 8px; list-style: none; border: 1.4px solid var(--td-trait-fort); padding: 6px 10px; }
@@ -55,10 +56,11 @@ main { max-width: 90rem; margin: 0 auto; }
 
 /* la bibliothèque */
 .qz-compteur { margin: 0 0 4px; font-weight: 700; }
-.qz-titre-niveau { font: 700 clamp(1.6rem, 4.5vw, 2.2rem)/1.1 var(--td-titres); margin: 18px 0 0; }
-.qz-titre-niveau.petit { font-size: 1.3rem; }
+.qz-titre-niveau { font: 400 clamp(1.8rem, 4.5vw, 2.4rem)/1.1 var(--td-titres); }
+.qz-niveau .qz-titre-niveau { margin: 26px 0 0; }
+.qz-titre-niveau.petit { font: 700 1.2rem/1.3 var(--td-texte); }
 .qz-niveau:first-of-type .qz-titre-niveau { margin-top: 6px; }
-.qz-niveau .qz-grille { margin-top: 10px; }
+.qz-niveau .qz-grille { margin-top: 12px; }
 .qz-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 10px; list-style: none; margin: 0; padding: 0; }
 
 /* une carte par quiz : « Cours-quiz » (cadre plein) ou « Révision » (cadre pointillé) */

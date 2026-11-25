@@ -335,14 +335,20 @@
     if (t === 'light' || t === 'dark') r.dataset.theme = t;
     const sombre = () => r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
     const barre = () => document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', r.dataset.theme ? FOND[r.dataset.theme] : /dark/.test(m.getAttribute('media') || '') ? FOND.dark : FOND.light));
+    // le libellé dit ce que fait le bouton (pas d'état « enfoncé » : ce n'est pas un filtre) ; sur un petit écran,
+    // « Obscur » ou « Clair » seulement (css/habillage.css), le nom complet restant celui du bouton
+    const libelle = b => {
+      const mot = sombre() ? 'clair' : 'obscur';
+      b.setAttribute('aria-label', 'Affichage ' + mot);
+      b.replaceChildren(Q.el('span', { class: 'qz-long' }, 'Affichage ' + mot), Q.el('span', { class: 'qz-court', 'aria-hidden': 'true' }, mot[0].toUpperCase() + mot.slice(1)));
+    };
     barre();
     document.querySelectorAll('[data-bascule-theme]').forEach(b => {
-      // le libellé dit ce que fait le bouton (pas d'état « enfoncé » : ce n'est pas un filtre)
-      b.textContent = sombre() ? 'Affichage clair' : 'Affichage obscur';
+      libelle(b);
       b.addEventListener('click', () => {
         r.dataset.theme = sombre() ? 'light' : 'dark';
         try { localStorage.setItem('theme', r.dataset.theme); } catch (e) { /* stockage bloqué : le choix vaut pour cette page */ }
-        document.querySelectorAll('[data-bascule-theme]').forEach(x => { x.textContent = sombre() ? 'Affichage clair' : 'Affichage obscur'; });
+        document.querySelectorAll('[data-bascule-theme]').forEach(libelle);
         barre();
       });
     });

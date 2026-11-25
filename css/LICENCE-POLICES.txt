@@ -1,10 +1,10 @@
-QuizzNSI : les polices de css/polices.css (reprises de Court-circuit)
+QuizzNSI : la police intégrée dans css/polices.css (reprise de Court-circuit)
 
-Les polices intégrées dans css/polices.css (fichiers woff2 de fontsource 5.3.0, écrits en base64)
-sont sous SIL Open Font License 1.1 :
+Seule Chakra Petch (fichier woff2 de fontsource 5.3.0, sous-ensemble latin, écrit en base64) est intégrée ici.
+Les autres polices (Atkinson Hyperlegible, JetBrains Mono, Anton, VT323) viennent du site Ressources NSI et SNT
+(assets/fonts/ de babash/Babash-NSI-SNT, avec leurs licences) : QuizzNSI ne les copie pas.
+Sous SIL Open Font License 1.1 :
 - Chakra Petch : Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git)
-- JetBrains Mono : Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
-- Atkinson Hyperlegible : Copyright 2020 Braille Institute of America, Inc.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

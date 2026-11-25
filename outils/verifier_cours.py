@@ -803,12 +803,12 @@ def main(args):
     total += erreurs_catalogue
     for chemin in fichiers:
         r, info = verifier_cours(chemin, executer_code)
-        # le catalogue de l'accueil annonce le bon nombre de questions, le bon gabarit et la bonne durée
+        # le catalogue de l'accueil annonce le bon nombre de questions, le bon gabarit, la bonne durée et le même titre
         if cat and info and info.get("cours"):
             entree = next((x for x in cat.get("cours", []) if x.get("id") == info["cours"].get("id")), None)
             if entree:
                 n = len(info["questions"]) + (len([d for d in info["autres"] if d.get("type") != "nuage"]) if info["gabarit"] == "introduction" else 0)
-                for champ, attendu in (("questions", n), ("gabarit", info["gabarit"]), ("duree_minutes", info["cours"].get("duree_minutes")), ("niveau", info["cours"].get("niveau"))):
+                for champ, attendu in (("questions", n), ("gabarit", info["gabarit"]), ("duree_minutes", info["cours"].get("duree_minutes")), ("niveau", info["cours"].get("niveau")), ("titre", info["cours"].get("titre"))):
                     if champ in entree and entree[champ] != attendu:
                         r.erreur("cours/catalogue.json", f"« {champ} » vaut {entree[champ]!r}, le cours dit {attendu!r}")
         print(f"== {chemin}")

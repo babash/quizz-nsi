@@ -33,7 +33,13 @@ jobs:
         run: |
           python3 -m pip install --quiet playwright==1.63.0  # version fixée : une nouvelle version ne fait pas rougir le parcours sans raison
           python3 -m playwright install --with-deps chromium
-      - name: Le parcours dans le navigateur (séance, injection, stockage, mode autonome, impression, rendus)
+      - name: Le style du site (assets/ de Ressources NSI et SNT, la seule source du style de QuizzNSI)
+        run: |
+          git clone --quiet --depth 1 --filter=blob:none --sparse https://github.com/babash/Babash-NSI-SNT.git "$RUNNER_TEMP/site"
+          git -C "$RUNNER_TEMP/site" sparse-checkout set assets
+      - name: Le parcours dans le navigateur (séance, injection, stockage, mode autonome, impression, rendus, habillage)
+        env:
+          QUIZZ_SITE: ${{ runner.temp }}/site
         run: python3 -I tests/test_parcours.py tests/captures
       - name: Les captures, en cas d'échec
         if: failure()

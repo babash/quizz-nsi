@@ -30,7 +30,12 @@ Lancement, depuis la racine de QuizzNSI :
    rejouer le quiz : toutes les questions dans un autre ordre, les réponses mélangées, rien d'envoyé.
 3. La version imprimable : le sujet et le corrigé en PDF A4, sans débordement.
 4. Toutes les pages à 320, 768 et 1440 px, en clair et en obscur : aucun défilement horizontal.
-Aucune erreur JavaScript n'est tolérée ; toute requête vers un autre site est bloquée et signalée.
+5. L'habillage (T143) : le style vient du site Ressources NSI et SNT (assets/signal-commun.css, assets/applis.css, polices) ;
+   l'écran de question reste hors du socle (.ap) ; le chrono de la maquette (page projetée et barre du téléphone) ;
+   la clé « theme » partagée avec le site ; sans le site (requêtes coupées), chaque page reste lisible et utilisable.
+Aucune erreur JavaScript n'est tolérée ; toute requête vers un autre site est bloquée et signalée, sauf celles du site
+Ressources NSI et SNT (le style) : servies depuis une copie locale du site si QUIZZ_SITE donne son dossier (comme dans le
+workflow), sinon laissées passer vers https://babash.github.io/Babash-NSI-SNT/assets/.
 """
 import functools
 import http.server
@@ -55,6 +60,9 @@ with open(os.path.join(RACINE, "tests", "faux-temps-reel.js"), encoding="utf-8")
     FAUX = f.read()
 
 erreurs, externes = [], []
+SITE = "https://babash.github.io/Babash-NSI-SNT/"
+SITE_LOCAL = os.environ.get("QUIZZ_SITE")  # le dossier d'une copie du site (assets/), pour tester sans réseau
+TYPES = {".css": "text/css", ".js": "text/javascript", ".woff2": "font/woff2", ".svg": "image/svg+xml", ".json": "application/json", ".png": "image/png"}
 
 
 def serveur():
@@ -72,13 +80,26 @@ def surveiller(page, nom):
     page.on("console", lambda m: erreurs.append(f"{nom} (console) : {m.text}") if m.type == "error" else None)
 
 
-def contexte(navigateur, base, **kw):
+def contexte(navigateur, base, sans_site=False, **kw):
     ctx = navigateur.new_context(**kw)
 
     def route(r):
         url = r.request.url
         if url.endswith("/vendor/temps-reel.js"):
             return r.fulfill(status=200, content_type="text/javascript", body=FAUX)
+        if url.startswith(SITE + "assets/"):
+            if sans_site:
+                return r.abort()
+            if SITE_LOCAL:
+                chemin = os.path.join(SITE_LOCAL, url[len(SITE):].split("?")[0].split("#")[0])
+                if not os.path.isfile(chemin):
+                    erreurs.append(f"fichier du site absent : {url}")
+                    return r.fulfill(status=404, body="")
+                with open(chemin, "rb") as f:
+                    corps = f.read()
+                return r.fulfill(status=200, body=corps, content_type=TYPES.get(os.path.splitext(chemin)[1], "application/octet-stream"),
+                                 headers={"Access-Control-Allow-Origin": "*"})
+            return r.continue_()
         if not url.startswith(base) and not url.startswith("data:") and not url.startswith("blob:"):
             externes.append(url)
             return r.abort()
@@ -415,7 +436,7 @@ def seance(nav, base):
     attendre_texte(eleve_1, "#ecran", "1re place")
     eleve_1.screenshot(path=os.path.join(SORTIE, "eleve-fin-320.png"), full_page=True)
     # rejouer : le lien sur le téléphone, le QR code « rejouer » sur la page projetée (dans le podium et en grand)
-    assert eleve_1.get_attribute('#ecran a.bouton.fort', "href") == "revision.html?cours=piles-files&rejouer"
+    assert eleve_1.get_attribute('#ecran a.ap-bt-principal', "href") == "revision.html?cours=piles-files&rejouer"
     assert prof.is_visible("#rejouerBloc") and prof.locator("#qrRejouer svg").count() == 1
     assert prof.inner_text("#lienRejouer").endswith("revision.html?cours=piles-files&rejouer")
     prof.click("#btnRejouerGrand")
@@ -553,6 +574,10 @@ def minuterie_et_flammes(nav, base):
     aller_question(0)
     a.wait_for_selector("#chrono")
     assert chrono(a) <= 20
+    # le chrono est dans la barre du haut (maquette T133b), qui reste visible quand on fait défiler la question
+    a.evaluate("window.scrollTo(0, document.body.scrollHeight)"); a.wait_for_timeout(100)
+    assert a.evaluate("() => { const r = document.getElementById('chrono').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.height > 0; }"), "le chrono doit rester à l'écran"
+    a.evaluate("window.scrollTo(0, 0)")
     assert prof.is_enabled("#plus15") and prof.is_enabled("#pause")
     prof.click("#plus15")
     a.wait_for_function("() => /(3[0-5]) s/.test(document.querySelector('#chrono').innerText)")
@@ -1240,6 +1265,7 @@ def bibliotheque(nav, base):
         assert p.locator(".puce-filtre").count() == 3, "une puce par filtre actif"
         p.click(".puce-filtre[aria-label='Retirer le filtre Notions travaillées : Récursivité']")
         assert p.locator(visibles).count() == piles
+        assert p.evaluate("document.activeElement.id") == "contenu", "comme sur le site : le focus revient au début du contenu"
         p.click("#puces .lien-bouton")
         assert p.locator(visibles).count() == total and p.is_hidden("#puces")
         # la recherche, sans accents, dans les titres, les mots-clés et les notions (alternatifs du site)
@@ -1256,7 +1282,7 @@ def bibliotheque(nav, base):
         assert p.is_visible("#aucun"), "état « aucun résultat »"
         assert "Aucun cours-quiz" in p.inner_text("#compteur")
         assert "Retirer les filtres" in p.inner_text("#aucun")
-        p.click("#aucun button.p")
+        p.click("#aucun button.ap-bt-principal")
         assert p.locator(visibles).count() >= 3 and p.is_hidden("#aucun")
         p.fill("#recherche", "zzzz")
         p.wait_for_timeout(600)
@@ -1277,7 +1303,7 @@ def bibliotheque(nav, base):
     p.keyboard.type("dichotomique")
     for _ in range(80):
         p.keyboard.press("Tab")
-        if p.evaluate("() => document.activeElement.matches('.qz-carte .bt.p')"):
+        if p.evaluate("() => document.activeElement.matches('.qz-carte .ap-bt-principal')"):
             break
     assert p.evaluate("() => document.activeElement.getAttribute('href')") == "animer.html?cours=dichotomie"
     p.keyboard.press("Enter")
@@ -1286,7 +1312,7 @@ def bibliotheque(nav, base):
     for i in ("variables", "chaines", "revision-conditions-boucles", "sql", "revision-poo-piles-files"):
         for action, adresse in (("Animer en classe", f"animer.html?cours={i}"), ("Réviser seul·e", f"revision.html?cours={i}")):
             p.goto(base + "index.html")
-            lien = p.locator(f".qz-carte[data-cours={i}] a.bt", has_text=action)
+            lien = p.locator(f".qz-carte[data-cours={i}] a.ap-bt", has_text=action)
             assert lien.get_attribute("href") == adresse, f"{i} : {action}"
             lien.click()
             p.wait_for_url("**/" + adresse)
@@ -1364,6 +1390,79 @@ def retours(nav, base):
     ctx.close()
 
 
+def habillage(nav, base):
+    """T143 : le socle du site chargé par chaque page ; l'écran de question hors du socle ; le chrono de la maquette ;
+    la clé « theme » du site ; la page sans le site (repli)."""
+    pages = ["index.html", "animer.html?cours=piles-files", "rejoindre.html", "revision.html?cours=piles-files", "imprimer.html?cours=piles-files"]
+    ctx = contexte(nav, base, viewport={"width": 1440, "height": 900})
+    for adresse in pages:
+        p = ctx.new_page(); surveiller(p, "habillage " + adresse)
+        p.goto(base + adresse); p.wait_for_timeout(300)
+        etat = p.evaluate("""() => ({ appli: document.documentElement.dataset.appli, repli: !!document.getElementById('repli'),
+          feuilles: [...document.styleSheets].map(f => f.href || '').filter(h => h.includes('Babash-NSI-SNT')),
+          socle: getComputedStyle(document.querySelector('.ap-barre')).borderBottomStyle, polices: [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family) })""")
+        assert etat["appli"] == "quizz-nsi", etat
+        assert not etat["repli"], f"{adresse} : le repli ne doit pas se charger quand le site répond"
+        assert [h.rsplit("/", 1)[1] for h in etat["feuilles"]] == ["signal-commun.css", "applis.css"], etat["feuilles"]
+        assert etat["socle"] == "solid", etat
+        assert any("Atkinson" in f for f in etat["polices"]), etat["polices"]
+        assert not p.query_selector("link[href*='socle-provisoire']"), adresse
+        p.close()
+    # l'écran de question est hors du socle (.ap) : le socle ne le touche pas, il reste celui d'avant (couleur et forme)
+    prof = ctx.new_page(); surveiller(prof, "habillage prof")
+    prof.goto(base + "animer.html?cours=piles-files"); attendre_texte(prof, "#etatConnexion", "Séance ouverte")
+    prof.select_option("#duree", "30"); prof.click("#commencer")
+    idx = [i for i, d in enumerate(COURS["diapositives"]) if d["type"] == "question"]
+    suivante(prof, "#action", "#compteur", idx[0])
+    assert prof.evaluate("() => !document.querySelector('.ap .option, .ap pre.code, .ap .q-tete, .ap .d-question')"), "l'écran de question ne doit pas être dans une boîte .ap"
+    assert prof.evaluate("() => document.body.classList.contains('qz-scene') && getComputedStyle(document.body).backgroundColor") == "rgb(237, 241, 247)", "le fond d'avant pendant le cours"
+    # le chrono de la maquette : l'anneau et le nombre, en haut à droite de la question minutée, retirés à la correction
+    prof.wait_for_selector("#chronoProjete")
+    n = int(prof.inner_text("#chronoProjete b")); assert 25 <= n <= 30, n
+    tete, chrono = prof.evaluate("() => [document.querySelector('.q-tete').getBoundingClientRect().right, document.getElementById('chronoProjete').getBoundingClientRect().left]")
+    assert tete <= chrono, "le chrono ne doit rien recouvrir"
+    prof.keyboard.press("s"); prof.wait_for_selector("#chronoProjete.en-pause")
+    assert prof.is_visible(".qz-chrono-pause"), "le mot « pause » sous le chrono"
+    prof.keyboard.press("s"); prof.click("#action"); prof.wait_for_timeout(300)
+    assert not prof.query_selector("#chronoProjete"), "plus de chrono après la correction"
+    prof.close()
+    # la clé « theme » du site : un choix fait sur le site vaut ici ; l'ancienne clé de QuizzNSI est reprise puis effacée
+    p = ctx.new_page(); surveiller(p, "habillage thème")
+    p.goto(base + "index.html")
+    p.evaluate("() => { localStorage.clear(); localStorage.setItem('theme', 'dark'); }"); p.reload()
+    assert p.evaluate("document.documentElement.dataset.theme") == "dark"
+    assert p.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(14, 12, 20)"
+    p.click("[data-bascule-theme]")
+    assert p.evaluate("localStorage.getItem('theme')") == "light" and p.evaluate("document.documentElement.dataset.theme") == "light"
+    p.evaluate("() => { localStorage.clear(); localStorage.setItem('quizz-nsi:theme', JSON.stringify('dark')); }"); p.goto(base + "rejoindre.html")
+    assert p.evaluate("[document.documentElement.dataset.theme, localStorage.getItem('theme'), localStorage.getItem('quizz-nsi:theme')]") == ["dark", "dark", None]
+    p.evaluate("() => localStorage.clear()")
+    p.close(); ctx.close()
+    # sans le site : le repli local, chaque page lisible et utilisable, aucune erreur de script
+    for largeur in (320, 1440):
+        for theme in ("light", "dark"):
+            ctx = contexte(nav, base, sans_site=True, color_scheme=theme, viewport={"width": largeur, "height": 800})
+            for adresse in pages:
+                p = ctx.new_page()
+                p.on("pageerror", lambda e, a=adresse: erreurs.append(f"sans le site {a} : {e}"))
+                p.goto(base + adresse); p.wait_for_timeout(400)
+                r = p.evaluate("""() => { const b = [...document.querySelectorAll('.ap-bt')].find(x => x.offsetParent), s = getComputedStyle(b), c = getComputedStyle(document.body);
+                  return { repli: !!document.getElementById('repli') && document.documentElement.classList.contains('sans-socle'), bord: s.borderTopStyle, h: b.getBoundingClientRect().height,
+                           fond: c.backgroundColor, encre: c.color, large: document.documentElement.scrollWidth - innerWidth }; }""")
+                assert r["repli"], f"sans le site, {adresse} doit charger css/repli.css"
+                assert r["bord"] == "solid" and r["h"] >= 36, f"sans le site, {adresse} : boutons sans style {r}"
+                assert r["large"] <= 0, f"sans le site, {adresse} à {largeur} px : défilement horizontal"
+                assert r["fond"] != r["encre"], r
+                if largeur == 320 and adresse.startswith("animer"):
+                    p.screenshot(path=os.path.join(SORTIE, f"sans-site-animer-320-{theme}.png"), full_page=True)
+                if largeur == 1440:
+                    p.screenshot(path=os.path.join(SORTIE, f"sans-site-{adresse.split('.')[0]}-1440-{theme}.png"), full_page=True)
+                p.close()
+            ctx.close()
+    print("  habillage : socle du site sur les 5 pages, écran de question hors du socle, chrono de la maquette (pause, retiré à la correction),"
+          " clé « theme » du site (et l'ancienne reprise), sans le site : repli lisible à 320 et 1440 px, clair et obscur")
+
+
 def main():
     s, base = serveur()
     with sync_playwright() as pw:
@@ -1383,6 +1482,7 @@ def main():
         autonome_autres(nav, base)
         impression(nav, base)
         rendus(nav, base)
+        habillage(nav, base)
         nav.close()
     s.shutdown()
     if externes:

@@ -6,7 +6,9 @@
 |---|---|
 | `index.html`, `animer.html`, `rejoindre.html`, `revision.html`, `imprimer.html` | l'accueil, la page projetée, la page élève, le mode autonome, la version à imprimer |
 | `js/accueil.js`, `css/bibliotheque.css` | l'accueil rangé en bibliothèque, affiné comme la bibliothèque du site (`assets/bibliotheque.js`) : cases Niveau, Type et Notions travaillées avec leur nombre, puces des filtres actifs, recherche sans accents (alternatifs et mots du code compris), compteur annoncé, état « aucun résultat », filtres dans l'adresse (`q`, `niv`, `type`, `notion`, comme sur le site) |
-| `css/socle-provisoire.css` | le socle du design des applications (piste B), chargé par l'accueil seulement, **à remplacer** par `assets/signal-commun.css` et `assets/applis.css` du site quand ils seront publiés |
+| le style (T143) | **une seule source, le site** : chaque page charge `assets/signal-commun.css` (palette clair et obscur, polices) puis `assets/applis.css` (le socle des applications, classes `ap-…`) depuis `https://babash.github.io/Babash-NSI-SNT/assets/`, avec `data-appli="quizz-nsi"` (le plateau de la Flottille sous la barre). `css/habillage.css` ne fait que la mise en place propre à QuizzNSI (barre, lobby, podium, commandes, téléphone), avec la palette du site |
+| `js/socle.js`, `css/repli.css` | avant l'affichage : l'affichage clair ou obscur (la clé `theme` du site, même stockage) ; si une feuille du site ne se charge pas, `css/repli.css` (une palette et des boutons sobres) la remplace, et la page reste lisible et utilisable |
+| `css/quizz.css`, `css/seance.css`, `css/polices.css` | **l'écran de question, inchangé** (décision du 25/11) : les diapositives, les questions et leur correction, hors de toute boîte `.ap` (le socle ne les touche pas), sur leur fond d'avant (`body.qz-scene`), avec les mêmes fichiers de police que le site déclarés comme avant (`QuizzNSI Texte`, `QuizzNSI Mono`) et Chakra Petch, intégrée. S'y ajoute seulement le chrono de la maquette validée : l'anneau en haut à droite de la question projetée, le temps dans la barre du téléphone |
 | `js/commun.js` | lecture d'un cours, mise en forme du texte, coloration du Python, schémas SVG, pseudo, stockage, thème |
 | `js/diapos.js` | le rendu des diapositives, des questions, des corrections et des apparitions progressives |
 | `js/seance.js` | la séance en direct (canaux temps réel, ou mode démo entre les onglets) |
@@ -38,11 +40,11 @@ node tests/test_moteur.js                                   # barème (rapidité
                                                             # envois d'une autre clé ignorés, choix retenu au téléphone, pseudo, échappement, schémas
 node tests/test_messages.js                                 # messages forgés : tous rejetés ; clé gardée du téléphone, enveloppe au nom d'un·e autre illisible
 python3 -I -m unittest discover -s tests -p "test_v*.py"    # le vérificateur
-python3 -I tests/test_parcours.py                           # Playwright : séance à 2 élèves, injection, minuterie et flammes, mode autonome,
-                                                            # impression, 320/768/1440 px, clair et obscur
+QUIZZ_SITE=../Babash-NSI-SNT python3 -I tests/test_parcours.py   # Playwright : séance à 2 élèves, injection, minuterie et flammes, mode autonome,
+                                                            # impression, 320/768/1440 px, clair et obscur, habillage et repli
 ```
 
-Le parcours utilise un faux client temps réel ([tests/faux-temps-reel.js](../tests/faux-temps-reel.js)) : il ne se connecte à aucune base.
+Le parcours utilise un faux client temps réel ([tests/faux-temps-reel.js](../tests/faux-temps-reel.js)) : il ne se connecte à aucune base. Le style vient du site : avec `QUIZZ_SITE=<dossier d'une copie du site>`, le parcours le lit dans cette copie (le workflow en prend une, réduite à `assets/`) ; sinon, il laisse passer les seules requêtes vers `https://babash.github.io/Babash-NSI-SNT/assets/`. Il vérifie aussi chaque page sans le site (requêtes coupées : le repli).
 
 Plus le contrôle des caractères invisibles :
 

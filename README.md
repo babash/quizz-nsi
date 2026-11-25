@@ -83,7 +83,7 @@ Deux gabarits de cours-quiz ([le format](cours/FORMAT.md#les-gabarits)) :
 
 Le cours modèle, **piles et files**, est une introduction : 8 écrans très courts et 12 questions. Il part du quotidien à Mayotte (la boîte de chips en tube pour la pile, la file au doukabé et le bouchon vers Mamoudzou pour la file, les véhicules qui attendent la barge), puis passe à l'informatique (le bouton « Annuler », l'imprimante de la salle info).
 
-**« Conditions, boucles, fonctions »** (Première), est une séance de révision : pas de cours, mais [4 blocs de 5 questions](https://babash.github.io/quizz-nsi/animer.html?cours=revision-conditions-boucles) (les conditions, la boucle `for`, la boucle `while`, les fonctions). À la fin de chaque bloc, chaque élève note son score sur sa feuille de route : le quiz sert de bilan avant un contrôle.
+**« Révision : conditions, boucles, fonctions »** (Première) est une séance de révision : pas de cours, mais [4 blocs de 5 questions](https://babash.github.io/quizz-nsi/animer.html?cours=revision-conditions-boucles) (les conditions, la boucle `for`, la boucle `while`, les fonctions). À la fin de chaque bloc, chaque élève note son score sur sa feuille de route : le quiz sert de bilan avant un contrôle.
 
 **De nouveaux types de questions**, en plus des questions à choix : le **nuage de mots** (chaque élève propose autant de mots qu'il ou elle veut ; quand l'enseignant·e montre le nuage, il s'affiche au tableau et sur les téléphones, où l'on vote pour les mots des camarades ; l'enseignant·e supprime un mot à tout moment ; non noté), **relier** (un terme et sa définition, un code et sa sortie), le **puzzle de code** (remettre les lignes dans l'ordre et à la bonne indentation) et **la ligne fautive** (toucher la ligne qui contient l'erreur). Un cours de démonstration en a un de chaque : [demo-types-de-questions](https://babash.github.io/quizz-nsi/animer.html?cours=demo-types-de-questions) (un cours de révision garde ses 20 questions à choix ; l'introduction piles et files compte une ligne fautive parmi ses 12 questions). Chacun marche au téléphone (320 px, au clavier et au lecteur d'écran), sur la page projetée, en révision et sur papier ; son code est exécuté par le vérificateur ([le format](cours/FORMAT.md#les-autres-types-de-questions)).
 
@@ -115,6 +115,8 @@ Chaque question a un objectif affiché, quatre options tirées d'erreurs fréque
 | Changer le temps | menu **Ensuite** | | Sans minuterie, 20 s, 30 s, 45 s, 1 min ou 1 min 30 : le temps s'applique aux questions suivantes ; la question déjà ouverte garde le sien. |
 
 « + 15 s » et « Pause » sont grisés sans minuterie et une fois la réponse montrée. « + 15 s » reste possible quand tout le monde a répondu : on peut laisser du temps pour changer d'avis. Quand tout le monde a répondu, la question reste ouverte (« Tout le monde a répondu » s'affiche) : **Montrer la réponse** la ferme quand tu veux. Tout se retrouve après un rechargement de la page projetée, pause comprise.
+
+**Le chrono** (celui de la maquette validée) : sur la page projetée, un anneau qui se vide et le nombre de secondes, en haut à droite de la question minutée (en pause : l'anneau en pointillé et le mot « pause ») ; sur le téléphone, le temps dans la barre du haut, qui reste à l'écran quand on fait défiler la question.
 
 **Ce que voient les élèves** : le temps restant, recalculé à chaque ajout ; en pause, « ‖ En pause · 23 s » dans un cadre pointillé et la phrase « Le temps est arrêté : tu peux lire et répondre » (lisible sans les couleurs). Un·e élève qui arrive ou revient pendant la question, ou pendant la pause, retrouve le même état. Après le zéro, « + 15 s » réaffiche la question sur le téléphone de celles et ceux qui n'ont pas répondu.
 
@@ -166,6 +168,10 @@ Les autres types de questions : **relier** et **puzzle de code** rapportent la b
 
 Chaque téléphone calcule ses propres points ; la page projetée fait seule foi pour le podium. La place d'un·e élève n'est connue que s'il ou elle est sur le podium affiché.
 
+## L'habillage
+
+QuizzNSI prend le style du site [Ressources NSI et SNT](https://babash.github.io/Babash-NSI-SNT/) (« piste B », choisie par l'enseignant le 24/11) : sa palette, ses polices et le socle commun des applications de jeu, chargés depuis le site (une seule source), clair ou obscur selon l'appareil ou le choix fait sur le site comme ici. La touche propre à QuizzNSI : le plateau de jeu de la Flottille, une frise de cases sous la barre. **L'écran de question ne change pas** (« plus lisible, notamment le code » : une couleur et une forme par réponse, la coloration du code, l'indentation marquée) ; seul s'y ajoute le chrono. Si le site ne répond pas, une feuille de repli garde chaque page lisible et utilisable. Les avatars viendront avec le compte commun : leurs places sont prévues, rien n'est encore branché.
+
 ## Pour aller plus loin
 
 | Document | Contenu |
@@ -190,6 +196,6 @@ Une question, une idée, un bug ? Les [issues GitHub](https://github.com/babash/
 - **Le code** (les fichiers `.html`, `.css`, `.js` et `.py`, hors bibliothèques et polices) est sous licence [MIT](LICENSE).
 - **Les documents** (les cours de `cours/`, ce README, `cours/FORMAT.md` et `docs/`) sont sous licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.fr).
 - **Les bibliothèques** de `vendor/` (le client temps réel de [Supabase](https://supabase.com), [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) de Kazuhiko Arase) : licence MIT, notices dans [vendor/LICENCES-BIBLIOTHEQUES.txt](vendor/LICENCES-BIBLIOTHEQUES.txt). « QR Code » est une marque déposée de DENSO WAVE.
-- **Les polices** Chakra Petch, JetBrains Mono et Atkinson Hyperlegible, intégrées dans `css/polices.css` : licence SIL OFL 1.1, copyrights et texte dans [css/LICENCE-POLICES.txt](css/LICENCE-POLICES.txt).
+- **Les polices** : Chakra Petch, intégrée dans `css/polices.css` (licence SIL OFL 1.1, copyright et texte dans [css/LICENCE-POLICES.txt](css/LICENCE-POLICES.txt)) ; les autres (Atkinson Hyperlegible, JetBrains Mono, Anton, VT323) viennent du site Ressources NSI et SNT, avec leurs licences (SIL OFL 1.1).
 
 Tu peux les réutiliser et les modifier, y compris pour tes classes, en mentionnant Babash - NSI Tani Malandi et la licence ; un document modifié se partage sous la même licence. Si tu utilises l'IA pour les modifier, merci de le préciser.

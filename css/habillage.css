@@ -33,10 +33,11 @@ main:focus { outline: none; }
 
 /* ── 2. La barre du haut et le décor de la Flottille ── */
 .qz-barre { position: relative; z-index: 6; flex-wrap: wrap; row-gap: 6px; }
-.qz-outils { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
+.qz-outils { flex: 1 0 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 100%; }   /* trop long : passe en entier à la ligne */
 .qz-pastille { font-size: 1.2rem; padding: 3px 8px; }
 .qz-pastille b { font-weight: 400; letter-spacing: .14em; }
 .qz-case { gap: 8px; }
+.ap-bt-principal:disabled { background: var(--td-fond); color: var(--td-encre-douce); box-shadow: none; }
 .qz-case input { width: 18px; height: 18px; margin: 0; accent-color: var(--td-trait-fort); }
 /* le téléphone : la barre (et son chrono) reste en haut de l'écran ; le bandeau dessous défile */
 .qz-barre-tel { position: sticky; top: 0; flex-wrap: nowrap; }
@@ -45,6 +46,9 @@ main:focus { outline: none; }
 .qz-bandeau { flex-wrap: wrap; padding: 4px 12px; }
 .qz-moi { font-weight: 700; overflow-wrap: anywhere; min-width: 0; }
 .qz-points { font-weight: 400; color: var(--td-encre-douce); white-space: nowrap; }
+/* le bouton d'affichage : « Affichage obscur » en entier, « Obscur » sur un petit écran (le nom complet reste lu) */
+.qz-court { display: none; }
+@media (max-width: 420px) { .qz-long { display: none; } .qz-court { display: inline; } }
 
 /* ── 3. Le pied de page ───────────────────────── */
 .qz-pied { padding: 12px 16px; font-size: .9rem; color: var(--td-encre-douce); text-align: center; border-top: 1.4px solid var(--td-trait-fort); background: var(--td-panneau-2); }
@@ -73,7 +77,7 @@ main:focus { outline: none; }
 .ap .retirer { min-height: 32px; padding: 2px 8px; font-size: .85rem; }
 .qz-reglages .ap-sous { margin-bottom: 4px; }
 .ap .ligne-reglage { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
-.ap .ligne-reglage label { font-weight: 700; min-width: 12ch; }
+.ap .ligne-reglage label { font-weight: 700; min-width: 11rem; }
 .ap select.ap-champ { width: auto; max-width: 100%; font-family: var(--td-texte); }
 .qz-lancer { margin-top: 16px; }
 
@@ -99,6 +103,7 @@ main:focus { outline: none; }
 }
 
 /* ── 6. Les fenêtres : podium, mots du nuage ── */
+.ap.qz-boite { margin: auto; }
 .qz-boite { border: 1.4px solid var(--td-trait-fort); border-radius: 2px; padding: 20px 24px; width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; box-shadow: 6px 6px 0 var(--ap-touche); }
 .qz-boite::backdrop { background: rgba(14, 12, 20, .72); }
 .qz-boite > form { margin-top: 14px; }
@@ -110,7 +115,7 @@ main:focus { outline: none; }
 .qz-podium-boite .ap-place-3 .ap-marche { height: auto; min-height: 115px; }
 .ap-marche { padding: 8px 6px 10px; }
 .ap-marche .qui { margin: 4px 0 0; max-width: 100%; text-align: center; line-height: 1.2; }
-.ap-marche .ap-pseudo { display: block; }
+.ap-marche .ap-pseudo { display: block; font-size: 1.35rem; }
 .ap-marche .pts { display: block; font-size: .95rem; color: var(--td-encre-douce); }
 .ap-podium .flamme { font-size: .8em; margin-left: .2em; }
 .ap .rep-barre { background: var(--td-panneau-2); border-color: var(--td-trait); border-radius: 0; }
